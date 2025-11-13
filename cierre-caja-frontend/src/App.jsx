@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard } from 'lucide-react';
 
 const App = () => {
   // BASE de la API: se inyecta en build por Vite (prefijo VITE_)
   const API_BASE = import.meta.env.VITE_API_URL || "https://cierre-caja-api.onrender.com"|| "http://localhost:5000";
+  // const API_BASE = "http://localhost:5000";
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -29,6 +31,16 @@ const App = () => {
     prestamos_nota: ''
   });
 
+  // Nuevo estado para métodos de pago registrados
+  const [metodosPago, setMetodosPago] = useState({
+    addi_datafono: '',
+    nequi_luz_helena: '',
+    daviplata_jose: '',
+    qr_julieth: '',
+    tarjeta_debito: '',
+    tarjeta_credito: ''
+  });
+
   const tiposExcedente = [
     { value: 'efectivo', label: 'Excedente Efectivo' },
     { value: 'qr_transferencias', label: 'Excedente QR/Transferencias' },
@@ -41,9 +53,7 @@ const App = () => {
     { value: 'qr', label: 'QR' }
   ];
 
-  // Función para validar y limpiar entrada numérica
   const handleNumericInput = (value) => {
-    // Remover cualquier caracter que no sea número
     const cleaned = value.replace(/[^0-9]/g, '');
     return cleaned;
   };
@@ -66,6 +76,17 @@ const App = () => {
   const totalBills = calculateTotal(bills);
   const totalGeneral = totalCoins + totalBills;
   const totalExcedentes = excedentes.reduce((sum, exc) => sum + (parseInt(exc.valor) || 0), 0);
+
+  // Calcular totales de métodos de pago
+  const totalTransferenciasRegistradas = 
+    parseInt(metodosPago.nequi_luz_helena || 0) + 
+    parseInt(metodosPago.daviplata_jose || 0) + 
+    parseInt(metodosPago.qr_julieth || 0);
+
+  const totalDatafonoRegistrado = 
+    parseInt(metodosPago.addi_datafono || 0) + 
+    parseInt(metodosPago.tarjeta_debito || 0) + 
+    parseInt(metodosPago.tarjeta_credito || 0);
 
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
@@ -101,6 +122,7 @@ const App = () => {
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
+    setShowSuccessModal(false);
 
     try {
       const excedentesPorTipo = {
@@ -147,10 +169,20 @@ const App = () => {
         gastos_operativos: parseInt(adjustments.gastos_operativos) || 0,
         gastos_operativos_nota: adjustments.gastos_operativos_nota || '',
         prestamos: parseInt(adjustments.prestamos) || 0,
-        prestamos_nota: adjustments.prestamos_nota || ''
+        prestamos_nota: adjustments.prestamos_nota || '',
+        // Métodos de pago registrados
+        metodos_pago: {
+          addi_datafono: parseInt(metodosPago.addi_datafono) || 0,
+          nequi_luz_helena: parseInt(metodosPago.nequi_luz_helena) || 0,
+          daviplata_jose: parseInt(metodosPago.daviplata_jose) || 0,
+          qr_julieth: parseInt(metodosPago.qr_julieth) || 0,
+          tarjeta_debito: parseInt(metodosPago.tarjeta_debito) || 0,
+          tarjeta_credito: parseInt(metodosPago.tarjeta_credito) || 0,
+          total_transferencias_registradas: totalTransferenciasRegistradas,
+          total_datafono_registrado: totalDatafonoRegistrado
+        }
       };
 
-      // <-- Aquí usamos API_BASE en lugar de hardcodear la URL
       const response = await fetch(`${API_BASE}/sum_payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +190,6 @@ const App = () => {
       });
 
       if (!response.ok) {
-        // Intenta leer el body si hay más info
         let text = '';
         try { text = await response.text(); } catch (e) { /* ignore */ }
         throw new Error(`Error en la respuesta del servidor: ${response.status} ${response.statusText} ${text}`);
@@ -168,7 +199,24 @@ const App = () => {
       data.excedentes_detalle = excedentesDetalle;
       data.gastos_operativos_nota = adjustments.gastos_operativos_nota;
       data.prestamos_nota = adjustments.prestamos_nota;
+      data.metodos_pago_registrados = payload.metodos_pago;
+      
       setResults(data);
+
+      // Verificar si el cierre es exitoso
+      const transferenciaAlegra = data.alegra.results.transfer.total || 0;
+      const datafonoAlegraTotal = 
+        (data.alegra.results['debit-card']?.total || 0) + 
+        (data.alegra.results['credit-card']?.total || 0);
+
+      const diferenciaTransferencia = Math.abs(transferenciaAlegra - totalTransferenciasRegistradas);
+      const diferenciaDatafono = Math.abs(datafonoAlegraTotal - totalDatafonoRegistrado);
+
+      // Si las diferencias son menores a 100 pesos (margen de error), considerar exitoso
+      if (diferenciaTransferencia < 100 && diferenciaDatafono < 100) {
+        setShowSuccessModal(true);
+      }
+
     } catch (err) {
       console.error(err);
       setError(err.message || 'Error desconocido');
@@ -182,8 +230,17 @@ const App = () => {
     setBills({ '2000': '', '5000': '', '10000': '', '20000': '', '50000': '', '100000': '' });
     setExcedentes([{ id: 1, tipo: 'efectivo', subtipo: '', valor: '' }]);
     setAdjustments({ gastos_operativos: '', gastos_operativos_nota: '', prestamos: '', prestamos_nota: '' });
+    setMetodosPago({
+      addi_datafono: '',
+      nequi_luz_helena: '',
+      daviplata_jose: '',
+      qr_julieth: '',
+      tarjeta_debito: '',
+      tarjeta_credito: ''
+    });
     setResults(null);
     setError(null);
+    setShowSuccessModal(false);
   };
 
   return (
@@ -203,6 +260,7 @@ const App = () => {
         </div>
 
         <div className="space-y-4 sm:space-y-6">
+          {/* Fecha del Cierre */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
@@ -217,6 +275,7 @@ const App = () => {
             />
           </div>
 
+          {/* Monedas y Billetes */}
           <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
@@ -287,6 +346,113 @@ const App = () => {
             </div>
           </div>
 
+          {/* NUEVA SECCIÓN: Métodos de Pago Registrados */}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registro de Métodos de Pago</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Transferencias */}
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                <h3 className="text-sm font-semibold text-purple-900 mb-3">Transferencias (QR)</h3>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.nequi_luz_helena}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.daviplata_jose}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.qr_julieth}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                {totalTransferenciasRegistradas > 0 && (
+                  <div className="mt-2 text-sm font-semibold text-purple-700">
+                    Total: {formatCurrency(totalTransferenciasRegistradas)}
+                  </div>
+                )}
+              </div>
+
+              {/* Datafono */}
+              <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                <h3 className="text-sm font-semibold text-orange-900 mb-3">Datafono</h3>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.addi_datafono}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.tarjeta_debito}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={metodosPago.tarjeta_credito}
+                      onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
+                      onFocus={(e) => e.target.select()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                {totalDatafonoRegistrado > 0 && (
+                  <div className="mt-2 text-sm font-semibold text-orange-700">
+                    Total: {formatCurrency(totalDatafonoRegistrado)}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Ajustes y Movimientos */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
@@ -425,6 +591,7 @@ const App = () => {
             </div>
           </div>
 
+          {/* Total en Caja */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <span className="text-lg sm:text-xl font-semibold">Total en Caja:</span>
@@ -432,6 +599,7 @@ const App = () => {
             </div>
           </div>
 
+          {/* Botones de Acción */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleSubmit}
@@ -459,6 +627,30 @@ const App = () => {
           </div>
         </div>
 
+        {/* Modal de Éxito */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-bounce">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Cierre Exitoso!</h3>
+                <p className="text-gray-600 mb-6">
+                  Los montos registrados coinciden con los datos de Alegra. El cierre se ha realizado correctamente.
+                </p>
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all"
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
         {error && (
           <div className="mt-4 sm:mt-6 bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
             <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -469,11 +661,81 @@ const App = () => {
           </div>
         )}
 
+        {/* Results Display */}
         {results && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Resultados del Cierre</h2>
               
+              {/* Comparación de Métodos de Pago */}
+              <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100">
+                <h3 className="text-base font-semibold text-blue-900 mb-3">Comparación de Métodos de Pago</h3>
+                
+                <div className="space-y-3">
+                  {/* Transferencias */}
+                  <div className="bg-white rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-sm">Transferencias</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <div className="text-gray-600">Alegra:</div>
+                        <div className="font-semibold text-purple-700">
+                          {results.alegra.results.transfer.formatted}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Registrado:</div>
+                        <div className="font-semibold text-blue-700">
+                          {formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <div className="text-gray-600">Desglose:</div>
+                      <div className="grid grid-cols-3 gap-1 mt-1">
+                        <div>Nequi: {formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</div>
+                        <div>Daviplata: {formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</div>
+                        <div>QR: {formatCurrency(results.metodos_pago_registrados.qr_julieth)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Datafono */}
+                  <div className="bg-white rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-sm">Datafono</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <div className="text-gray-600">Alegra (Déb + Créd):</div>
+                        <div className="font-semibold text-orange-700">
+                          {formatCurrency(
+                            (results.alegra.results['debit-card']?.total || 0) + 
+                            (results.alegra.results['credit-card']?.total || 0)
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600">Registrado:</div>
+                        <div className="font-semibold text-blue-700">
+                          {formatCurrency(results.metodos_pago_registrados.total_datafono_registrado)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <div className="text-gray-600">Desglose:</div>
+                      <div className="grid grid-cols-3 gap-1 mt-1">
+                        <div>Addi: {formatCurrency(results.metodos_pago_registrados.addi_datafono)}</div>
+                        <div>T. Débito: {formatCurrency(results.metodos_pago_registrados.tarjeta_debito)}</div>
+                        <div>T. Crédito: {formatCurrency(results.metodos_pago_registrados.tarjeta_credito)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resumen Alegra */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
                   <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Efectivo</div>
@@ -506,6 +768,7 @@ const App = () => {
                 <div className="text-2xl sm:text-4xl font-bold">{results.alegra.total_sale.formatted}</div>
               </div>
 
+              {/* Base y Consignar */}
               <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
                   <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Base de Caja</h3>
@@ -542,6 +805,7 @@ const App = () => {
                 </div>
               </div>
 
+              {/* Ajustes Aplicados */}
               <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100">
                 <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Ajustes Aplicados</h3>
                 
@@ -587,6 +851,7 @@ const App = () => {
                 </div>
               </div>
 
+              {/* Footer Info */}
               <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 text-xs sm:text-sm text-gray-600">
                 <div className="flex flex-col sm:flex-row justify-between gap-2">
                   <span>Usuario: {results.username_used}</span>
