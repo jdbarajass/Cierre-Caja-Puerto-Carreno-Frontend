@@ -634,7 +634,7 @@ const Dashboard = () => {
         {/* Modal de Éxito */}
         {showSuccessModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-bounce">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-bounce-once">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
@@ -816,13 +816,19 @@ const Dashboard = () => {
                 {results.excedentes_detalle && results.excedentes_detalle.length > 0 && (
                   <div className="mb-4">
                     <div className="text-xs font-semibold text-gray-700 mb-2">Excedentes:</div>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {results.excedentes_detalle.map((exc, idx) => (
-                        <div key={idx} className="flex justify-between text-xs">
-                          <span className="text-gray-600">
+                        <div
+                          key={idx}
+                          className="flex items-center text-xs bg-white rounded-lg px-3 py-2 border border-gray-200"
+                        >
+                          <span className="text-gray-600 whitespace-nowrap">
                             {exc.tipo} {exc.subtipo && `(${exc.subtipo})`}:
                           </span>
-                          <span className="font-semibold">{formatCurrency(exc.valor)}</span>
+                          <span className="flex-1 mx-2 border-b-2 border-dotted border-gray-300 min-w-[20px]"></span>
+                          <span className="font-semibold text-gray-900 whitespace-nowrap bg-yellow-50 px-2 py-1 rounded">
+                            {formatCurrency(exc.valor)}
+                          </span>
                         </div>
                       ))}
                     </div>
