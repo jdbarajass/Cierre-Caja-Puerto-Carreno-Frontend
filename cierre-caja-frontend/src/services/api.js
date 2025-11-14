@@ -1,3 +1,5 @@
+import logger from '../utils/logger';
+
 // URLs de los backends (prioridad: local -> desplegado)
 const API_LOCAL = 'http://localhost:5000';
 const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
@@ -81,7 +83,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
         return response;
       }
     } catch (error) {
-      console.warn(`Error al conectar con ${workingApiBase}:`, error.message);
+      logger.warn(`Error al conectar con ${workingApiBase}:`, error.message);
       lastError = error;
       workingApiBase = null; // Resetear para intentar con ambos
     }
@@ -89,7 +91,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
   // Intentar primero con el backend local
   try {
-    console.log('Intentando conectar con backend local:', API_LOCAL);
+    logger.info('Intentando conectar con backend local:', API_LOCAL);
     response = await fetchWithTimeout(
       `${API_LOCAL}${endpoint}`,
       fetchOptions,
@@ -98,7 +100,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
     // Si la conexión fue exitosa, guardar que el backend local funciona
     workingApiBase = API_LOCAL;
-    console.log('Conectado exitosamente con backend local');
+    logger.info('Conectado exitosamente con backend local');
 
     // Si la respuesta es 401 (no autorizado), limpiar la sesión
     if (response.status === 401) {
@@ -110,12 +112,12 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
     return response;
   } catch (localError) {
-    console.warn('Backend local no disponible, intentando con backend desplegado...');
+    logger.warn('Backend local no disponible, intentando con backend desplegado...');
     lastError = localError;
 
     // Si falla el local, intentar con el desplegado
     try {
-      console.log('Intentando conectar con backend desplegado:', API_DEPLOYED);
+      logger.info('Intentando conectar con backend desplegado:', API_DEPLOYED);
       response = await fetchWithTimeout(
         `${API_DEPLOYED}${endpoint}`,
         fetchOptions,
@@ -124,7 +126,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
       // Si la conexión fue exitosa, guardar que el backend desplegado funciona
       workingApiBase = API_DEPLOYED;
-      console.log('Conectado exitosamente con backend desplegado');
+      logger.info('Conectado exitosamente con backend desplegado');
 
       // Si la respuesta es 401 (no autorizado), limpiar la sesión
       if (response.status === 401) {
@@ -136,7 +138,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
       return response;
     } catch (deployedError) {
-      console.error('Ambos backends fallaron:', {
+      logger.error('Ambos backends fallaron:', {
         local: lastError.message,
         deployed: deployedError.message,
       });
