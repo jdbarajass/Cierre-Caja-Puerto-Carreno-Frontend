@@ -859,29 +859,38 @@ const Dashboard = () => {
               </div>
 
               {/* Resumen Alegra */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
-                  <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Efectivo</div>
+                  <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Efectivo Alegra</div>
                   <div className="text-lg sm:text-2xl font-bold text-blue-900">
                     {results.alegra.results.cash.formatted}
                   </div>
                 </div>
                 <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100">
-                  <div className="text-xs sm:text-sm text-purple-600 font-medium mb-1">Transferencia</div>
+                  <div className="text-xs sm:text-sm text-purple-600 font-medium mb-1">Transferencia Alegra</div>
                   <div className="text-lg sm:text-2xl font-bold text-purple-900">
                     {results.alegra.results.transfer.formatted}
                   </div>
                 </div>
-                <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100">
-                  <div className="text-xs sm:text-sm text-green-600 font-medium mb-1">Tarjeta Débito</div>
-                  <div className="text-lg sm:text-2xl font-bold text-green-900">
-                    {results.alegra.results['debit-card'].formatted}
-                  </div>
+              </div>
+
+              {/* Datafono - Tarjetas */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border-2 border-gray-300 mb-4 sm:mb-6">
+                <div className="text-center mb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-700">Datafono</h3>
                 </div>
-                <div className="bg-orange-50 rounded-xl p-3 sm:p-4 border border-orange-100">
-                  <div className="text-xs sm:text-sm text-orange-600 font-medium mb-1">Tarjeta Crédito</div>
-                  <div className="text-lg sm:text-2xl font-bold text-orange-900">
-                    {results.alegra.results['credit-card'].formatted}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100">
+                    <div className="text-xs sm:text-sm text-green-600 font-medium mb-1">Tarjeta Débito</div>
+                    <div className="text-lg sm:text-2xl font-bold text-green-900">
+                      {results.alegra.results['debit-card'].formatted}
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-3 sm:p-4 border border-orange-100">
+                    <div className="text-xs sm:text-sm text-orange-600 font-medium mb-1">Tarjeta Crédito</div>
+                    <div className="text-lg sm:text-2xl font-bold text-orange-900">
+                      {results.alegra.results['credit-card'].formatted}
+                    </div>
                   </div>
                 </div>
               </div>
