@@ -469,114 +469,116 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Métodos de Pago Registrados */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registro de Métodos de Pago</h2>
-            </div>
-
-            <div className="space-y-4">
-              {/* Transferencias */}
-              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                <h3 className="text-sm font-semibold text-purple-900 mb-3">Transferencias (QR)</h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.nequi_luz_helena}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.daviplata_jose}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.qr_julieth}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                {totalTransferenciasRegistradas > 0 && (
-                  <div className="mt-2 text-sm font-semibold text-purple-700">
-                    Total: {formatCurrency(totalTransferenciasRegistradas)}
-                  </div>
-                )}
+          {/* Grid de 2 columnas: Métodos de Pago y Ajustes */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Columna Izquierda: Métodos de Pago Registrados */}
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registro de Métodos de Pago</h2>
               </div>
 
-              {/* Datafono */}
-              <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
-                <h3 className="text-sm font-semibold text-orange-900 mb-3">Datafono</h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.addi_datafono}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
+              <div className="space-y-4">
+                {/* Transferencias */}
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <h3 className="text-sm font-semibold text-purple-900 mb-3">Transferencias (QR)</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.nequi_luz_helena}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.daviplata_jose}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.qr_julieth}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.tarjeta_debito}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={metodosPago.tarjeta_credito}
-                      onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
-                      placeholder="0"
-                    />
-                  </div>
+                  {totalTransferenciasRegistradas > 0 && (
+                    <div className="mt-2 text-sm font-semibold text-purple-700">
+                      Total: {formatCurrency(totalTransferenciasRegistradas)}
+                    </div>
+                  )}
                 </div>
-                {totalDatafonoRegistrado > 0 && (
-                  <div className="mt-2 text-sm font-semibold text-orange-700">
-                    Total: {formatCurrency(totalDatafonoRegistrado)}
+
+                {/* Datafono */}
+                <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                  <h3 className="text-sm font-semibold text-orange-900 mb-3">Datafono</h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.addi_datafono}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.tarjeta_debito}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={metodosPago.tarjeta_credito}
+                        onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                )}
+                  {totalDatafonoRegistrado > 0 && (
+                    <div className="mt-2 text-sm font-semibold text-orange-700">
+                      Total: {formatCurrency(totalDatafonoRegistrado)}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Ajustes y Movimientos */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
+            {/* Columna Derecha: Ajustes y Movimientos */}
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Ajustes y Movimientos</h2>
@@ -712,6 +714,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Total en Caja */}
@@ -790,121 +793,194 @@ const Dashboard = () => {
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Resultados del Cierre</h2>
 
-              {/* Comparación de Métodos de Pago */}
-              <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100">
-                <h3 className="text-base font-semibold text-blue-900 mb-3">Comparación de Métodos de Pago</h3>
+              {/* Grid de 2 columnas: Comparación a la izquierda, Resumen Alegra a la derecha */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                {/* Columna Izquierda: Comparación de Métodos de Pago */}
+                <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100 h-full flex flex-col">
+                  <h3 className="text-sm sm:text-base font-semibold text-blue-900 mb-2 sm:mb-3">Comparación de Métodos de Pago</h3>
 
-                <div className="space-y-3">
-                  {/* Transferencias */}
-                  <div className="bg-white rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-sm">Transferencias</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <div className="text-gray-600">Alegra:</div>
-                        <div className="font-semibold text-purple-700">
-                          {results.alegra.results.transfer.formatted}
+                  <div className="space-y-2 sm:space-y-3 flex-1">
+                    {/* Transferencias */}
+                    <div className="bg-white rounded-lg p-2 sm:p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-xs sm:text-sm">Transferencias</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <div className="text-gray-600">Alegra:</div>
+                          <div className="font-semibold text-purple-700">
+                            {results.alegra.results.transfer.formatted}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Registrado:</div>
+                          <div className="font-semibold text-blue-700">
+                            {formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-gray-600">Registrado:</div>
-                        <div className="font-semibold text-blue-700">
-                          {formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
+                      <div className="mt-2 text-xs">
+                        <div className="text-gray-600">Desglose:</div>
+                        <div className="grid grid-cols-3 gap-1 mt-1">
+                          <div>Nequi: {formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</div>
+                          <div>Daviplata: {formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</div>
+                          <div>QR: {formatCurrency(results.metodos_pago_registrados.qr_julieth)}</div>
                         </div>
                       </div>
                     </div>
-                    <div className="mt-2 text-xs">
-                      <div className="text-gray-600">Desglose:</div>
-                      <div className="grid grid-cols-3 gap-1 mt-1">
-                        <div>Nequi: {formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</div>
-                        <div>Daviplata: {formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</div>
-                        <div>QR: {formatCurrency(results.metodos_pago_registrados.qr_julieth)}</div>
+
+                    {/* Datafono */}
+                    <div className="bg-white rounded-lg p-2 sm:p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-xs sm:text-sm">Datafono</span>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <div className="text-gray-600">Alegra (Déb + Créd):</div>
+                          <div className="font-semibold text-orange-700">
+                            {formatCurrency(
+                              (results.alegra.results['debit-card']?.total || 0) +
+                              (results.alegra.results['credit-card']?.total || 0)
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Registrado:</div>
+                          <div className="font-semibold text-blue-700">
+                            {formatCurrency(results.metodos_pago_registrados.total_datafono_registrado)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <div className="text-gray-600">Desglose:</div>
+                        <div className="grid grid-cols-3 gap-1 mt-1">
+                          <div>Addi: {formatCurrency(results.metodos_pago_registrados.addi_datafono)}</div>
+                          <div>T. Débito: {formatCurrency(results.metodos_pago_registrados.tarjeta_debito)}</div>
+                          <div>T. Crédito: {formatCurrency(results.metodos_pago_registrados.tarjeta_credito)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Resumen Alegra apilado */}
+                <div className="flex flex-col gap-2 sm:gap-3 h-full">
+                  {/* Efectivo Alegra */}
+                  <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100 flex-1 flex flex-col justify-center">
+                    <div className="text-xs text-blue-600 font-medium mb-1">Efectivo Alegra</div>
+                    <div className="text-lg sm:text-2xl font-bold text-blue-900">
+                      {results.alegra.results.cash.formatted}
+                    </div>
+                  </div>
+
+                  {/* Transferencia Alegra */}
+                  <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100 flex-1 flex flex-col justify-center">
+                    <div className="text-xs text-purple-600 font-medium mb-1">Transferencia Alegra</div>
+                    <div className="text-lg sm:text-2xl font-bold text-purple-900">
+                      {results.alegra.results.transfer.formatted}
                     </div>
                   </div>
 
                   {/* Datafono */}
-                  <div className="bg-white rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-sm">Datafono</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <div className="text-gray-600">Alegra (Déb + Créd):</div>
-                        <div className="font-semibold text-orange-700">
-                          {formatCurrency(
-                            (results.alegra.results['debit-card']?.total || 0) +
-                            (results.alegra.results['credit-card']?.total || 0)
-                          )}
+                  <div className="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-300 flex-1 flex flex-col justify-center">
+                    <div className="text-xs text-gray-700 font-medium mb-2">Datafono</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-green-50 rounded-lg p-2 border border-green-100">
+                        <div className="text-xs text-green-600 mb-1">Tarjeta Débito</div>
+                        <div className="text-sm sm:text-base font-bold text-green-900">
+                          {results.alegra.results['debit-card'].formatted}
                         </div>
                       </div>
-                      <div>
-                        <div className="text-gray-600">Registrado:</div>
-                        <div className="font-semibold text-blue-700">
-                          {formatCurrency(results.metodos_pago_registrados.total_datafono_registrado)}
+                      <div className="bg-orange-50 rounded-lg p-2 border border-orange-100">
+                        <div className="text-xs text-orange-600 mb-1">Tarjeta Crédito</div>
+                        <div className="text-sm sm:text-base font-bold text-orange-900">
+                          {results.alegra.results['credit-card'].formatted}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-2 text-xs">
-                      <div className="text-gray-600">Desglose:</div>
-                      <div className="grid grid-cols-3 gap-1 mt-1">
-                        <div>Addi: {formatCurrency(results.metodos_pago_registrados.addi_datafono)}</div>
-                        <div>T. Débito: {formatCurrency(results.metodos_pago_registrados.tarjeta_debito)}</div>
-                        <div>T. Crédito: {formatCurrency(results.metodos_pago_registrados.tarjeta_credito)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid de 2 columnas: Ajustes a la izquierda, Totales a la derecha */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                {/* Columna Izquierda: Ajustes Aplicados */}
+                <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100 h-full flex flex-col">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Ajustes Aplicados</h3>
+
+                  <div className="flex-1 flex flex-col justify-between">
+                    {results.excedentes_detalle && results.excedentes_detalle.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-semibold text-gray-700 mb-2">Excedentes:</div>
+                        <div className="space-y-1.5">
+                          {results.excedentes_detalle.map((exc, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center text-xs bg-white rounded-lg px-2 py-1.5 border border-gray-200"
+                            >
+                              <span className="text-gray-600 whitespace-nowrap">
+                                {exc.tipo} {exc.subtipo && `(${exc.subtipo})`}:
+                              </span>
+                              <span className="flex-1 mx-2 border-b-2 border-dotted border-gray-300 min-w-[20px]"></span>
+                              <span className="font-semibold text-gray-900 whitespace-nowrap bg-yellow-50 px-2 py-0.5 rounded">
+                                {formatCurrency(exc.valor)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                      <div>
+                        <div className="text-gray-600 mb-1">Total Excedente</div>
+                        <div className="font-semibold">{results.cash_count.adjustments.excedente_formatted}</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-600 mb-1">Gastos Operativos</div>
+                        <div className="font-semibold">{results.cash_count.adjustments.gastos_operativos_formatted}</div>
+                        {results.gastos_operativos_nota && (
+                          <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.gastos_operativos_nota}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-gray-600 mb-1">Préstamos</div>
+                        <div className="font-semibold">{results.cash_count.adjustments.prestamos_formatted}</div>
+                        {results.prestamos_nota && (
+                          <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.prestamos_nota}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-gray-600 mb-1">Venta Efectivo Alegra</div>
+                        <div className="font-semibold">{results.cash_count.adjustments.venta_efectivo_diaria_alegra_formatted}</div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Resumen Alegra */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
-                  <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Efectivo Alegra</div>
-                  <div className="text-lg sm:text-2xl font-bold text-blue-900">
-                    {results.alegra.results.cash.formatted}
+                {/* Columna Derecha: Totales apilados */}
+                <div className="flex flex-col gap-2 sm:gap-3 h-full">
+                  {/* TOTAL VENTA DEL DÍA */}
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
+                    <div className="text-xs sm:text-sm font-medium opacity-90 mb-1">TOTAL VENTA DEL DÍA</div>
+                    <div className="text-2xl sm:text-4xl font-bold">{results.alegra.total_sale.formatted}</div>
                   </div>
-                </div>
-                <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100">
-                  <div className="text-xs sm:text-sm text-purple-600 font-medium mb-1">Transferencia Alegra</div>
-                  <div className="text-lg sm:text-2xl font-bold text-purple-900">
-                    {results.alegra.results.transfer.formatted}
-                  </div>
-                </div>
-              </div>
 
-              {/* Datafono - Tarjetas */}
-              <div className="bg-gray-50 rounded-xl p-4 sm:p-5 border-2 border-gray-300 mb-4 sm:mb-6">
-                <div className="text-center mb-3">
-                  <h3 className="text-sm sm:text-base font-bold text-gray-700">Datafono</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100">
-                    <div className="text-xs sm:text-sm text-green-600 font-medium mb-1">Tarjeta Débito</div>
-                    <div className="text-lg sm:text-2xl font-bold text-green-900">
-                      {results.alegra.results['debit-card'].formatted}
-                    </div>
-                  </div>
-                  <div className="bg-orange-50 rounded-xl p-3 sm:p-4 border border-orange-100">
-                    <div className="text-xs sm:text-sm text-orange-600 font-medium mb-1">Tarjeta Crédito</div>
-                    <div className="text-lg sm:text-2xl font-bold text-orange-900">
-                      {results.alegra.results['credit-card'].formatted}
+                  {/* Total a Consignar */}
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
+                    <div className="text-xs sm:text-sm font-medium opacity-90 mb-1">Total a Consignar</div>
+                    <div className="text-2xl sm:text-4xl font-bold">
+                      {results.cash_count.consignar.efectivo_para_consignar_final_formatted}
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 sm:p-6 text-white mb-4 sm:mb-6">
-                <div className="text-xs sm:text-sm font-medium opacity-90 mb-1">TOTAL VENTA DEL DÍA</div>
-                <div className="text-2xl sm:text-4xl font-bold">{results.alegra.total_sale.formatted}</div>
               </div>
 
               {/* Base y Consignar */}
-              <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
-                <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Base de Caja</h3>
-                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+              <div className="grid sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="bg-gray-50 rounded-xl p-2 sm:p-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Base de Caja</h3>
+                  <div className="space-y-1 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Total Base:</span>
                       <span className="font-semibold">{results.cash_count.base.total_base_formatted}</span>
@@ -918,9 +994,9 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">A Consignar</h3>
-                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                <div className="bg-gray-50 rounded-xl p-2 sm:p-3">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">A Consignar</h3>
+                  <div className="space-y-1 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Efectivo Final:</span>
                       <span className="font-semibold text-green-600">
@@ -1131,7 +1207,7 @@ const Dashboard = () => {
                         <div className="text-xl font-bold">{formatCurrency(results.distribucion_caja.cajaBase.total)}</div>
                       </div>
                       <div>
-                        <div className="text-xs font-medium opacity-90 mb-1">Total para Consignar</div>
+                        <div className="text-xs font-medium opacity-90 mb-1">Total a Consignar</div>
                         <div className="text-xl font-bold">{formatCurrency(results.distribucion_caja.consignacion.total)}</div>
                       </div>
                       <div>
@@ -1144,58 +1220,6 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-
-              {/* Ajustes Aplicados */}
-              <div className="bg-yellow-50 rounded-xl p-3 sm:p-4 border border-yellow-100">
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 sm:mb-3">Ajustes Aplicados</h3>
-
-                {results.excedentes_detalle && results.excedentes_detalle.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-xs font-semibold text-gray-700 mb-2">Excedentes:</div>
-                    <div className="space-y-2">
-                      {results.excedentes_detalle.map((exc, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center text-xs bg-white rounded-lg px-3 py-2 border border-gray-200"
-                        >
-                          <span className="text-gray-600 whitespace-nowrap">
-                            {exc.tipo} {exc.subtipo && `(${exc.subtipo})`}:
-                          </span>
-                          <span className="flex-1 mx-2 border-b-2 border-dotted border-gray-300 min-w-[20px]"></span>
-                          <span className="font-semibold text-gray-900 whitespace-nowrap bg-yellow-50 px-2 py-1 rounded">
-                            {formatCurrency(exc.valor)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <div>
-                    <div className="text-gray-600 mb-1">Total Excedente</div>
-                    <div className="font-semibold">{results.cash_count.adjustments.excedente_formatted}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-600 mb-1">Gastos Operativos</div>
-                    <div className="font-semibold">{results.cash_count.adjustments.gastos_operativos_formatted}</div>
-                    {results.gastos_operativos_nota && (
-                      <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.gastos_operativos_nota}</div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-gray-600 mb-1">Préstamos</div>
-                    <div className="font-semibold">{results.cash_count.adjustments.prestamos_formatted}</div>
-                    {results.prestamos_nota && (
-                      <div className="text-xs text-gray-500 mt-1 italic">Nota: {results.prestamos_nota}</div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-gray-600 mb-1">Venta Efectivo Alegra</div>
-                    <div className="font-semibold">{results.cash_count.adjustments.venta_efectivo_diaria_alegra_formatted}</div>
-                  </div>
-                </div>
-              </div>
 
               {/* Footer Info */}
               <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 text-xs sm:text-sm text-gray-600">
