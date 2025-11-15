@@ -3,7 +3,7 @@ import logger from '../utils/logger';
 // URLs de los backends (prioridad: local -> desplegado)
 const API_LOCAL = 'http://10.28.168.57:5000';
 const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
-const API_TIMEOUT = 5000; // 5 segundos de timeout para el backend local
+const API_TIMEOUT = 15000; // 15 segundos de timeout para el backend local
 
 // Variable para almacenar qué backend está funcionando
 let workingApiBase = null;

@@ -117,120 +117,8 @@ const Dashboard = () => {
     ));
   };
 
-  // Función para distribuir monedas y billetes entre caja base y consignación
-  const calcularDistribucionCaja = (coins, bills) => {
-    const CAJA_BASE = 450000;
-
-    // Calcular totales
-    const totalCoins = Object.entries(coins).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * parseInt(qty || 0));
-    }, 0);
-
-    const totalBills = Object.entries(bills).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * parseInt(qty || 0));
-    }, 0);
-
-    const totalContado = totalCoins + totalBills;
-
-    // Si el total es menor o igual a la base, todo queda en caja
-    if (totalContado <= CAJA_BASE) {
-      return {
-        cajaBase: {
-          coins: { ...coins },
-          bills: { ...bills },
-          totalCoins,
-          totalBills,
-          total: totalContado
-        },
-        consignacion: {
-          coins: { '50': 0, '100': 0, '200': 0, '500': 0, '1000': 0 },
-          bills: { '2000': 0, '5000': 0, '10000': 0, '20000': 0, '50000': 0, '100000': 0 },
-          totalCoins: 0,
-          totalBills: 0,
-          total: 0
-        }
-      };
-    }
-
-    // Si hay que dividir, priorizamos billetes grandes para consignación
-    let montoRestante = totalContado;
-    let montoBase = CAJA_BASE;
-
-    const cajaBaseCoins = {};
-    const cajaBaseBills = {};
-    const consignacionCoins = {};
-    const consignacionBills = {};
-
-    // Inicializar todos en 0
-    Object.keys(coins).forEach(denom => {
-      cajaBaseCoins[denom] = 0;
-      consignacionCoins[denom] = 0;
-    });
-    Object.keys(bills).forEach(denom => {
-      cajaBaseBills[denom] = 0;
-      consignacionBills[denom] = 0;
-    });
-
-    // Estrategia: Llenar consignación con billetes grandes primero
-    const billetesOrdenados = ['100000', '50000', '20000', '10000', '5000', '2000'];
-
-    for (const denom of billetesOrdenados) {
-      const cantidad = parseInt(bills[denom] || 0);
-      const valorDenom = parseInt(denom);
-
-      if (cantidad > 0) {
-        let cantidadParaConsignar = 0;
-
-        // Calcular cuántos de este billete van para consignación
-        while (cantidadParaConsignar < cantidad && montoRestante - valorDenom >= CAJA_BASE) {
-          cantidadParaConsignar++;
-          montoRestante -= valorDenom;
-        }
-
-        consignacionBills[denom] = cantidadParaConsignar;
-        cajaBaseBills[denom] = cantidad - cantidadParaConsignar;
-      }
-    }
-
-    // Las monedas todas van para caja base
-    Object.entries(coins).forEach(([denom, qty]) => {
-      cajaBaseCoins[denom] = parseInt(qty || 0);
-    });
-
-    // Calcular totales finales
-    const cajaBaseTotalCoins = Object.entries(cajaBaseCoins).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * qty);
-    }, 0);
-
-    const cajaBaseTotalBills = Object.entries(cajaBaseBills).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * qty);
-    }, 0);
-
-    const consignacionTotalCoins = Object.entries(consignacionCoins).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * qty);
-    }, 0);
-
-    const consignacionTotalBills = Object.entries(consignacionBills).reduce((sum, [denom, qty]) => {
-      return sum + (parseInt(denom) * qty);
-    }, 0);
-
-    return {
-      cajaBase: {
-        coins: cajaBaseCoins,
-        bills: cajaBaseBills,
-        totalCoins: cajaBaseTotalCoins,
-        totalBills: cajaBaseTotalBills,
-        total: cajaBaseTotalCoins + cajaBaseTotalBills
-      },
-      consignacion: {
-        coins: consignacionCoins,
-        bills: consignacionBills,
-        totalCoins: consignacionTotalCoins,
-        totalBills: consignacionTotalBills,
-        total: consignacionTotalBills + consignacionTotalCoins
-      }
-    };
-  };
+  // NOTA: La distribución de caja ahora se calcula en el backend
+  // y viene en la respuesta en cash_count.base
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -301,9 +189,28 @@ const Dashboard = () => {
       data.prestamos_nota = adjustments.prestamos_nota;
       data.metodos_pago_registrados = payload.metodos_pago;
 
-      // Calcular distribución de monedas y billetes para caja base y consignación
-      const distribucion = calcularDistribucionCaja(coins, bills);
-      data.distribucion_caja = distribucion;
+      // Preparar distribución usando los datos del backend
+      if (data.cash_count && data.cash_count.base) {
+        const baseData = data.cash_count.base;
+        const consignarData = data.cash_count.consignar;
+
+        data.distribucion_caja = {
+          cajaBase: {
+            coins: baseData.base_monedas || {},
+            bills: baseData.base_billetes || {},
+            totalCoins: baseData.total_base_monedas || 0,
+            totalBills: baseData.total_base_billetes || 0,
+            total: baseData.total_base || 450000
+          },
+          consignacion: {
+            coins: consignarData?.consignar_monedas || {},
+            bills: consignarData?.consignar_billetes || {},
+            totalCoins: 0, // El backend no envía este subtotal, se puede calcular si se necesita
+            totalBills: 0, // El backend no envía este subtotal, se puede calcular si se necesita
+            total: consignarData?.efectivo_para_consignar_final || 0
+          }
+        };
+      }
 
       setResults(data);
 
@@ -991,6 +898,24 @@ const Dashboard = () => {
                         {results.cash_count.base.exact_base_obtained ? 'Sí' : 'No'}
                       </span>
                     </div>
+                    {results.cash_count.base.mensaje_base && (
+                      <div className={`mt-2 p-2 rounded-lg text-xs ${
+                        results.cash_count.base.base_status === 'exacto'
+                          ? 'bg-green-100 text-green-800 border border-green-200'
+                          : results.cash_count.base.base_status === 'sobrante'
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          : 'bg-red-100 text-red-800 border border-red-200'
+                      }`}>
+                        <div className="flex items-start gap-1">
+                          {results.cash_count.base.base_status === 'exacto' ? (
+                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                          )}
+                          <span className="font-medium">{results.cash_count.base.mensaje_base}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
