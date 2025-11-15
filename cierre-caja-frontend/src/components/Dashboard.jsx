@@ -57,6 +57,15 @@ const Dashboard = () => {
     return cleaned;
   };
 
+  const formatNumberWithThousands = (value) => {
+    // Eliminar todo excepto números
+    const cleaned = value.replace(/[^0-9]/g, '');
+    if (!cleaned) return '';
+
+    // Formatear con separador de miles (punto) y signo de pesos
+    return '$' + parseInt(cleaned).toLocaleString('es-CO');
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -75,16 +84,6 @@ const Dashboard = () => {
   const totalBills = calculateTotal(bills);
   const totalGeneral = totalCoins + totalBills;
   const totalExcedentes = excedentes.reduce((sum, exc) => sum + (parseInt(exc.valor) || 0), 0);
-
-  const totalTransferenciasRegistradas =
-    parseInt(metodosPago.nequi_luz_helena || 0) +
-    parseInt(metodosPago.daviplata_jose || 0) +
-    parseInt(metodosPago.qr_julieth || 0);
-
-  const totalDatafonoRegistrado =
-    parseInt(metodosPago.addi_datafono || 0) +
-    parseInt(metodosPago.tarjeta_debito || 0) +
-    parseInt(metodosPago.tarjeta_credito || 0);
 
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
@@ -117,56 +116,25 @@ const Dashboard = () => {
     ));
   };
 
-  // NOTA: La distribución de caja ahora se calcula en el backend
-  // y viene en la respuesta en cash_count.base
-
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     setShowSuccessModal(false);
 
     try {
-      const excedentesPorTipo = {
-        excedente_efectivo: 0,
-        excedente_datafono: 0,
-        excedente_nequi: 0,
-        excedente_daviplata: 0,
-        excedente_qr: 0
-      };
-
-      const excedentesDetalle = [];
-
-      excedentes.forEach(exc => {
-        const valor = parseInt(exc.valor) || 0;
-        if (valor > 0) {
-          if (exc.tipo === 'efectivo') {
-            excedentesPorTipo.excedente_efectivo += valor;
-            excedentesDetalle.push({ tipo: 'Efectivo', valor });
-          } else if (exc.tipo === 'datafono') {
-            excedentesPorTipo.excedente_datafono += valor;
-            excedentesDetalle.push({ tipo: 'Datafono', valor });
-          } else if (exc.tipo === 'qr_transferencias') {
-            if (exc.subtipo === 'nequi') {
-              excedentesPorTipo.excedente_nequi += valor;
-              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'Nequi', valor });
-            } else if (exc.subtipo === 'daviplata') {
-              excedentesPorTipo.excedente_daviplata += valor;
-              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'Daviplata', valor });
-            } else if (exc.subtipo === 'qr') {
-              excedentesPorTipo.excedente_qr += valor;
-              excedentesDetalle.push({ tipo: 'Transferencia', subtipo: 'QR', valor });
-            }
-          }
-        }
-      });
+      const excedentesArray = excedentes
+        .filter(exc => (parseInt(exc.valor) || 0) > 0)
+        .map(exc => ({
+          tipo: exc.tipo,
+          subtipo: exc.tipo === 'qr_transferencias' ? exc.subtipo : null,
+          valor: parseInt(exc.valor) || 0
+        }));
 
       const payload = {
         date,
         coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])),
         bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
-        excedente: totalExcedentes,
-        ...excedentesPorTipo,
-        excedentes_detalle: excedentesDetalle,
+        excedentes: excedentesArray,
         gastos_operativos: parseInt(adjustments.gastos_operativos) || 0,
         gastos_operativos_nota: adjustments.gastos_operativos_nota || '',
         prestamos: parseInt(adjustments.prestamos) || 0,
@@ -177,19 +145,12 @@ const Dashboard = () => {
           daviplata_jose: parseInt(metodosPago.daviplata_jose) || 0,
           qr_julieth: parseInt(metodosPago.qr_julieth) || 0,
           tarjeta_debito: parseInt(metodosPago.tarjeta_debito) || 0,
-          tarjeta_credito: parseInt(metodosPago.tarjeta_credito) || 0,
-          total_transferencias_registradas: totalTransferenciasRegistradas,
-          total_datafono_registrado: totalDatafonoRegistrado
+          tarjeta_credito: parseInt(metodosPago.tarjeta_credito) || 0
         }
       };
 
       const data = await submitCashClosing(payload);
-      data.excedentes_detalle = excedentesDetalle;
-      data.gastos_operativos_nota = adjustments.gastos_operativos_nota;
-      data.prestamos_nota = adjustments.prestamos_nota;
-      data.metodos_pago_registrados = payload.metodos_pago;
 
-      // Preparar distribución usando los datos del backend
       if (data.cash_count && data.cash_count.base) {
         const baseData = data.cash_count.base;
         const consignarData = data.cash_count.consignar;
@@ -205,8 +166,8 @@ const Dashboard = () => {
           consignacion: {
             coins: consignarData?.consignar_monedas || {},
             bills: consignarData?.consignar_billetes || {},
-            totalCoins: 0, // El backend no envía este subtotal, se puede calcular si se necesita
-            totalBills: 0, // El backend no envía este subtotal, se puede calcular si se necesita
+            totalCoins: 0,
+            totalBills: 0,
             total: consignarData?.efectivo_para_consignar_final || 0
           }
         };
@@ -214,16 +175,10 @@ const Dashboard = () => {
 
       setResults(data);
 
-      const transferenciaAlegra = data.alegra.results.transfer.total || 0;
-      const datafonoAlegraTotal =
-        (data.alegra.results['debit-card']?.total || 0) +
-        (data.alegra.results['credit-card']?.total || 0);
-
-      const diferenciaTransferencia = Math.abs(transferenciaAlegra - totalTransferenciasRegistradas);
-      const diferenciaDatafono = Math.abs(datafonoAlegraTotal - totalDatafonoRegistrado);
-
-      if (diferenciaTransferencia < 100 && diferenciaDatafono < 100) {
+      if (data.validation && data.validation.cierre_validado) {
         setShowSuccessModal(true);
+      } else if (data.validation) {
+        console.warn('Validación del cierre:', data.validation.mensaje_validacion);
       }
 
     } catch (err) {
@@ -395,7 +350,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.nequi_luz_helena}
+                        value={formatNumberWithThousands(metodosPago.nequi_luz_helena)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
@@ -407,7 +362,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.daviplata_jose}
+                        value={formatNumberWithThousands(metodosPago.daviplata_jose)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
@@ -419,7 +374,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.qr_julieth}
+                        value={formatNumberWithThousands(metodosPago.qr_julieth)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
@@ -427,11 +382,6 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
-                  {totalTransferenciasRegistradas > 0 && (
-                    <div className="mt-2 text-sm font-semibold text-purple-700">
-                      Total: {formatCurrency(totalTransferenciasRegistradas)}
-                    </div>
-                  )}
                 </div>
 
                 {/* Datafono */}
@@ -443,7 +393,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.addi_datafono}
+                        value={formatNumberWithThousands(metodosPago.addi_datafono)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
@@ -455,7 +405,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.tarjeta_debito}
+                        value={formatNumberWithThousands(metodosPago.tarjeta_debito)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
@@ -467,7 +417,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={metodosPago.tarjeta_credito}
+                        value={formatNumberWithThousands(metodosPago.tarjeta_credito)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
@@ -475,11 +425,6 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
-                  {totalDatafonoRegistrado > 0 && (
-                    <div className="mt-2 text-sm font-semibold text-orange-700">
-                      Total: {formatCurrency(totalDatafonoRegistrado)}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -540,11 +485,11 @@ const Dashboard = () => {
                         <input
                           type="text"
                           inputMode="numeric"
-                          value={excedente.valor}
+                          value={formatNumberWithThousands(excedente.valor)}
                           onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
                           onFocus={(e) => e.target.select()}
                           className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                          placeholder="0"
+                          placeholder="$0"
                         />
                         {excedentes.length > 1 && (
                           <button
@@ -579,11 +524,11 @@ const Dashboard = () => {
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={adjustments.gastos_operativos}
+                  value={formatNumberWithThousands(adjustments.gastos_operativos)}
                   onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
-                  placeholder="0"
+                  placeholder="$0"
                 />
                 <div className="relative">
                   <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
@@ -603,11 +548,11 @@ const Dashboard = () => {
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={adjustments.prestamos}
+                  value={formatNumberWithThousands(adjustments.prestamos)}
                   onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
-                  placeholder="0"
+                  placeholder="$0"
                 />
                 <div className="relative">
                   <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
@@ -699,6 +644,88 @@ const Dashboard = () => {
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Resultados del Cierre</h2>
+
+              {/* Sección de Validación */}
+              {results.validation && (
+                <div className={`mb-4 sm:mb-6 p-4 rounded-xl border-2 ${
+                  results.validation.validation_status === 'success'
+                    ? 'bg-green-50 border-green-200'
+                    : results.validation.validation_status === 'warning'
+                    ? 'bg-yellow-50 border-yellow-200'
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {results.validation.validation_status === 'success' ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <h3 className={`text-lg font-semibold mb-2 ${
+                        results.validation.validation_status === 'success'
+                          ? 'text-green-900'
+                          : 'text-yellow-900'
+                      }`}>
+                        Estado de Validación
+                      </h3>
+                      <p className={`text-sm mb-3 ${
+                        results.validation.validation_status === 'success'
+                          ? 'text-green-800'
+                          : 'text-yellow-800'
+                      }`}>
+                        {results.validation.mensaje_validacion}
+                      </p>
+
+                      {/* Mostrar diferencias si existen */}
+                      {results.validation.diferencias && (
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          {/* Diferencias en Transferencias */}
+                          {results.validation.diferencias.transferencias && results.validation.diferencias.transferencias.es_significativa && (
+                            <div className="bg-white rounded-lg p-3 border border-yellow-200">
+                              <h4 className="font-semibold text-sm text-gray-900 mb-2">Transferencias</h4>
+                              <div className="text-xs space-y-1">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Alegra:</span>
+                                  <span className="font-semibold">{formatCurrency(results.validation.diferencias.transferencias.alegra)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Registrado:</span>
+                                  <span className="font-semibold">{formatCurrency(results.validation.diferencias.transferencias.registrado)}</span>
+                                </div>
+                                <div className="flex justify-between pt-1 border-t border-gray-200">
+                                  <span className="text-gray-700 font-medium">Diferencia:</span>
+                                  <span className="font-bold text-yellow-700">{results.validation.diferencias.transferencias.diferencia_formatted}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Diferencias en Datafono */}
+                          {results.validation.diferencias.datafono && results.validation.diferencias.datafono.es_significativa && (
+                            <div className="bg-white rounded-lg p-3 border border-yellow-200">
+                              <h4 className="font-semibold text-sm text-gray-900 mb-2">Datafono</h4>
+                              <div className="text-xs space-y-1">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Alegra:</span>
+                                  <span className="font-semibold">{formatCurrency(results.validation.diferencias.datafono.alegra)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Registrado:</span>
+                                  <span className="font-semibold">{formatCurrency(results.validation.diferencias.datafono.registrado)}</span>
+                                </div>
+                                <div className="flex justify-between pt-1 border-t border-gray-200">
+                                  <span className="text-gray-700 font-medium">Diferencia:</span>
+                                  <span className="font-bold text-yellow-700">{results.validation.diferencias.datafono.diferencia_formatted}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Grid de 2 columnas: Comparación a la izquierda, Resumen Alegra a la derecha */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
