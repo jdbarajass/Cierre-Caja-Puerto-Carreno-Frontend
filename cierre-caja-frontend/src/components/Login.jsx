@@ -38,11 +38,21 @@ const Login = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-              <LogIn className="w-8 h-8 text-white" />
+            {/* Logo KOAJ */}
+            <div className="inline-flex items-center justify-center mb-3">
+              <div className="bg-gray-900 rounded-2xl p-3 shadow-lg">
+                <div className="text-white text-xl font-bold tracking-widest" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '0.3em' }}>
+                  KOAJ
+                </div>
+              </div>
+            </div>
+            <div className="mb-3">
+              <p className="text-lg font-semibold text-blue-600">
+                Puerto Carreño
+              </p>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Sistema de Cierre de Caja
+              Sistema de Cierre de Caja y Arqueo Diario
             </h1>
             <p className="text-gray-600">
               Inicia sesión para acceder al sistema
@@ -113,7 +123,7 @@ const Login = () => {
           {/* Footer */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
-              Sistema de Gestión de Cierre de Caja v1.0
+              Sistema de Gestión de Cierre de Caja v5.0
             </p>
           </div>
         </div>
