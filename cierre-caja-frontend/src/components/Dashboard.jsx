@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, LogOut, Download } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, LogOut, Download, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing } from '../services/api';
+import { getColombiaTodayString, formatColombiaDate, getColombiaTimeString, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -9,13 +10,18 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const resultsRef = useRef(null);
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getColombiaTodayString());
+  const [closingDate, setClosingDate] = useState(getColombiaTodayString());
+  const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [validationWarning, setValidationWarning] = useState(null);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -111,6 +117,23 @@ const Dashboard = () => {
   const totalGeneral = totalCoins + totalBills;
   const totalExcedentes = excedentes.reduce((sum, exc) => sum + (parseInt(exc.valor) || 0), 0);
 
+  // Calcular totales de métodos de pago
+  const totalTransferencias = (parseInt(metodosPago.nequi_luz_helena) || 0) +
+                               (parseInt(metodosPago.daviplata_jose) || 0) +
+                               (parseInt(metodosPago.qr_julieth) || 0);
+  const totalDatafono = (parseInt(metodosPago.addi_datafono) || 0) +
+                        (parseInt(metodosPago.tarjeta_debito) || 0) +
+                        (parseInt(metodosPago.tarjeta_credito) || 0);
+
+  // Actualizar la hora cada segundo para mostrar la hora de Colombia en tiempo real
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(getColombiaTimeString());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
       setExcedentes([...excedentes, { id: Date.now(), tipo: 'efectivo', subtipo: '', valor: '' }]);
@@ -143,6 +166,42 @@ const Dashboard = () => {
   };
 
   const handleSubmit = async () => {
+    // Validar que haya al menos un valor en monedas o billetes
+    const hasCoins = Object.values(coins).some(value => parseInt(value) > 0);
+    const hasBills = Object.values(bills).some(value => parseInt(value) > 0);
+
+    if (!hasCoins && !hasBills) {
+      setValidationWarning('Debe ingresar al menos un valor en Monedas o en Billetes para realizar el cierre.');
+      setTimeout(() => setValidationWarning(null), 5000); // Auto-cerrar después de 5 segundos
+      return;
+    }
+
+    // Preparar datos para el modal de confirmación
+    const excedentesArray = excedentes
+      .filter(exc => (parseInt(exc.valor) || 0) > 0)
+      .map(exc => ({
+        tipo: exc.tipo,
+        subtipo: exc.tipo === 'qr_transferencias' ? exc.subtipo : null,
+        valor: parseInt(exc.valor) || 0
+      }));
+
+    const confirmationData = {
+      fecha: closingDate,
+      totalMonedas: totalCoins,
+      totalBilletes: totalBills,
+      totalGeneral: totalGeneral,
+      totalExcedentes: totalExcedentes,
+      hasExcedentes: excedentesArray.length > 0,
+      hasGastos: parseInt(adjustments.gastos_operativos) > 0,
+      hasPrestamos: parseInt(adjustments.prestamos) > 0
+    };
+
+    setConfirmData(confirmationData);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false);
     setLoading(true);
     setError(null);
     setShowSuccessModal(false);
@@ -158,7 +217,10 @@ const Dashboard = () => {
         }));
 
       const payload = {
-        date,
+        date: closingDate,
+        timezone: 'America/Bogota',
+        utc_offset: '-05:00',
+        request_timestamp: getColombiaTimestamp(),
         coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])),
         bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
         excedentes: excedentesArray,
@@ -244,6 +306,8 @@ const Dashboard = () => {
     setResults(null);
     setError(null);
     setShowSuccessModal(false);
+    setShowConfirmModal(false);
+    setConfirmData(null);
   };
 
   const handleLogout = () => {
@@ -314,9 +378,41 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-4">
+      {/* Notificación de Validación - Popup Superior */}
+      {validationWarning && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-yellow-900">Validación</h3>
+              <p className="text-sm text-yellow-700 mt-1">{validationWarning}</p>
+            </div>
+            <button
+              onClick={() => setValidationWarning(null)}
+              className="text-yellow-600 hover:text-yellow-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
-        {/* Header con botón de logout */}
-        <div className="flex justify-end mb-4">
+        {/* Header con información del usuario y hora de Colombia */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          {/* Fecha y Hora de Colombia */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg px-4 py-2 border-2 border-blue-300">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              <div>
+                <div className="text-xs font-medium opacity-90">Hora Colombia (UTC-5)</div>
+                <div className="text-lg font-bold tabular-nums">{currentTime}</div>
+                <div className="text-xs opacity-90">{formatDateStringToColombiaDate(date)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Usuario y logout */}
           <div className="flex items-center gap-3 bg-white rounded-xl shadow-md px-4 py-2 border border-gray-100">
             <div className="text-sm">
               <span className="text-gray-600">Usuario: </span>
@@ -354,8 +450,8 @@ const Dashboard = () => {
             </div>
             <input
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={closingDate}
+              onChange={(e) => setClosingDate(e.target.value)}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
               required
             />
@@ -483,6 +579,14 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
+                  {totalTransferencias > 0 && (
+                    <div className="pt-3 mt-3 border-t border-purple-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-purple-900">Total Transferencias (QR):</span>
+                        <span className="text-base font-bold text-purple-700">{formatCurrency(totalTransferencias)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Datafono */}
@@ -526,6 +630,14 @@ const Dashboard = () => {
                       />
                     </div>
                   </div>
+                  {totalDatafono > 0 && (
+                    <div className="pt-3 mt-3 border-t border-orange-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-orange-900">Total Datafono:</span>
+                        <span className="text-base font-bold text-orange-700">{formatCurrency(totalDatafono)}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -741,6 +853,94 @@ const Dashboard = () => {
                 <p className="text-gray-600">
                   Validando cierre con Alegra y calculando distribución
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmación */}
+        {showConfirmModal && confirmData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <AlertCircle className="w-10 h-10 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Confirmar Cierre de Caja</h3>
+                <p className="text-sm text-gray-600">
+                  Por favor, verifica los datos antes de continuar
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-3">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+                  <span className="text-sm font-semibold text-gray-700">Fecha:</span>
+                  <span className="text-sm font-bold text-blue-600">
+                    {formatDateStringToColombiaDate(confirmData.fecha)}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-100">
+                    <div className="text-xs text-gray-600 mb-1">Monedas</div>
+                    <div className="text-base font-bold text-yellow-700">
+                      {formatCurrency(confirmData.totalMonedas)}
+                    </div>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-2 border border-green-100">
+                    <div className="text-xs text-gray-600 mb-1">Billetes</div>
+                    <div className="text-base font-bold text-green-700">
+                      {formatCurrency(confirmData.totalBilletes)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-3 text-white">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold">Total en Caja:</span>
+                    <span className="text-xl font-bold">{formatCurrency(confirmData.totalGeneral)}</span>
+                  </div>
+                </div>
+
+                {confirmData.hasExcedentes && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Excedentes:</span>
+                    <span className="font-semibold text-purple-600">{formatCurrency(confirmData.totalExcedentes)}</span>
+                  </div>
+                )}
+
+                {confirmData.hasGastos && (
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span>Gastos operativos registrados</span>
+                  </div>
+                )}
+
+                {confirmData.hasPrestamos && (
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span>Préstamos registrados</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-sm text-gray-700 mb-6 text-center">
+                ¿Está seguro que desea realizar el cierre con estos valores?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmSubmit}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                >
+                  Confirmar
+                </button>
               </div>
             </div>
           </div>
