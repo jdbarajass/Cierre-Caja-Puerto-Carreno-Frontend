@@ -561,7 +561,8 @@ Este frontend se conecta a un backend alojado en Render:
 
 ### Endpoints Disponibles
 
-- `POST /sum_payments` - Envía datos del cierre y recibe cálculos + comparación con Alegra
+- `POST /api/sum_payments` - Envía datos del cierre y recibe cálculos + comparación con Alegra
+- `GET /api/monthly_sales` - Consulta el resumen de ventas mensuales (parámetros opcionales: `start_date`, `end_date`)
 
 ### Lógica de Fallback
 
