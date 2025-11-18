@@ -38,7 +38,7 @@ const fetchWithTimeout = async (url, options, timeout) => {
 /**
  * Función helper para hacer peticiones autenticadas a la API con fallback
  * Intenta primero con el backend local, si falla usa el desplegado
- * @param {string} endpoint - El endpoint de la API (ej: '/sum_payments')
+ * @param {string} endpoint - El endpoint de la API (ej: '/api/sum_payments')
  * @param {object} options - Opciones de fetch (method, body, etc.)
  * @returns {Promise} - Promesa con la respuesta de la API
  */
@@ -164,7 +164,7 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
  * @returns {Promise} - Promesa con los resultados
  */
 export const submitCashClosing = async (payload) => {
-  const response = await authenticatedFetch('/sum_payments', {
+  const response = await authenticatedFetch('/api/sum_payments', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
