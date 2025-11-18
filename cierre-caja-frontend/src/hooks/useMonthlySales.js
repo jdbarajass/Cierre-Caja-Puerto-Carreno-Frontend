@@ -6,7 +6,7 @@ const API_LOCALS = [
   'http://10.28.168.57:5000',
   'http://localhost:5000'
 ];
-const API_DEPLOYED = 'https://jdbarajass.pythonanywhere.com';
+const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
 
 /**
  * Hook personalizado para obtener las ventas mensuales desde el backend
