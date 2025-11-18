@@ -9,6 +9,27 @@ const API_LOCALS = [
 const API_DEPLOYED = 'https://cierre-caja-api.onrender.com';
 
 /**
+ * Detecta si el frontend está corriendo en un entorno local
+ * @returns {boolean} - true si es local, false si está desplegado
+ */
+const isLocalEnvironment = () => {
+  const hostname = window.location.hostname;
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.16.') ||
+    hostname.startsWith('172.17.') ||
+    hostname.startsWith('172.18.') ||
+    hostname.startsWith('172.19.') ||
+    hostname.startsWith('172.2') ||
+    hostname.startsWith('172.30.') ||
+    hostname.startsWith('172.31.')
+  );
+};
+
+/**
  * Hook personalizado para obtener las ventas mensuales desde el backend
  * Este endpoint NO requiere autenticación según la documentación
  * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD (opcional)
@@ -36,37 +57,61 @@ export const useMonthlySales = (startDate = null, endDate = null) => {
 
       logger.info('Intentando obtener ventas mensuales:', endpoint);
 
-      // Intentar con cada backend local primero
+      // Detectar si estamos en entorno local o desplegado
+      const isLocal = isLocalEnvironment();
       let response = null;
       let lastError = null;
 
-      for (const localApi of API_LOCALS) {
-        try {
-          const url = `${localApi}${endpoint}`;
-          logger.info('Intentando con:', url);
+      if (isLocal) {
+        logger.info('Frontend en entorno LOCAL - Prioridad: backends locales');
 
-          response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
+        // ENTORNO LOCAL: Intentar con backends locales primero
+        for (const localApi of API_LOCALS) {
+          try {
+            const url = `${localApi}${endpoint}`;
+            logger.info('Intentando con:', url);
 
-          if (response.ok) {
-            logger.info('Conectado exitosamente con:', localApi);
-            break;
+            response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (response.ok) {
+              logger.info('Conectado exitosamente con:', localApi);
+              break;
+            }
+          } catch (err) {
+            logger.warn(`Error con ${localApi}:`, err.message);
+            lastError = err;
           }
-        } catch (err) {
-          logger.warn(`Error con ${localApi}:`, err.message);
-          lastError = err;
         }
-      }
 
-      // Si no funcionó ningún backend local, intentar con el desplegado
-      if (!response || !response.ok) {
+        // Si no funcionó ningún backend local, intentar con el desplegado como fallback
+        if (!response || !response.ok) {
+          logger.warn('Backends locales no disponibles, intentando con backend desplegado como fallback...');
+          try {
+            const url = `${API_DEPLOYED}${endpoint}`;
+            logger.info('Intentando con backend desplegado:', url);
+
+            response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+          } catch (err) {
+            logger.error('Error con backend desplegado:', err.message);
+            throw new Error('No se pudo conectar con ningún servidor');
+          }
+        }
+      } else {
+        // ENTORNO DESPLEGADO: Solo usar backend desplegado
+        logger.info('Frontend en entorno DESPLEGADO - Usando solo backend desplegado');
         try {
           const url = `${API_DEPLOYED}${endpoint}`;
-          logger.info('Intentando con backend desplegado:', url);
+          logger.info('Conectando con backend desplegado:', url);
 
           response = await fetch(url, {
             method: 'GET',
@@ -76,7 +121,7 @@ export const useMonthlySales = (startDate = null, endDate = null) => {
           });
         } catch (err) {
           logger.error('Error con backend desplegado:', err.message);
-          throw new Error('No se pudo conectar con ningún servidor');
+          throw new Error('No se pudo conectar con el servidor');
         }
       }
 
