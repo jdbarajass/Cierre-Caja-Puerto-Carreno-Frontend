@@ -564,13 +564,22 @@ Este frontend se conecta a un backend alojado en Render:
 - `POST /api/sum_payments` - Envía datos del cierre y recibe cálculos + comparación con Alegra
 - `GET /api/monthly_sales` - Consulta el resumen de ventas mensuales (parámetros opcionales: `start_date`, `end_date`)
 
-### Lógica de Fallback
+### Lógica de Fallback Inteligente
 
-El servicio API (`src/services/api.js`) implementa un sistema de fallback:
+El servicio API (`src/services/api.js`) implementa un sistema de fallback inteligente que detecta automáticamente el entorno:
 
-1. Intenta conectar al backend local (timeout: 5s)
-2. Si falla, intenta el backend en producción (timeout: 30s)
-3. Si ambos fallan, muestra un error al usuario
+#### Frontend en entorno LOCAL (localhost, 127.0.0.1, IPs privadas):
+1. Intenta conectar con backends locales primero (timeout: 15s)
+   - `http://10.28.168.57:5000`
+   - `http://localhost:5000`
+2. Si fallan los locales, usa el backend desplegado como fallback (timeout: 30s)
+3. Si todos fallan, muestra un error al usuario
+
+#### Frontend DESPLEGADO (cualquier otro dominio):
+1. Conecta directamente con el backend desplegado (timeout: 30s)
+2. No intenta con backends locales (no tiene sentido en producción)
+
+**Beneficio:** En desarrollo local puedes probar con tu backend local sin cambiar configuración. En producción, la app conecta directamente al backend desplegado sin intentos innecesarios.
 
 ---
 
