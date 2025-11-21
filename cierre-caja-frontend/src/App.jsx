@@ -5,9 +5,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/Login';
 
-// Lazy loading del Dashboard y MonthlySales para reducir el bundle inicial
+// Lazy loading del Dashboard, MonthlySales y ProductosLayout para reducir el bundle inicial
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const MonthlySales = lazy(() => import('./components/MonthlySales'));
+const ProductosLayout = lazy(() => import('./components/productos/ProductosLayout'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -40,6 +41,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <MonthlySales />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/productos"
+                element={
+                  <ProtectedRoute>
+                    <ProductosLayout />
                   </ProtectedRoute>
                 }
               />

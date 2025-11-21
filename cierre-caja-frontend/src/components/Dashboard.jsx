@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, LogOut, Download, Clock, BarChart3 } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, LogOut, Download, Clock, BarChart3, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing } from '../services/api';
@@ -431,14 +431,23 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {/* Botón de Ventas Mensuales */}
-            <button
-              onClick={() => navigate('/monthly-sales')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md text-sm font-medium"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Ver Ventas Mensuales
-            </button>
+            {/* Botones de Navegación */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/productos')}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-md text-sm font-medium"
+              >
+                <Package className="w-4 h-4" />
+                Análisis de Productos
+              </button>
+              <button
+                onClick={() => navigate('/monthly-sales')}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md text-sm font-medium"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Ver Ventas Mensuales
+              </button>
+            </div>
           </div>
         </div>
 
