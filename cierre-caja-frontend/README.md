@@ -73,6 +73,22 @@
 - Modal de éxito animado
 - Reportes detallados con desglose completo
 
+### 📦 Análisis de Productos *(Nuevo)*
+- **Dashboard de productos**: Métricas principales de ventas de productos
+- **Top Productos**: Ranking de productos más vendidos (Top 5, 10, 20, 50)
+  - Modo unificado: Agrupa variantes del mismo producto
+  - Modo individual: Muestra cada SKU por separado
+- **Análisis por categorías**: Visualización por tipo de producto (Camisetas, Jeans, Blusas, etc.)
+- **Reportes completos**: Vista detallada con todas las tablas y estadísticas
+- **Descarga de PDF**: Generación de reportes profesionales para imprimir
+- **Integración con Alegra**: Datos en tiempo real desde las facturas
+
+### 📊 Ventas Mensuales
+- Consulta de ventas por período (rango de fechas personalizable)
+- Desglose por métodos de pago (Efectivo, Transferencias, Tarjetas)
+- Cálculo de promedios y totales
+- Indicadores visuales con porcentajes de participación
+
 ---
 
 ## 🛠️ Tecnologías
