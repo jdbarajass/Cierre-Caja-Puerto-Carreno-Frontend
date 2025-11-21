@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { secureGetItem, secureSetItem, secureRemoveItem } from '../utils/secureStorage';
+import { authenticatedFetch } from '../services/api';
 import logger from '../utils/logger';
 
 const AuthContext = createContext(null);
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (email, password) => {
+  const login = async (email, password) => {
     // Verificar bloqueo por intentos fallidos
     if (isLockedOut()) {
       const timeLeft = Math.ceil((lockoutUntil - Date.now()) / 1000 / 60);
@@ -92,53 +93,65 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'La contraseña debe tener al menos 8 caracteres' };
     }
 
-    // NOTA: Credenciales hardcoded - DEBE ser reemplazado por autenticación real en backend
-    // TODO: Implementar autenticación con backend
-    const validEmail = 'ventaspuertocarreno@gmail.com';
-    const validPassword = 'VentasCarreno2025.*';
+    try {
+      // Llamar al backend para autenticación real con JWT
+      const response = await authenticatedFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (email === validEmail && password === validPassword) {
-      // Resetear intentos fallidos
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Incrementar intentos fallidos
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+
+        if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+          const lockout = Date.now() + LOCKOUT_TIME;
+          setLockoutUntil(lockout);
+          logger.warn(`Cuenta bloqueada después de ${MAX_LOGIN_ATTEMPTS} intentos fallidos`);
+          return {
+            success: false,
+            error: `Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.`
+          };
+        }
+
+        logger.warn(`Intento de login fallido (${newAttempts}/${MAX_LOGIN_ATTEMPTS})`);
+        return {
+          success: false,
+          error: data.message || `Credenciales incorrectas (${newAttempts}/${MAX_LOGIN_ATTEMPTS} intentos)`
+        };
+      }
+
+      // Login exitoso - resetear intentos
       setLoginAttempts(0);
       setLockoutUntil(null);
 
-      // Generar un token simple (en producción esto vendría del backend)
-      // ADVERTENCIA: Este método NO es seguro para producción
-      const generatedToken = btoa(`${email}:${Date.now()}`);
+      // Guardar token JWT y datos del usuario del backend
+      const jwtToken = data.token;
       const userData = {
-        email: email,
-        name: 'Usuario Ventas',
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
         loginTime: new Date().toISOString()
       };
 
       // Guardar en almacenamiento seguro
-      secureSetItem('authToken', generatedToken);
+      secureSetItem('authToken', jwtToken);
       secureSetItem('authUser', userData);
 
-      setToken(generatedToken);
+      setToken(jwtToken);
       setUser(userData);
 
       logger.info('Login exitoso para:', email);
       return { success: true };
-    } else {
-      // Incrementar intentos fallidos
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
 
-      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-        const lockout = Date.now() + LOCKOUT_TIME;
-        setLockoutUntil(lockout);
-        logger.warn(`Cuenta bloqueada después de ${MAX_LOGIN_ATTEMPTS} intentos fallidos`);
-        return {
-          success: false,
-          error: `Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.`
-        };
-      }
-
-      logger.warn(`Intento de login fallido (${newAttempts}/${MAX_LOGIN_ATTEMPTS})`);
+    } catch (error) {
+      logger.error('Error en login:', error.message);
       return {
         success: false,
-        error: `Credenciales incorrectas (${newAttempts}/${MAX_LOGIN_ATTEMPTS} intentos)`
+        error: 'Error al conectar con el servidor. Por favor intente nuevamente.'
       };
     }
   };

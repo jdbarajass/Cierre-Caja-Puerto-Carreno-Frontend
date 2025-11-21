@@ -1,4 +1,5 @@
 import logger from '../utils/logger';
+import { secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 
 // URLs de los backends
 const API_LOCALS = [
