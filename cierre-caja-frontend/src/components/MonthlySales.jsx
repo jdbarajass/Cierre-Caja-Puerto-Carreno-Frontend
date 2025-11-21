@@ -42,11 +42,19 @@ const MonthlySales = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 shadow-lg">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-            <p className="text-gray-600 font-medium">Cargando ventas mensuales...</p>
-            <p className="text-sm text-gray-500">Esto puede tomar unos segundos</p>
+            <p className="text-gray-800 font-semibold text-lg">Procesando facturas...</p>
+            <p className="text-sm text-gray-600 text-center">
+              Estamos consultando todas las facturas del periodo en Alegra.
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-2">
+              <p className="text-sm text-yellow-800 text-center">
+                ⏱️ <strong>Este proceso puede tardar 1-3 minutos</strong> dependiendo de la cantidad de facturas.
+              </p>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Por favor no cierres esta ventana</p>
           </div>
         </div>
       </div>
