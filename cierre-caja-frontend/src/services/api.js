@@ -86,11 +86,12 @@ const fetchWithTimeout = async (url, options, timeout) => {
  * - Si el frontend está DESPLEGADO: Solo usa backend desplegado
  * @param {string} endpoint - El endpoint de la API (ej: '/api/sum_payments')
  * @param {object} options - Opciones de fetch (method, body, etc.)
+ * @param {number} customTimeout - Timeout personalizado en milisegundos (opcional)
  * @returns {Promise} - Promesa con la respuesta de la API
  */
-export const authenticatedFetch = async (endpoint, options = {}) => {
-  // Obtener el token del localStorage
-  const token = localStorage.getItem('authToken');
+export const authenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
+  // Obtener el token del almacenamiento seguro
+  const token = secureGetItem('authToken');
 
   // Preparar los headers
   const headers = {
@@ -129,17 +130,18 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
     } else {
       try {
         const isLocalBackend = API_LOCALS.includes(workingApiBase);
+        const timeout = customTimeout || (isLocalBackend ? API_TIMEOUT : 80000);
         response = await fetchWithTimeout(
           `${workingApiBase}${endpoint}`,
           fetchOptions,
-          isLocalBackend ? API_TIMEOUT : 80000
+          timeout
         );
 
         // Si la respuesta es exitosa, retornarla
         if (response.ok || response.status === 401) {
           if (response.status === 401) {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('authUser');
+            secureRemoveItem('authToken');
+            secureRemoveItem('authUser');
             window.location.href = '/login';
             throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
           }
@@ -158,10 +160,11 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
     for (const localApi of API_LOCALS) {
       try {
         logger.info('Intentando conectar con backend local:', localApi);
+        const timeout = customTimeout || API_TIMEOUT;
         response = await fetchWithTimeout(
           `${localApi}${endpoint}`,
           fetchOptions,
-          API_TIMEOUT
+          timeout
         );
 
         // Si la conexión fue exitosa, guardar que este backend local funciona
@@ -170,8 +173,8 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
         // Si la respuesta es 401 (no autorizado), limpiar la sesión
         if (response.status === 401) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('authUser');
+          secureRemoveItem('authToken');
+          secureRemoveItem('authUser');
           window.location.href = '/login';
           throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
         }
@@ -191,10 +194,11 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
   // Intentar con el backend desplegado
   try {
     logger.info('Conectando con backend desplegado:', API_DEPLOYED);
+    const timeout = customTimeout || 30000; // Timeout más largo para el backend desplegado (30 segundos por defecto)
     response = await fetchWithTimeout(
       `${API_DEPLOYED}${endpoint}`,
       fetchOptions,
-      30000 // Timeout más largo para el backend desplegado (30 segundos)
+      timeout
     );
 
     // Si la conexión fue exitosa, guardar que el backend desplegado funciona
@@ -203,8 +207,8 @@ export const authenticatedFetch = async (endpoint, options = {}) => {
 
     // Si la respuesta es 401 (no autorizado), limpiar la sesión
     if (response.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('authUser');
+      secureRemoveItem('authToken');
+      secureRemoveItem('authUser');
       window.location.href = '/login';
       throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
     }
