@@ -3,9 +3,13 @@ import { TrendingUp, DollarSign, FileText, CreditCard, Loader2, AlertCircle, Cal
 import { useNavigate } from 'react-router-dom';
 import { useMonthlySales } from '../hooks/useMonthlySales';
 import { getColombiaTodayString } from '../utils/dateUtils';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const MonthlySales = () => {
   const navigate = useNavigate();
+
+  // Establecer título de la página
+  useDocumentTitle('Ventas Mensuales');
 
   // Estado para las fechas
   const currentDate = getColombiaTodayString();

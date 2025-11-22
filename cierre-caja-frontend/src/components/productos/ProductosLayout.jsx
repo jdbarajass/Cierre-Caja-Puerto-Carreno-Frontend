@@ -5,10 +5,29 @@ import DashboardProductos from './DashboardProductos';
 import TopProductos from './TopProductos';
 import CategoriasProductos from './CategoriasProductos';
 import AnalisisCompleto from './AnalisisCompleto';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 const ProductosLayout = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
+
+  // Establecer título de la página según la sección activa
+  const getSectionTitle = () => {
+    switch (activeSection) {
+      case 'dashboard':
+        return 'Análisis de Productos - Resumen';
+      case 'top-productos':
+        return 'Análisis de Productos - Top Productos';
+      case 'categorias':
+        return 'Análisis de Productos - Categorías';
+      case 'analisis-completo':
+        return 'Análisis de Productos - Completo';
+      default:
+        return 'Análisis de Productos';
+    }
+  };
+
+  useDocumentTitle(getSectionTitle());
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');

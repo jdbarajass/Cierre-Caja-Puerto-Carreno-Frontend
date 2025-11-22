@@ -6,11 +6,15 @@ import { submitCashClosing } from '../services/api';
 import { getColombiaTodayString, formatColombiaDate, getColombiaTimeString, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const resultsRef = useRef(null);
+
+  // Establecer título de la página
+  useDocumentTitle('Dashboard');
 
   const [date, setDate] = useState(getColombiaTodayString());
   const [closingDate, setClosingDate] = useState(getColombiaTodayString());
