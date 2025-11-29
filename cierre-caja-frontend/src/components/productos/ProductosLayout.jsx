@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, BarChart3, TrendingUp, Package, FileBarChart, Download } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, Package, FileBarChart, Ruler, Shirt, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardProductos from './DashboardProductos';
 import TopProductos from './TopProductos';
 import CategoriasProductos from './CategoriasProductos';
 import AnalisisCompleto from './AnalisisCompleto';
+import AnalisisPorTalla from './AnalisisPorTalla';
+import AnalisisPorCategoriaTalla from './AnalisisPorCategoriaTalla';
+import AnalisisPorDepartamentoTalla from './AnalisisPorDepartamentoTalla';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 const ProductosLayout = () => {
@@ -22,6 +25,12 @@ const ProductosLayout = () => {
         return 'Análisis de Productos - Categorías';
       case 'analisis-completo':
         return 'Análisis de Productos - Completo';
+      case 'analisis-por-talla':
+        return 'Análisis de Productos - Por Talla';
+      case 'analisis-categoria-talla':
+        return 'Análisis de Productos - Categoría y Talla';
+      case 'analisis-departamento-talla':
+        return 'Análisis de Productos - Departamento y Talla';
       default:
         return 'Análisis de Productos';
     }
@@ -37,7 +46,10 @@ const ProductosLayout = () => {
     { id: 'dashboard', label: 'Resumen', icon: BarChart3, description: 'Métricas principales' },
     { id: 'top-productos', label: 'Top Productos', icon: TrendingUp, description: 'Más vendidos' },
     { id: 'categorias', label: 'Categorías', icon: Package, description: 'Análisis por tipo' },
-    { id: 'analisis-completo', label: 'Análisis Completo', icon: FileBarChart, description: 'Vista detallada' }
+    { id: 'analisis-completo', label: 'Análisis Completo', icon: FileBarChart, description: 'Vista detallada' },
+    { id: 'analisis-por-talla', label: 'Por Talla', icon: Ruler, description: 'Ventas por talla' },
+    { id: 'analisis-categoria-talla', label: 'Categoría + Talla', icon: Shirt, description: 'Por categoría y talla' },
+    { id: 'analisis-departamento-talla', label: 'Departamento + Talla', icon: Users, description: 'Por departamento y talla' }
   ];
 
   const renderSection = () => {
@@ -50,6 +62,12 @@ const ProductosLayout = () => {
         return <CategoriasProductos />;
       case 'analisis-completo':
         return <AnalisisCompleto />;
+      case 'analisis-por-talla':
+        return <AnalisisPorTalla />;
+      case 'analisis-categoria-talla':
+        return <AnalisisPorCategoriaTalla />;
+      case 'analisis-departamento-talla':
+        return <AnalisisPorDepartamentoTalla />;
       default:
         return <DashboardProductos />;
     }

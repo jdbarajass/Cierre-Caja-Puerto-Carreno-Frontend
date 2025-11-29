@@ -19,7 +19,10 @@ const AnalisisCompleto = () => {
     top10: true,
     top10Unified: true,
     todosUnified: false,
-    listadoCompleto: false
+    listadoCompleto: false,
+    ventasPorTalla: false,
+    ventasPorCategoriaTalla: false,
+    ventasPorDepartamentoTalla: false
   });
 
   const fetchAnalisis = async () => {
@@ -449,6 +452,140 @@ const AnalisisCompleto = () => {
           </table>
         </div>
       </Section>
+
+      {/* Análisis por Talla */}
+      {data.ventas_por_talla && data.ventas_por_talla.sizes && data.ventas_por_talla.sizes.length > 0 && (
+        <Section
+          title={`Análisis por Talla (${data.ventas_por_talla.sizes.length} tallas)`}
+          isExpanded={expandedSections.ventasPorTalla}
+          onToggle={() => toggleSection('ventasPorTalla')}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Talla</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Cantidad</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Ingresos</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">% Part.</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.ventas_por_talla.sizes.map((talla, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-bold">{talla.size}</td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold">{talla.units_formatted}</td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">
+                      {talla.revenue_formatted}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
+                      {talla.percentage_formatted}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      {/* Análisis por Categoría y Talla */}
+      {data.ventas_por_categoria_talla && data.ventas_por_categoria_talla.categories && data.ventas_por_categoria_talla.categories.length > 0 && (
+        <Section
+          title={`Análisis por Categoría y Talla (${data.ventas_por_categoria_talla.categories.length} categorías)`}
+          isExpanded={expandedSections.ventasPorCategoriaTalla}
+          onToggle={() => toggleSection('ventasPorCategoriaTalla')}
+        >
+          <div className="space-y-4">
+            {data.ventas_por_categoria_talla.categories.map((categoria, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">{categoria.category}</h3>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Total: {categoria.total_units_formatted} unidades</p>
+                    <p className="text-sm font-semibold text-green-600">{categoria.total_revenue_formatted}</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Talla</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Cantidad</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Ingresos</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">% Part.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {categoria.sizes.map((talla, tallaIndex) => (
+                        <tr key={tallaIndex} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-sm font-medium">{talla.size}</td>
+                          <td className="px-3 py-2 text-sm text-right">{talla.units_formatted}</td>
+                          <td className="px-3 py-2 text-sm text-right text-green-600">
+                            {talla.revenue_formatted}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-right text-blue-600">
+                            {talla.percentage_in_category_formatted}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Análisis por Departamento y Talla */}
+      {data.ventas_por_departamento_talla && data.ventas_por_departamento_talla.departments && data.ventas_por_departamento_talla.departments.length > 0 && (
+        <Section
+          title={`Análisis por Departamento y Talla (${data.ventas_por_departamento_talla.departments.length} departamentos)`}
+          isExpanded={expandedSections.ventasPorDepartamentoTalla}
+          onToggle={() => toggleSection('ventasPorDepartamentoTalla')}
+        >
+          <div className="space-y-4">
+            {data.ventas_por_departamento_talla.departments.map((departamento, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">{departamento.department}</h3>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Total: {departamento.total_units_formatted} unidades</p>
+                    <p className="text-sm font-semibold text-green-600">{departamento.total_revenue_formatted}</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Talla</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Cantidad</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Ingresos</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">% Part.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {departamento.sizes.map((talla, tallaIndex) => (
+                        <tr key={tallaIndex} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-sm font-medium">{talla.size}</td>
+                          <td className="px-3 py-2 text-sm text-right">{talla.units_formatted}</td>
+                          <td className="px-3 py-2 text-sm text-right text-green-600">
+                            {talla.revenue_formatted}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-right text-blue-600">
+                            {talla.percentage_in_department_formatted}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
         </>
       )}
     </div>
