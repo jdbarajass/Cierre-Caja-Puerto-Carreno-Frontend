@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, RefreshCw, AlertCircle, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { Grid, RefreshCw, AlertCircle, ChevronDown, ChevronUp, Package, Database } from 'lucide-react';
 import { getByDepartment } from '../../services/inventoryService';
 
 const DepartmentAnalysis = () => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedDept, setExpandedDept] = useState(null);
 
@@ -21,9 +21,10 @@ const DepartmentAnalysis = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // NO hacer la petición automáticamente
+  // useEffect(() => {
+  //   fetchData();
+  // }, []);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -55,12 +56,36 @@ const DepartmentAnalysis = () => {
     return total > 0 ? ((value / total) * 100).toFixed(1) : 0;
   };
 
+  // Estado inicial: sin datos
+  if (!data && !loading && !error) {
+    return (
+      <div className="bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-200 rounded-xl p-12">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-teal-100 rounded-full mb-6">
+            <Grid className="w-10 h-10 text-teal-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Análisis por Departamento</h3>
+          <p className="text-gray-600 mb-8">
+            Consulta el análisis detallado de inventario agrupado por departamentos desde Alegra.
+          </p>
+          <button
+            onClick={fetchData}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold"
+          >
+            <Database className="w-6 h-6" />
+            Consultar Análisis por Departamento
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando análisis por departamento...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+          <p className="mt-4 text-gray-600 font-medium">Consultando análisis por departamento...</p>
         </div>
       </div>
     );

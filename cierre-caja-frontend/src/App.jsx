@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/Login';
+import MainLayout from './components/layout/MainLayout';
 
 // Lazy loading del Dashboard, MonthlySales, ProductosLayout, AnalyticsLayout e InventoryLayout para reducir el bundle inicial
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -34,7 +35,9 @@ const App = () => {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <MainLayout>
+                      <Dashboard />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
               />
@@ -42,7 +45,9 @@ const App = () => {
                 path="/monthly-sales"
                 element={
                   <ProtectedRoute>
-                    <MonthlySales />
+                    <MainLayout>
+                      <MonthlySales />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
               />
@@ -50,7 +55,9 @@ const App = () => {
                 path="/productos"
                 element={
                   <ProtectedRoute>
-                    <ProductosLayout />
+                    <MainLayout>
+                      <ProductosLayout />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
               />
@@ -58,7 +65,9 @@ const App = () => {
                 path="/analytics"
                 element={
                   <ProtectedRoute>
-                    <AnalyticsLayout />
+                    <MainLayout>
+                      <AnalyticsLayout />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
               />
@@ -66,7 +75,9 @@ const App = () => {
                 path="/inventario"
                 element={
                   <ProtectedRoute>
-                    <InventoryLayout />
+                    <MainLayout>
+                      <InventoryLayout />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
               />

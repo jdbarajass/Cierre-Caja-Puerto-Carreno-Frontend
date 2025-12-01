@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Package, ShoppingCart, DollarSign, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, ShoppingCart, DollarSign, TrendingUp, AlertCircle, RefreshCw, Database } from 'lucide-react';
 import { getSummary, getOutOfStock, getLowStock } from '../../services/inventoryService';
 
 const InventoryDashboard = () => {
   const [summary, setSummary] = useState(null);
   const [outOfStock, setOutOfStock] = useState(null);
   const [lowStock, setLowStock] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
@@ -29,9 +29,10 @@ const InventoryDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // NO hacer la petición automáticamente
+  // useEffect(() => {
+  //   fetchData();
+  // }, []);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -48,12 +49,36 @@ const InventoryDashboard = () => {
     return 'text-red-600 bg-red-100';
   };
 
+  // Estado inicial: sin datos
+  if (!summary && !loading && !error) {
+    return (
+      <div className="bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-200 rounded-xl p-12">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-teal-100 rounded-full mb-6">
+            <Package className="w-10 h-10 text-teal-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Análisis de Inventario desde Alegra</h3>
+          <p className="text-gray-600 mb-8">
+            Consulta el inventario actual desde Alegra para ver métricas detalladas, alertas de stock y análisis completo.
+          </p>
+          <button
+            onClick={fetchData}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold"
+          >
+            <Database className="w-6 h-6" />
+            Consultar Inventario desde Alegra
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando datos de inventario...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+          <p className="mt-4 text-gray-600 font-medium">Consultando inventario desde Alegra...</p>
         </div>
       </div>
     );
@@ -80,14 +105,6 @@ const InventoryDashboard = () => {
     );
   }
 
-  if (!summary) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        No hay datos de inventario disponibles
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header con botón de refresh */}
@@ -95,7 +112,7 @@ const InventoryDashboard = () => {
         <h2 className="text-2xl font-bold text-gray-900">Resumen Ejecutivo</h2>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar

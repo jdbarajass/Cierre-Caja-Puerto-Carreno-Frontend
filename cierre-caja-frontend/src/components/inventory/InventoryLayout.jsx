@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import { ArrowLeft, LayoutDashboard, Package, AlertTriangle, TrendingUp, PieChart, Grid, Ruler } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Package, AlertTriangle, TrendingUp, PieChart, Grid, Ruler, Upload, Database } from 'lucide-react';
 import InventoryDashboard from './InventoryDashboard';
 import DepartmentAnalysis from './DepartmentAnalysis';
 import StockAlerts from './StockAlerts';
 import ABCAnalysis from './ABCAnalysis';
 import TopProducts from './TopProducts';
 import CategorySizeAnalysis from './CategorySizeAnalysis';
+import FileUploadInventory from './FileUploadInventory';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 const InventoryLayout = () => {
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [mainSection, setMainSection] = useState('cargar-archivo'); // 'cargar-archivo' o 'analisis'
+  const [activeSubsection, setActiveSubsection] = useState('dashboard');
 
-  // Establecer título de la página según la sección activa
+  // Establecer título de la página
   const getSectionTitle = () => {
-    switch (activeSection) {
+    if (mainSection === 'cargar-archivo') {
+      return 'Inventario - Cargar Archivo';
+    }
+
+    switch (activeSubsection) {
       case 'dashboard':
         return 'Inventario - Dashboard';
       case 'departamentos':
@@ -35,11 +39,12 @@ const InventoryLayout = () => {
 
   useDocumentTitle(getSectionTitle());
 
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
+  const mainSections = [
+    { id: 'cargar-archivo', label: 'Cargar Archivo', icon: Upload, description: 'Análisis de archivo' },
+    { id: 'analisis', label: 'Análisis de Inventario', icon: Database, description: 'Consultar inventario actual' }
+  ];
 
-  const sections = [
+  const analysisSubsections = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Resumen ejecutivo' },
     { id: 'departamentos', label: 'Departamentos', icon: Grid, description: 'Por departamento' },
     { id: 'alertas', label: 'Alertas de Stock', icon: AlertTriangle, description: 'Stock bajo y sin stock' },
@@ -48,8 +53,21 @@ const InventoryLayout = () => {
     { id: 'categorias-tallas', label: 'Categorías y Tallas', icon: Ruler, description: 'Análisis detallado' }
   ];
 
-  const renderSection = () => {
-    switch (activeSection) {
+  const handleMainSectionChange = (sectionId) => {
+    setMainSection(sectionId);
+    // Si cambia a análisis, resetear a dashboard
+    if (sectionId === 'analisis') {
+      setActiveSubsection('dashboard');
+    }
+  };
+
+  const renderContent = () => {
+    if (mainSection === 'cargar-archivo') {
+      return <FileUploadInventory />;
+    }
+
+    // Renderizar subsecciones de análisis
+    switch (activeSubsection) {
       case 'dashboard':
         return <InventoryDashboard />;
       case 'departamentos':
@@ -68,56 +86,77 @@ const InventoryLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      {/* Header Principal */}
-      <div className="bg-white shadow-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleBackToDashboard}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-                title="Volver al Dashboard"
-              >
-                <ArrowLeft className="w-6 h-6 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Package className="w-7 h-7 text-green-600" />
-                  Análisis de Inventario
-                </h1>
-                <p className="text-sm text-gray-600">Gestión y análisis de inventario desde Alegra</p>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Header de Sección */}
+      <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-teal-500">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-teal-100 rounded-lg">
+            <Package className="w-8 h-8 text-teal-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Análisis de Inventario</h2>
+            <p className="text-sm text-gray-600">Gestión y análisis de inventario desde Alegra</p>
           </div>
         </div>
       </div>
 
-      {/* Navegación de Secciones */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-2 overflow-x-auto py-2">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              const isActive = activeSection === section.id;
+      {/* Navegación Principal - Nivel 1 */}
+      <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+        <div className="flex gap-3">
+          {mainSections.map((section) => {
+            const Icon = section.icon;
+            const isActive = mainSection === section.id;
+
+            return (
+              <button
+                key={section.id}
+                onClick={() => handleMainSectionChange(section.id)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg whitespace-nowrap transition-all flex-1 ${
+                  isActive
+                    ? 'bg-teal-600 text-white shadow-lg transform scale-105'
+                    : 'bg-gray-50 text-gray-700 hover:bg-teal-50 hover:text-teal-700 border border-gray-200'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                <div className="text-left">
+                  <div className={`text-base font-bold ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                    {section.label}
+                  </div>
+                  <div className={`text-xs ${isActive ? 'text-teal-100' : 'text-gray-500'}`}>
+                    {section.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Navegación Secundaria - Nivel 2 (solo cuando está en Análisis) */}
+      {mainSection === 'analisis' && (
+        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+            {analysisSubsections.map((subsection) => {
+              const Icon = subsection.icon;
+              const isActive = activeSubsection === subsection.id;
 
               return (
                 <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+                  key={subsection.id}
+                  onClick={() => setActiveSubsection(subsection.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all ${
                     isActive
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'bg-gray-50 text-gray-700 hover:bg-teal-50 hover:text-teal-700 border border-gray-200'
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-600'}`} />
                   <div className="text-left">
                     <div className={`text-sm font-semibold ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                      {section.label}
+                      {subsection.label}
                     </div>
-                    <div className={`text-xs ${isActive ? 'text-green-100' : 'text-gray-500'}`}>
-                      {section.description}
+                    <div className={`text-xs ${isActive ? 'text-teal-100' : 'text-gray-500'}`}>
+                      {subsection.description}
                     </div>
                   </div>
                 </button>
@@ -125,11 +164,11 @@ const InventoryLayout = () => {
             })}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Contenido de la Sección Activa */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {renderSection()}
+      <div>
+        {renderContent()}
       </div>
     </div>
   );

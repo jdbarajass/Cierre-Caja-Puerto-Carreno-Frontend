@@ -1,16 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, LogOut, Download, Clock, BarChart3, Package, Box } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing } from '../services/api';
-import { getColombiaTodayString, formatColombiaDate, getColombiaTimeString, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
+import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const resultsRef = useRef(null);
 
   // Establecer título de la página
@@ -18,7 +16,6 @@ const Dashboard = () => {
 
   const [date, setDate] = useState(getColombiaTodayString());
   const [closingDate, setClosingDate] = useState(getColombiaTodayString());
-  const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -130,15 +127,6 @@ const Dashboard = () => {
   const totalDatafono = (parseInt(metodosPago.addi_datafono) || 0) +
                         (parseInt(metodosPago.tarjeta_debito) || 0) +
                         (parseInt(metodosPago.tarjeta_credito) || 0);
-
-  // Actualizar la hora cada segundo para mostrar la hora de Colombia en tiempo real
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(getColombiaTimeString());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
@@ -316,10 +304,6 @@ const Dashboard = () => {
     setConfirmData(null);
   };
 
-  const handleLogout = () => {
-    logout();
-  };
-
   const generatePDF = async () => {
     if (!resultsRef.current) return;
 
@@ -404,71 +388,6 @@ const Dashboard = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Header con información del usuario y hora de Colombia */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          {/* Fecha y Hora de Colombia */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg px-4 py-2 border-2 border-blue-300">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              <div>
-                <div className="text-xs font-medium opacity-90">Hora Colombia (UTC-5)</div>
-                <div className="text-lg font-bold tabular-nums">{currentTime}</div>
-                <div className="text-xs opacity-90">{formatDateStringToColombiaDate(date)}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Acciones de usuario */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            {/* Usuario y logout */}
-            <div className="flex items-center gap-3 bg-white rounded-xl shadow-md px-4 py-2 border border-gray-100">
-              <div className="text-sm">
-                <span className="text-gray-600">Usuario: </span>
-                <span className="font-semibold text-gray-900">{user?.email}</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all text-sm font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                Cerrar Sesión
-              </button>
-            </div>
-
-            {/* Botones de Navegación */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate('/productos')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-md text-sm font-medium"
-              >
-                <Package className="w-4 h-4" />
-                Análisis de Productos
-              </button>
-              <button
-                onClick={() => navigate('/analytics')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-md text-sm font-medium"
-              >
-                <BarChart3 className="w-4 h-4" />
-                Analytics Avanzado
-              </button>
-              <button
-                onClick={() => navigate('/inventario')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl hover:from-green-700 hover:to-teal-700 transition-all shadow-md text-sm font-medium"
-              >
-                <Box className="w-4 h-4" />
-                Análisis de Inventario
-              </button>
-              <button
-                onClick={() => navigate('/monthly-sales')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white rounded-xl hover:from-emerald-700 hover:to-cyan-700 transition-all shadow-md text-sm font-medium"
-              >
-                <BarChart3 className="w-4 h-4" />
-                Ver Ventas Mensuales
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
             <div className="bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-2xl">

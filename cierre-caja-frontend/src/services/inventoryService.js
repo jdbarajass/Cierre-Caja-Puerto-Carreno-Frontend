@@ -232,6 +232,39 @@ export const getABCAnalysis = async () => {
   }
 };
 
+/**
+ * Sube un archivo de inventario (CSV o Excel) para análisis
+ * @param {File} file - Archivo a subir (.csv, .xlsx, .xls)
+ * @returns {Promise<Object>} - Análisis del archivo
+ */
+export const uploadFile = async (file) => {
+  const endpoint = '/api/inventory/upload-file';
+
+  try {
+    logger.info('Subiendo archivo de inventario:', file.name);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await authenticatedFetch(endpoint, {
+      method: 'POST',
+      body: formData
+    }, 60000); // Timeout de 60s para archivos grandes
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error al procesar el archivo');
+    }
+
+    const data = await response.json();
+    logger.info('Archivo procesado exitosamente');
+    return data;
+  } catch (error) {
+    logger.error('Error al subir archivo de inventario:', error.message);
+    throw error;
+  }
+};
+
 export default {
   getSummary,
   getByDepartment,
@@ -241,5 +274,6 @@ export default {
   getOutOfStock,
   getLowStock,
   getTopByValue,
-  getABCAnalysis
+  getABCAnalysis,
+  uploadFile
 };

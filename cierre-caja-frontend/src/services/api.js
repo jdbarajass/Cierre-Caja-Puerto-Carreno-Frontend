@@ -96,13 +96,23 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
 
   // Preparar los headers
   const headers = {
-    'Content-Type': 'application/json',
     ...(options.headers || {}),
   };
+
+  // Solo agregar Content-Type si no es FormData
+  // FormData necesita que el navegador establezca el Content-Type automáticamente
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   // Agregar el token si existe
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Si Content-Type es undefined, eliminarlo
+  if (headers['Content-Type'] === undefined) {
+    delete headers['Content-Type'];
   }
 
   // Opciones de fetch con headers
