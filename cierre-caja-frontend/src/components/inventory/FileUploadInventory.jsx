@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Package, DollarSign, TrendingUp, FileText, AlertCircle, CheckCircle, Database, LayoutDashboard, Grid, Award, Ruler, PieChart, List } from 'lucide-react';
+import { Upload, Package, DollarSign, TrendingUp, FileText, AlertCircle, CheckCircle, Database, LayoutDashboard, Grid, Award, Ruler, PieChart, List, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getFullAnalysis, uploadFile } from '../../services/inventoryService';
 
 const FileUploadInventory = () => {
@@ -9,6 +9,11 @@ const FileUploadInventory = () => {
   const [fileName, setFileName] = useState(null);
   const [activeView, setActiveView] = useState('inventario-completo'); // 'inventario-completo', 'resumen', 'departamentos', 'top-productos', 'categorias'
   const fileInputRef = useRef(null);
+
+  // Estados para paginación de la tabla de items completos
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -23,6 +28,9 @@ const FileUploadInventory = () => {
     setLoading(true);
     setError(null);
     setFileName(null);
+    // Resetear estados de paginación y búsqueda
+    setCurrentPage(1);
+    setSearchTerm('');
 
     try {
       const result = await getFullAnalysis();
@@ -54,6 +62,9 @@ const FileUploadInventory = () => {
     setLoading(true);
     setError(null);
     setFileName(file.name);
+    // Resetear estados de paginación y búsqueda
+    setCurrentPage(1);
+    setSearchTerm('');
 
     try {
       const result = await uploadFile(file);
@@ -242,303 +253,156 @@ const FileUploadInventory = () => {
 
   // Vista: Inventario Completo
   function renderInventarioCompleto() {
-    if (!analysisData.por_departamento) {
+    // Verificar si existe el campo items_completos (nuevo backend)
+    if (!analysisData.items_completos || analysisData.items_completos.length === 0) {
       return (
         <div className="text-center py-12 text-gray-500">
-          No hay datos de inventario disponibles
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-semibold">No hay datos de inventario completo disponibles</p>
+          <p className="text-sm mt-2">El archivo no contiene items completos o el formato no es compatible</p>
         </div>
       );
     }
 
-    const isInventoryReport = analysisData.tipo_archivo === 'inventario_alegra';
+    const allItems = analysisData.items_completos;
 
-    // Definir el orden de los departamentos
-    const departmentOrder = ['mujer', 'hombre', 'niño', 'niña', 'accesorios', 'otros'];
+    // Aplicar filtro de búsqueda
+    const filteredItems = searchTerm
+      ? allItems.filter(item =>
+          item.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.categoria.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : allItems;
 
-    // Mapeo de colores para cada departamento
-    const departmentColors = {
-      'mujer': { from: 'from-pink-50', to: 'to-pink-100', border: 'border-pink-200', text: 'text-pink-700', bg: 'bg-pink-200', icon: 'text-pink-700', bar: 'from-pink-500 to-pink-600' },
-      'hombre': { from: 'from-blue-50', to: 'to-blue-100', border: 'border-blue-200', text: 'text-blue-700', bg: 'bg-blue-200', icon: 'text-blue-700', bar: 'from-blue-500 to-blue-600' },
-      'niño': { from: 'from-green-50', to: 'to-green-100', border: 'border-green-200', text: 'text-green-700', bg: 'bg-green-200', icon: 'text-green-700', bar: 'from-green-500 to-green-600' },
-      'niña': { from: 'from-purple-50', to: 'to-purple-100', border: 'border-purple-200', text: 'text-purple-700', bg: 'bg-purple-200', icon: 'text-purple-700', bar: 'from-purple-500 to-purple-600' },
-      'accesorios': { from: 'from-orange-50', to: 'to-orange-100', border: 'border-orange-200', text: 'text-orange-700', bg: 'bg-orange-200', icon: 'text-orange-700', bar: 'from-orange-500 to-orange-600' },
-      'otros': { from: 'from-gray-50', to: 'to-gray-100', border: 'border-gray-200', text: 'text-gray-700', bg: 'bg-gray-200', icon: 'text-gray-700', bar: 'from-gray-500 to-gray-600' }
-    };
+    // Calcular paginación
+    const totalItems = filteredItems.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredItems.slice(startIndex, endIndex);
 
-    // Ordenar departamentos según el orden especificado
-    const sortedDepartments = departmentOrder
-      .filter(dept => analysisData.por_departamento[dept])
-      .map(dept => ({ name: dept, data: analysisData.por_departamento[dept] }));
-
-    // Calcular el valor máximo para las barras de progreso
-    const maxValue = Math.max(...sortedDepartments.map(d => d.data.valor_inventario || d.data.valor_precio || 0));
+    // Calcular totales para el resumen
+    const totalCantidad = allItems.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+    const totalValor = allItems.reduce((sum, item) => sum + (item.total || 0), 0);
+    const costoPromedioGeneral = totalValor / totalCantidad;
 
     return (
       <div className="space-y-6">
         {/* Header con resumen total */}
         <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl shadow-md p-6 border border-indigo-200">
-          <h3 className="text-2xl font-bold text-indigo-900 mb-4">Inventario Completo por Departamento</h3>
-          <p className="text-indigo-700 mb-6">Vista detallada de todo el inventario sectorizado por departamento</p>
+          <h3 className="text-2xl font-bold text-indigo-900 mb-4">📋 Inventario Completo - Todos los Items</h3>
+          <p className="text-indigo-700 mb-6">Listado completo de todos los artículos en inventario con detalles individuales</p>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
               <p className="text-sm text-gray-600 mb-1">Total Items</p>
               <p className="text-2xl font-bold text-indigo-900">
-                {analysisData.resumen_general?.total_items || 0}
-              </p>
-            </div>
-            {isInventoryReport && analysisData.resumen_general?.total_unidades && (
-              <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
-                <p className="text-sm text-gray-600 mb-1">Total Unidades</p>
-                <p className="text-2xl font-bold text-indigo-900">
-                  {analysisData.resumen_general.total_unidades.toLocaleString()}
-                </p>
-              </div>
-            )}
-            <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
-              <p className="text-sm text-gray-600 mb-1">Valor Total Inventario</p>
-              <p className="text-2xl font-bold text-indigo-900">
-                {formatCurrency(
-                  analysisData.resumen_general?.valor_total_inventario ||
-                  analysisData.resumen_general?.valor_total_precio ||
-                  0
-                )}
+                {allItems.length.toLocaleString()}
               </p>
             </div>
             <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
-              <p className="text-sm text-gray-600 mb-1">Departamentos Activos</p>
+              <p className="text-sm text-gray-600 mb-1">Total Unidades</p>
               <p className="text-2xl font-bold text-indigo-900">
-                {sortedDepartments.length}
+                {totalCantidad.toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
+              <p className="text-sm text-gray-600 mb-1">Valor Total</p>
+              <p className="text-xl font-bold text-indigo-900">
+                {formatCurrency(totalValor)}
+              </p>
+            </div>
+            <div className="bg-white/80 rounded-lg p-4 border border-indigo-200">
+              <p className="text-sm text-gray-600 mb-1">Costo Promedio</p>
+              <p className="text-xl font-bold text-indigo-900">
+                {formatCurrency(costoPromedioGeneral)}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Secciones por Departamento */}
-        {sortedDepartments.map((department, index) => {
-          const colors = departmentColors[department.name] || departmentColors['otros'];
-          const deptData = department.data;
-
-          return (
-            <div key={index} className={`bg-gradient-to-br ${colors.from} ${colors.to} rounded-xl shadow-lg p-6 border ${colors.border}`}>
-              {/* Header del departamento */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 ${colors.bg} rounded-lg`}>
-                    <Package className={`w-6 h-6 ${colors.icon}`} />
-                  </div>
-                  <h4 className={`text-2xl font-bold ${colors.text} capitalize`}>{department.name}</h4>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">% del Inventario</p>
-                  <p className={`text-2xl font-bold ${colors.text}`}>
-                    {(deptData.porcentaje_unidades || deptData.porcentaje_inventario || deptData.porcentaje_valor || 0).toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-
-              {/* Grid de métricas */}
-              <div className={`grid grid-cols-2 gap-4 mb-6 ${isInventoryReport ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
-                <div className="bg-white/90 rounded-lg p-4 shadow">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Package className="w-4 h-4 text-gray-600" />
-                    <p className="text-xs text-gray-600 font-medium">Cantidad Items</p>
-                  </div>
-                  <p className="text-xl font-bold text-gray-900">{deptData.cantidad_items || deptData.cantidad || 0}</p>
-                </div>
-
-                {isInventoryReport && deptData.cantidad_unidades !== undefined && (
-                  <div className="bg-white/90 rounded-lg p-4 shadow">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Package className="w-4 h-4 text-gray-600" />
-                      <p className="text-xs text-gray-600 font-medium">Unidades</p>
-                    </div>
-                    <p className="text-xl font-bold text-blue-700">{deptData.cantidad_unidades.toLocaleString()}</p>
-                  </div>
-                )}
-
-                <div className="bg-white/90 rounded-lg p-4 shadow">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-4 h-4 text-gray-600" />
-                    <p className="text-xs text-gray-600 font-medium">Valor {isInventoryReport ? 'Inventario' : 'Precio'}</p>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatCurrency(deptData.valor_inventario || deptData.valor_precio || 0)}
-                  </p>
-                </div>
-
-                <div className="bg-white/90 rounded-lg p-4 shadow">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-4 h-4 text-gray-600" />
-                    <p className="text-xs text-gray-600 font-medium">Valor Costo</p>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900">
-                    {formatCurrency(deptData.costo_total || deptData.valor_costo || 0)}
-                  </p>
-                </div>
-
-                {!isInventoryReport && deptData.margen_total !== undefined && (
-                  <div className="bg-white/90 rounded-lg p-4 shadow">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-gray-600" />
-                      <p className="text-xs text-gray-600 font-medium">Margen</p>
-                    </div>
-                    <p className="text-lg font-bold text-green-700">{formatCurrency(deptData.margen_total)}</p>
-                    <p className={`text-xs font-semibold ${
-                      deptData.margen_porcentaje >= 20 ? 'text-green-600' :
-                      deptData.margen_porcentaje >= 10 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                      {deptData.margen_porcentaje.toFixed(2)}%
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Barra de progreso visual */}
-              <div className="bg-white/50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">Participación en el Inventario</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {formatCurrency(deptData.valor_inventario || deptData.valor_precio || 0)}
-                  </span>
-                </div>
-                <div className="h-4 bg-white rounded-full overflow-hidden shadow-inner">
-                  <div
-                    className={`h-full bg-gradient-to-r ${colors.bar} rounded-full transition-all flex items-center justify-end px-2`}
-                    style={{ width: `${((deptData.valor_inventario || deptData.valor_precio || 0) / maxValue) * 100}%` }}
-                  >
-                    <span className="text-white text-xs font-semibold">
-                      {(((deptData.valor_inventario || deptData.valor_precio || 0) / maxValue) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lista de productos - Solo para archivos de inventario con items */}
-              {isInventoryReport && deptData.items && deptData.items.length > 0 && (
-                <div className="mt-4 bg-white/50 rounded-lg p-4">
-                  <h5 className="text-sm font-bold text-gray-800 mb-3">
-                    Top Productos ({deptData.items.length})
-                  </h5>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {deptData.items.map((item, itemIndex) => (
-                      <div
-                        key={itemIndex}
-                        className="bg-white rounded-lg p-3 border border-gray-200 hover:border-gray-300 transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
-                              {item.nombre}
-                            </p>
-                            <p className="text-xs text-gray-600 truncate">
-                              {item.categoria}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {item.estado && (
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                item.estado === 'Activo'
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                {item.estado}
-                              </span>
-                            )}
-                            {item.cantidad !== undefined && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                                {item.cantidad} uds
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between text-xs">
-                          <span className="text-gray-600">
-                            Costo: {formatCurrency(item.costo_unitario || item.costo || 0)}
-                          </span>
-                          <span className="font-semibold text-gray-900">
-                            Total: {formatCurrency(item.valor_total || 0)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* Barra de búsqueda y controles */}
+        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Búsqueda */}
+            <div className="relative flex-1 w-full md:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por item o categoría..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Resetear a página 1 al buscar
+                }}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
             </div>
-          );
-        })}
 
-        {/* Comparativa Final */}
-        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Comparativa de Departamentos</h3>
+            {/* Selector de items por página */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 whitespace-nowrap">Items por página:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Información de resultados */}
+          <div className="mt-3 text-sm text-gray-600">
+            Mostrando {startIndex + 1} - {Math.min(endIndex, totalItems)} de {totalItems.toLocaleString()} items
+            {searchTerm && ` (filtrado de ${allItems.length.toLocaleString()} items totales)`}
+          </div>
+        </div>
+
+        {/* Tabla de items */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100 border-b-2 border-gray-300">
-                  <th className="text-left p-3 font-semibold text-gray-700">Departamento</th>
-                  <th className="text-right p-3 font-semibold text-gray-700">Items</th>
-                  {isInventoryReport && (
-                    <th className="text-right p-3 font-semibold text-gray-700">Unidades</th>
-                  )}
-                  <th className="text-right p-3 font-semibold text-gray-700">Valor {isInventoryReport ? 'Inventario' : 'Precio'}</th>
-                  <th className="text-right p-3 font-semibold text-gray-700">Valor Costo</th>
-                  {!isInventoryReport && (
-                    <>
-                      <th className="text-right p-3 font-semibold text-gray-700">Margen $</th>
-                      <th className="text-right p-3 font-semibold text-gray-700">Margen %</th>
-                    </>
-                  )}
-                  <th className="text-right p-3 font-semibold text-gray-700">% Inventario</th>
+              <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+                <tr>
+                  <th className="text-left p-4 font-semibold">#</th>
+                  <th className="text-left p-4 font-semibold">Item</th>
+                  <th className="text-left p-4 font-semibold">Categoría</th>
+                  <th className="text-right p-4 font-semibold">Cantidad</th>
+                  <th className="text-right p-4 font-semibold">Costo Promedio</th>
+                  <th className="text-right p-4 font-semibold">Total</th>
                 </tr>
               </thead>
-              <tbody>
-                {sortedDepartments.map((department, index) => {
-                  const deptData = department.data;
-                  const colors = departmentColors[department.name] || departmentColors['otros'];
-
+              <tbody className="divide-y divide-gray-200">
+                {currentItems.map((item, index) => {
+                  const globalIndex = startIndex + index + 1;
                   return (
-                    <tr key={index} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                      <td className={`p-3 font-semibold capitalize ${colors.text}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${colors.bar}`}></div>
-                          {department.name}
-                        </div>
+                    <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                      <td className="p-4 text-sm text-gray-600 font-medium">{globalIndex}</td>
+                      <td className="p-4">
+                        <p className="text-sm font-semibold text-gray-900">{item.item}</p>
                       </td>
-                      <td className="text-right p-3 text-gray-700 font-semibold">
-                        {deptData.cantidad_items || deptData.cantidad || 0}
+                      <td className="p-4">
+                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {item.categoria}
+                        </span>
                       </td>
-                      {isInventoryReport && (
-                        <td className="text-right p-3 text-blue-700 font-semibold">
-                          {deptData.cantidad_unidades?.toLocaleString() || 0}
-                        </td>
-                      )}
-                      <td className="text-right p-3 text-gray-700">
-                        {formatCurrency(deptData.valor_inventario || deptData.valor_precio || 0)}
+                      <td className="p-4 text-right">
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-bold">
+                          {item.cantidad.toLocaleString()}
+                        </span>
                       </td>
-                      <td className="text-right p-3 text-gray-700">
-                        {formatCurrency(deptData.costo_total || deptData.valor_costo || 0)}
+                      <td className="p-4 text-right text-sm font-semibold text-gray-900">
+                        {formatCurrency(item.costo_promedio)}
                       </td>
-                      {!isInventoryReport && deptData.margen_total !== undefined && (
-                        <>
-                          <td className="text-right p-3 text-green-700 font-semibold">
-                            {formatCurrency(deptData.margen_total)}
-                          </td>
-                          <td className="text-right p-3">
-                            <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
-                              deptData.margen_porcentaje >= 20
-                                ? 'bg-green-100 text-green-700'
-                                : deptData.margen_porcentaje >= 10
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {deptData.margen_porcentaje.toFixed(2)}%
-                            </span>
-                          </td>
-                        </>
-                      )}
-                      <td className="text-right p-3 text-gray-700 font-semibold">
-                        {(deptData.porcentaje_unidades || deptData.porcentaje_inventario || deptData.porcentaje_valor || 0).toFixed(2)}%
+                      <td className="p-4 text-right text-sm font-bold text-indigo-700">
+                        {formatCurrency(item.total)}
                       </td>
                     </tr>
                   );
@@ -547,6 +411,96 @@ const FileUploadInventory = () => {
             </table>
           </div>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+            <div className="flex items-center justify-between">
+              {/* Botón anterior */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Anterior
+              </button>
+
+              {/* Números de página */}
+              <div className="flex items-center gap-2">
+                {/* Primera página */}
+                {currentPage > 3 && (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition-all"
+                    >
+                      1
+                    </button>
+                    {currentPage > 4 && <span className="text-gray-400">...</span>}
+                  </>
+                )}
+
+                {/* Páginas cercanas a la actual */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
+                  if (pageNum <= totalPages) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-100 hover:bg-indigo-100 text-gray-700'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Última página */}
+                {currentPage < totalPages - 2 && (
+                  <>
+                    {currentPage < totalPages - 3 && <span className="text-gray-400">...</span>}
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition-all"
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Botón siguiente */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                Siguiente
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Información de página */}
+            <div className="mt-3 text-center text-sm text-gray-600">
+              Página {currentPage} de {totalPages}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

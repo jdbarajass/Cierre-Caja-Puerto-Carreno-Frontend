@@ -1,5 +1,32 @@
 # Changelog - Sistema de Gestión Koaj Puerto Carreño
 
+## [2024-12-02] - Mejoras en Análisis de Inventario Completo
+
+### ✨ Nueva Vista: Inventario Completo con Paginación y Búsqueda
+- **Archivo modificado**: `src/components/inventory/FileUploadInventory.jsx`
+- **Funcionalidades agregadas**:
+  - Tabla paginada con todos los items del inventario
+  - Barra de búsqueda en tiempo real por item o categoría
+  - Selector de items por página (25, 50, 100, 200)
+  - Controles de navegación de páginas con botones anterior/siguiente
+  - Visualización numerada de páginas con elipsis para páginas distantes
+  - Contadores de totales: cantidad total de items, unidades, valor total y costo promedio
+  - Información de resultados: muestra rango actual y total filtrado
+  - Iconos agregados: `Search`, `ChevronLeft`, `ChevronRight`
+
+### 🔄 Cambios en la Vista de Inventario Completo
+- Reemplazada vista por departamentos con tabla completa de items
+- Cada fila muestra: número, item, categoría, cantidad, costo promedio y total
+- Diseño responsivo con colores degradados en encabezado de tabla
+- Estados adicionales para paginación: `currentPage`, `itemsPerPage`, `searchTerm`
+- Reseteo automático de paginación al cargar nuevo archivo o realizar búsqueda
+
+### 🎯 Mejoras de UX
+- Filtrado instantáneo sin necesidad de enviar formularios
+- Mensajes informativos cuando no hay datos disponibles
+- Navegación fluida entre páginas con indicadores visuales
+- Diseño consistente con el resto del sistema usando gradientes indigo/blue
+
 ## [2024-12-01] - Mejoras de UI/UX y Análisis de Inventario
 
 ### 🎨 Reestructuración de Layout Principal
