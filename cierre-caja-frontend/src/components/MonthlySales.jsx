@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, DollarSign, FileText, CreditCard, Loader2, AlertCircle, Calendar, RefreshCw, ArrowLeft, Search } from 'lucide-react';
+import { TrendingUp, DollarSign, FileText, CreditCard, Loader2, AlertCircle, Calendar, RefreshCw, ArrowLeft, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMonthlySales } from '../hooks/useMonthlySales';
 import { getColombiaTodayString } from '../utils/dateUtils';
@@ -17,6 +17,7 @@ const MonthlySales = () => {
 
   const [startDate, setStartDate] = useState(currentMonthStart);
   const [endDate, setEndDate] = useState(currentDate);
+  const [validationWarning, setValidationWarning] = useState(null);
 
   // Usar el hook personalizado
   const { data, loading, error, refetch } = useMonthlySales(startDate, endDate);
@@ -76,6 +77,25 @@ const MonthlySales = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
+      {/* Notificación de Validación - Popup Superior */}
+      {validationWarning && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-yellow-900">Validación</h3>
+              <p className="text-sm text-yellow-700 mt-1">{validationWarning}</p>
+            </div>
+            <button
+              onClick={() => setValidationWarning(null)}
+              className="text-yellow-600 hover:text-yellow-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -115,7 +135,16 @@ const MonthlySales = () => {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  if (selectedDate > currentDate) {
+                    setValidationWarning('No se pueden seleccionar fechas futuras. Se ha establecido la fecha de hoy como fecha de inicio.');
+                    setStartDate(currentDate);
+                    setTimeout(() => setValidationWarning(null), 5000);
+                  } else {
+                    setStartDate(selectedDate);
+                  }
+                }}
                 max={endDate}
                 disabled={loading}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -128,7 +157,16 @@ const MonthlySales = () => {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  if (selectedDate > currentDate) {
+                    setValidationWarning('No se pueden seleccionar fechas futuras. Se ha establecido la fecha de hoy.');
+                    setEndDate(currentDate);
+                    setTimeout(() => setValidationWarning(null), 5000);
+                  } else {
+                    setEndDate(selectedDate);
+                  }
+                }}
                 min={startDate}
                 max={currentDate}
                 disabled={loading}

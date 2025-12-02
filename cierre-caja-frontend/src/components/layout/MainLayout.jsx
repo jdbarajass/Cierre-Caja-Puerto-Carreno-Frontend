@@ -165,15 +165,17 @@ const MainLayout = ({ children }) => {
       </header>
 
       {/* Navbar Secundario - Reloj */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-md">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-md py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center py-2">
-            {/* Reloj */}
-            <div className="flex items-center gap-2 text-white">
-              <Clock className="w-5 h-5" />
-              <div>
-                <p className="text-sm font-semibold">{currentTime}</p>
-                <p className="text-xs opacity-90">Hora de Colombia (UTC-5)</p>
+          <div className="bg-white rounded-xl shadow-lg p-4">
+            <div className="flex items-center justify-center">
+              {/* Reloj */}
+              <div className="flex items-center gap-2 text-gray-900">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-semibold">{currentTime}</p>
+                  <p className="text-xs text-gray-600">Hora de Colombia (UTC-5)</p>
+                </div>
               </div>
             </div>
           </div>

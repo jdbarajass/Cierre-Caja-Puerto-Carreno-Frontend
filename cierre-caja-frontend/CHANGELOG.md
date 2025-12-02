@@ -1,5 +1,44 @@
 # Changelog - Sistema de Gestión Koaj Puerto Carreño
 
+## [2024-12-02] - Mejoras en Cierre de Caja, Layout y Validación de Fechas
+
+### 📥 Nueva Funcionalidad: Descarga de Imagen en Cierre de Caja
+- **Archivo modificado**: `src/components/Dashboard.jsx`
+- **Nuevas funcionalidades**:
+  - Botón "Descargar Imagen" que genera PNG de alta calidad (scale 2.5)
+  - Botón "Descargar PDF" renombrado y rediseñado con color rojo
+  - Descarga optimizada para WhatsApp con buena resolución y tamaño reducido
+  - Ambos botones deshabilitados mientras se genera cualquiera de los dos formatos
+  - Estado `generatingImage` para controlar la generación de imágenes
+  - Función `downloadImage()` que usa canvas.toBlob() para mejor compresión
+
+### 🎨 Mejoras de Layout
+- **Archivo modificado**: `src/components/layout/MainLayout.jsx`
+- **Cambios en sección de hora**:
+  - Ahora la hora se muestra en un recuadro blanco con bordes redondeados
+  - Mismo ancho máximo (`max-w-7xl`) que los contenidos de otras secciones
+  - Mejor integración visual con el resto del sistema
+  - Diseño más consistente con las tarjetas de Ventas Mensuales, Análisis de Productos y Analytics
+
+### ✅ Validación de Fechas Futuras
+- **Archivos modificados**:
+  - `src/components/Dashboard.jsx`
+  - `src/components/MonthlySales.jsx`
+- **Funcionalidades agregadas**:
+  - Validación que previene selección de fechas futuras
+  - Mensaje de advertencia visual cuando se intenta seleccionar fecha futura
+  - Establecimiento automático de la fecha actual como fecha máxima
+  - Atributo `max={getColombiaTodayString()}` en inputs de fecha
+  - Notificaciones emergentes con auto-cierre a los 5 segundos
+  - Validación tanto en Dashboard como en Ventas Mensuales
+
+### 🔧 Mejoras Técnicas
+- Importación de icono `Image` de lucide-react
+- Importación de icono `X` para cerrar notificaciones
+- Estado `validationWarning` en MonthlySales para mostrar alertas
+- Uso de `setTimeout()` para auto-cierre de notificaciones
+- Mejora en UX con deshabilitación cruzada de botones durante generación
+
 ## [2024-12-02] - Mejoras en Análisis de Inventario Completo
 
 ### ✨ Nueva Vista: Inventario Completo con Paginación y Búsqueda

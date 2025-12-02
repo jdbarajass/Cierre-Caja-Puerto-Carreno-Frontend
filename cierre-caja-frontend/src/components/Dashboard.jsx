@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing } from '../services/api';
 import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
@@ -24,6 +24,7 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
 
   const [coins, setCoins] = useState({
@@ -366,6 +367,51 @@ const Dashboard = () => {
     }
   };
 
+  const downloadImage = async () => {
+    if (!resultsRef.current) return;
+
+    setGeneratingImage(true);
+    try {
+      // Capturar el contenido HTML como imagen con mayor calidad
+      const canvas = await html2canvas(resultsRef.current, {
+        scale: 2.5, // Mayor escala para mejor calidad
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      // Convertir canvas a blob para mejor compresión
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('No se pudo generar la imagen');
+        }
+
+        // Crear URL del blob
+        const url = URL.createObjectURL(blob);
+
+        // Crear link de descarga
+        const link = document.createElement('a');
+        const fileName = `Cierre_Caja_${results.request_date.replace(/\//g, '-')}.png`;
+        link.href = url;
+        link.download = fileName;
+
+        // Ejecutar descarga
+        document.body.appendChild(link);
+        link.click();
+
+        // Limpiar
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        setGeneratingImage(false);
+      }, 'image/png', 0.95); // PNG con calidad 95%
+    } catch (error) {
+      console.error('Error generando imagen:', error);
+      alert('Error al generar la imagen. Por favor, intenta nuevamente.');
+      setGeneratingImage(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-4">
       {/* Notificación de Validación - Popup Superior */}
@@ -411,7 +457,19 @@ const Dashboard = () => {
             <input
               type="date"
               value={closingDate}
-              onChange={(e) => setClosingDate(e.target.value)}
+              onChange={(e) => {
+                const selectedDate = e.target.value;
+                const today = getColombiaTodayString();
+
+                if (selectedDate > today) {
+                  setValidationWarning('No se pueden seleccionar fechas futuras. Se ha establecido la fecha de hoy.');
+                  setClosingDate(today);
+                  setTimeout(() => setValidationWarning(null), 5000);
+                } else {
+                  setClosingDate(selectedDate);
+                }
+              }}
+              max={getColombiaTodayString()}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
               required
             />
@@ -1678,12 +1736,12 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Botón Generar PDF */}
-            <div className="flex justify-center">
+            {/* Botones de Descarga */}
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               <button
                 onClick={generatePDF}
-                disabled={generatingPDF}
-                className="flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                disabled={generatingPDF || generatingImage}
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {generatingPDF ? (
                   <>
@@ -1692,8 +1750,26 @@ const Dashboard = () => {
                   </>
                 ) : (
                   <>
-                    <Download className="w-5 h-5" />
-                    Generar PDF
+                    <FileText className="w-5 h-5" />
+                    Descargar PDF
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={downloadImage}
+                disabled={generatingPDF || generatingImage}
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              >
+                {generatingImage ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Generando Imagen...
+                  </>
+                ) : (
+                  <>
+                    <Image className="w-5 h-5" />
+                    Descargar Imagen
                   </>
                 )}
               </button>
