@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useMonthlySales } from '../hooks/useMonthlySales';
 import { getColombiaTodayString } from '../utils/dateUtils';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
+import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
+import VoidedInvoicesModal from './common/VoidedInvoicesModal';
 
 const MonthlySales = () => {
   const navigate = useNavigate();
@@ -18,6 +21,7 @@ const MonthlySales = () => {
   const [startDate, setStartDate] = useState(currentMonthStart);
   const [endDate, setEndDate] = useState(currentDate);
   const [validationWarning, setValidationWarning] = useState(null);
+  const [isVoidedModalOpen, setIsVoidedModalOpen] = useState(false);
 
   // Usar el hook personalizado
   const { data, loading, error, refetch } = useMonthlySales(startDate, endDate);
@@ -259,10 +263,18 @@ const MonthlySales = () => {
               <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between mb-3">
                   <FileText className="w-8 h-8 text-green-600" />
+                  {data.invoices_summary && (
+                    <InvoicesSummaryBadge invoicesSummary={data.invoices_summary} variant="compact" />
+                  )}
                 </div>
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Facturas Generadas</h3>
                 <p className="text-3xl font-bold text-gray-900 mb-2">{data.cantidad_facturas}</p>
-                <p className="text-xs text-gray-500">Facturas en el periodo</p>
+                <p className="text-xs text-gray-500">
+                  {data.invoices_summary
+                    ? `${data.invoices_summary.active_invoices} activas de ${data.invoices_summary.total_invoices} recibidas`
+                    : 'Facturas en el periodo'
+                  }
+                </p>
               </div>
 
               {/* Promedio por Factura */}
@@ -277,6 +289,16 @@ const MonthlySales = () => {
                 <p className="text-xs text-gray-500">Venta promedio</p>
               </div>
             </div>
+
+            {/* Alerta de Facturas Anuladas */}
+            {data.voided_invoices && (
+              <div className="mb-6">
+                <VoidedInvoicesAlert
+                  voidedInvoices={data.voided_invoices}
+                  onViewDetails={() => setIsVoidedModalOpen(true)}
+                />
+              </div>
+            )}
 
         {/* Desglose por Métodos de Pago */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -389,6 +411,15 @@ const MonthlySales = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Modal de Facturas Anuladas */}
+        {data && data.voided_invoices && (
+          <VoidedInvoicesModal
+            isOpen={isVoidedModalOpen}
+            onClose={() => setIsVoidedModalOpen(false)}
+            voidedInvoices={data.voided_invoices}
+          />
         )}
       </div>
     </div>

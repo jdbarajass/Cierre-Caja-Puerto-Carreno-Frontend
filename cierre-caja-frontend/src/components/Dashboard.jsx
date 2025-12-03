@@ -6,6 +6,9 @@ import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, forma
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
+import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
+import VoidedInvoicesModal from './common/VoidedInvoicesModal';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -26,6 +29,7 @@ const Dashboard = () => {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
+  const [isVoidedModalOpen, setIsVoidedModalOpen] = useState(false);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -1099,7 +1103,22 @@ const Dashboard = () => {
         {results && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div ref={resultsRef} className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Resultados del Cierre</h2>
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Resultados del Cierre</h2>
+                {results.alegra?.invoices_summary && (
+                  <InvoicesSummaryBadge invoicesSummary={results.alegra.invoices_summary} variant="compact" />
+                )}
+              </div>
+
+              {/* Alerta de Facturas Anuladas */}
+              {results.alegra?.voided_invoices && (
+                <div className="mb-4 sm:mb-6">
+                  <VoidedInvoicesAlert
+                    voidedInvoices={results.alegra.voided_invoices}
+                    onViewDetails={() => setIsVoidedModalOpen(true)}
+                  />
+                </div>
+              )}
 
               {/* Sección de Validación */}
               {results.validation && (
@@ -1450,8 +1469,23 @@ const Dashboard = () => {
                 <div className="flex flex-col gap-2 sm:gap-3 h-full">
                   {/* TOTAL VENTA DEL DÍA */}
                   <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
-                    <div className="text-xs sm:text-sm font-medium opacity-90 mb-1">TOTAL VENTA DEL DÍA</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs sm:text-sm font-medium opacity-90">TOTAL VENTA DEL DÍA</div>
+                      {results.alegra?.invoices_summary?.voided_invoices > 0 && (
+                        <div className="bg-white/20 px-2 py-0.5 rounded text-xs">
+                          {results.alegra.invoices_summary.active_invoices} facturas
+                        </div>
+                      )}
+                    </div>
                     <div className="text-2xl sm:text-4xl font-bold">{results.alegra.total_sale.formatted}</div>
+                    {results.alegra?.invoices_summary && (
+                      <div className="text-xs opacity-75 mt-1">
+                        {results.alegra.invoices_summary.voided_invoices > 0
+                          ? `${results.alegra.invoices_summary.voided_invoices} factura(s) anulada(s) excluida(s)`
+                          : `${results.alegra.invoices_summary.total_invoices} facturas procesadas`
+                        }
+                      </div>
+                    )}
                   </div>
 
                   {/* Total a Consignar */}
@@ -1775,6 +1809,15 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Modal de Facturas Anuladas */}
+        {results && results.alegra?.voided_invoices && (
+          <VoidedInvoicesModal
+            isOpen={isVoidedModalOpen}
+            onClose={() => setIsVoidedModalOpen(false)}
+            voidedInvoices={results.alegra.voided_invoices}
+          />
         )}
       </div>
     </div>
