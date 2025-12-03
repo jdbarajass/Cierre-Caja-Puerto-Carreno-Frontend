@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
   const [isVoidedModalOpen, setIsVoidedModalOpen] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState('jpeg');
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -413,6 +414,67 @@ const Dashboard = () => {
       console.error('Error generando imagen:', error);
       alert('Error al generar la imagen. Por favor, intenta nuevamente.');
       setGeneratingImage(false);
+    }
+  };
+
+  const downloadJPEG = async () => {
+    if (!resultsRef.current) return;
+
+    setGeneratingImage(true);
+    try {
+      // Capturar el contenido HTML como imagen con alta calidad
+      const canvas = await html2canvas(resultsRef.current, {
+        scale: 3.0, // Escala alta para máxima calidad en JPEG
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      // Convertir canvas a blob JPEG con alta calidad
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('No se pudo generar la imagen JPEG');
+        }
+
+        // Crear URL del blob
+        const url = URL.createObjectURL(blob);
+
+        // Crear link de descarga
+        const link = document.createElement('a');
+        const fileName = `Cierre_Caja_${results.request_date.replace(/\//g, '-')}.jpeg`;
+        link.href = url;
+        link.download = fileName;
+
+        // Ejecutar descarga
+        document.body.appendChild(link);
+        link.click();
+
+        // Limpiar
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        setGeneratingImage(false);
+      }, 'image/jpeg', 0.95); // JPEG con calidad 95%
+    } catch (error) {
+      console.error('Error generando imagen JPEG:', error);
+      alert('Error al generar la imagen JPEG. Por favor, intenta nuevamente.');
+      setGeneratingImage(false);
+    }
+  };
+
+  const handleDownload = () => {
+    switch (downloadFormat) {
+      case 'jpeg':
+        downloadJPEG();
+        break;
+      case 'png':
+        downloadImage();
+        break;
+      case 'pdf':
+        generatePDF();
+        break;
+      default:
+        downloadJPEG();
     }
   };
 
@@ -1770,40 +1832,35 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Botones de Descarga */}
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-              <button
-                onClick={generatePDF}
-                disabled={generatingPDF || generatingImage}
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-              >
-                {generatingPDF ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Generando PDF...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-5 h-5" />
-                    Descargar PDF
-                  </>
-                )}
-              </button>
+            {/* Selector y Botón de Descarga */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
+              <div className="w-full sm:w-auto">
+                <select
+                  value={downloadFormat}
+                  onChange={(e) => setDownloadFormat(e.target.value)}
+                  disabled={generatingPDF || generatingImage}
+                  className="w-full px-4 py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base cursor-pointer"
+                >
+                  <option value="jpeg">JPEG (Alta Calidad)</option>
+                  <option value="png">PNG</option>
+                  <option value="pdf">PDF</option>
+                </select>
+              </div>
 
               <button
-                onClick={downloadImage}
+                onClick={handleDownload}
                 disabled={generatingPDF || generatingImage}
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                {generatingImage ? (
+                {(generatingPDF || generatingImage) ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Generando Imagen...
+                    Generando...
                   </>
                 ) : (
                   <>
-                    <Image className="w-5 h-5" />
-                    Descargar Imagen
+                    <Download className="w-5 h-5" />
+                    Descargar Reporte
                   </>
                 )}
               </button>
