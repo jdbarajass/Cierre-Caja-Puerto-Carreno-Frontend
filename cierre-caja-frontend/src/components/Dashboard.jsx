@@ -1265,32 +1265,156 @@ const Dashboard = () => {
                               </div>
                             )}
                           </div>
-
-                          {/* Datafono Real - NUEVO */}
-                          {results.validation.diferencias.datafono_real && (
-                            <div className="bg-blue-50 rounded-lg p-3 border-2 border-blue-200">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-semibold text-sm text-blue-900 mb-1">Datafono Monto Real</h4>
-                                  {results.validation.diferencias.datafono_real.detalle && (
-                                    <p className="text-xs text-blue-700 italic">{results.validation.diferencias.datafono_real.detalle}</p>
-                                  )}
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-2xl font-bold text-blue-900">
-                                    {results.validation.diferencias.datafono_real.total_formatted}
-                                  </p>
-                                  <p className="text-xs text-blue-700">Tarjetas + Addi</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Resumen de Cierre */}
+              <div className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+                <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-blue-600 rounded"></span>
+                  Resumen del Cierre
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {/* QR */}
+                  {results.metodos_pago_registrados.qr_julieth > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">QR</div>
+                      <div className="text-lg font-bold text-blue-900">
+                        {formatCurrency(results.metodos_pago_registrados.qr_julieth)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Datafono - Solo si hay tarjetas */}
+                  {(results.metodos_pago_registrados.tarjeta_debito > 0 || results.metodos_pago_registrados.tarjeta_credito > 0) && (
+                    <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-2">Datafono</div>
+                      <div className="space-y-1 text-xs">
+                        {results.metodos_pago_registrados.tarjeta_debito > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">T. Débito:</span>
+                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.tarjeta_debito)}</span>
+                          </div>
+                        )}
+                        {results.metodos_pago_registrados.tarjeta_credito > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">T. Crédito:</span>
+                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.tarjeta_credito)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-1 border-t border-gray-200">
+                          <span className="text-gray-700 font-medium">Total:</span>
+                          <span className="font-bold text-orange-700">{formatCurrency(results.metodos_pago_registrados.total_solo_tarjetas)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Nequi */}
+                  {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Nequi</div>
+                      <div className="text-lg font-bold text-purple-900">
+                        {formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Daviplata */}
+                  {results.metodos_pago_registrados.daviplata_jose > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-pink-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Daviplata</div>
+                      <div className="text-lg font-bold text-pink-900">
+                        {formatCurrency(results.metodos_pago_registrados.daviplata_jose)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Addi */}
+                  {results.metodos_pago_registrados.addi_datafono > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Addi</div>
+                      <div className="text-lg font-bold text-blue-900">
+                        {formatCurrency(results.metodos_pago_registrados.addi_datafono)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Efectivo de Ventas */}
+                  {results.alegra.results.cash.total > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Efectivo de Ventas</div>
+                      <div className="text-lg font-bold text-green-900">
+                        {results.alegra.results.cash.formatted}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Valor a Consignar */}
+                  {results.cash_count.consignar.efectivo_para_consignar_final > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-emerald-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Valor a Consignar</div>
+                      <div className="text-lg font-bold text-emerald-900">
+                        {results.cash_count.consignar.efectivo_para_consignar_final_formatted}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Excedentes */}
+                  {results.cash_count.adjustments.excedente > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-yellow-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-2">Excedentes</div>
+                      <div className="text-lg font-bold text-yellow-900 mb-2">
+                        {results.cash_count.adjustments.excedente_formatted}
+                      </div>
+                      {results.excedentes_detalle && results.excedentes_detalle.length > 0 && (
+                        <div className="space-y-1">
+                          {results.excedentes_detalle.map((exc, idx) => (
+                            <div key={idx} className="text-xs text-gray-600 italic">
+                              • {exc.tipo}{exc.subtipo && ` (${exc.subtipo})`}: {formatCurrency(exc.valor)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Gastos Operativos */}
+                  {results.cash_count.adjustments.gastos_operativos > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-red-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Gastos Operativos</div>
+                      <div className="text-lg font-bold text-red-900">
+                        {results.cash_count.adjustments.gastos_operativos_formatted}
+                      </div>
+                      {results.gastos_operativos_nota && (
+                        <div className="text-xs text-gray-600 mt-2 italic">
+                          Nota: {results.gastos_operativos_nota}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Préstamos */}
+                  {results.cash_count.adjustments.prestamos > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-indigo-100 shadow-sm">
+                      <div className="text-xs font-medium text-gray-600 mb-1">Préstamos</div>
+                      <div className="text-lg font-bold text-indigo-900">
+                        {results.cash_count.adjustments.prestamos_formatted}
+                      </div>
+                      {results.prestamos_nota && (
+                        <div className="text-xs text-gray-600 mt-2 italic">
+                          Nota: {results.prestamos_nota}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Título de la sección */}
               <div className="mb-3">
