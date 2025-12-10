@@ -1112,25 +1112,102 @@ const Dashboard = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {/* Info: Datafono Real */}
-                  {results.validation.diferencias.datafono_real && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-semibold text-blue-900">Datafono Monto Real</h4>
-                          <p className="text-xs text-blue-700 mt-1">{results.validation.diferencias.datafono_real.detalle}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-blue-900">
-                            {results.validation.diferencias.datafono_real.total_formatted}
-                          </p>
-                        </div>
+              {/* Resumen General del Cierre */}
+              <div className="bg-gradient-to-br from-gray-50 to-slate-100 border border-gray-200 rounded-xl p-4 mb-6">
+                <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-blue-600 rounded"></span>
+                  Resumen General
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {/* QR */}
+                  {results.metodos_pago_registrados.qr_julieth > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">QR:</div>
+                      <div className="font-bold text-blue-900">{formatCurrency(results.metodos_pago_registrados.qr_julieth)}</div>
+                    </div>
+                  )}
+
+                  {/* Datafono Total */}
+                  {(results.metodos_pago_registrados.tarjeta_debito > 0 || results.metodos_pago_registrados.tarjeta_credito > 0) && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Datafono:</div>
+                      <div className="font-bold text-orange-900">{formatCurrency(results.metodos_pago_registrados.total_solo_tarjetas)}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {results.metodos_pago_registrados.tarjeta_debito > 0 && `Déb: ${formatCurrency(results.metodos_pago_registrados.tarjeta_debito)}`}
+                        {results.metodos_pago_registrados.tarjeta_debito > 0 && results.metodos_pago_registrados.tarjeta_credito > 0 && ' | '}
+                        {results.metodos_pago_registrados.tarjeta_credito > 0 && `Créd: ${formatCurrency(results.metodos_pago_registrados.tarjeta_credito)}`}
                       </div>
                     </div>
                   )}
+
+                  {/* Nequi */}
+                  {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Nequi:</div>
+                      <div className="font-bold text-purple-900">{formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</div>
+                    </div>
+                  )}
+
+                  {/* Daviplata */}
+                  {results.metodos_pago_registrados.daviplata_jose > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Daviplata:</div>
+                      <div className="font-bold text-pink-900">{formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</div>
+                    </div>
+                  )}
+
+                  {/* Addi */}
+                  {results.metodos_pago_registrados.addi_datafono > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Addi:</div>
+                      <div className="font-bold text-blue-900">{formatCurrency(results.metodos_pago_registrados.addi_datafono)}</div>
+                    </div>
+                  )}
+
+                  {/* Efectivo de Ventas */}
+                  {results.alegra.results.cash.total > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Efectivo Ventas:</div>
+                      <div className="font-bold text-green-900">{results.alegra.results.cash.formatted}</div>
+                    </div>
+                  )}
+
+                  {/* Valor a Consignar */}
+                  {results.cash_count.consignar.efectivo_para_consignar_final > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-emerald-100 col-span-2">
+                      <div className="text-gray-600 mb-0.5">Valor a Consignar:</div>
+                      <div className="font-bold text-emerald-900 text-sm">{results.cash_count.consignar.efectivo_para_consignar_final_formatted}</div>
+                    </div>
+                  )}
+
+                  {/* Excedentes */}
+                  {results.cash_count.adjustments.excedente > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Excedentes:</div>
+                      <div className="font-bold text-yellow-900">{results.cash_count.adjustments.excedente_formatted}</div>
+                    </div>
+                  )}
+
+                  {/* Gastos Operativos */}
+                  {results.cash_count.adjustments.gastos_operativos > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Gastos Oper.:</div>
+                      <div className="font-bold text-red-900">{results.cash_count.adjustments.gastos_operativos_formatted}</div>
+                    </div>
+                  )}
+
+                  {/* Préstamos */}
+                  {results.cash_count.adjustments.prestamos > 0 && (
+                    <div className="bg-white rounded-lg p-2 border border-gray-100">
+                      <div className="text-gray-600 mb-0.5">Préstamos:</div>
+                      <div className="font-bold text-indigo-900">{results.cash_count.adjustments.prestamos_formatted}</div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div className="flex gap-3">
                 <button
