@@ -198,34 +198,28 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
 
-          {/* Navegación Principal - Estructura con 3 Secciones */}
+          {/* Navegación Principal - Todo en una línea horizontal */}
           <nav className="py-3">
-            <div className="space-y-4">
-              {/* Sección 1: Dashboard/Cierre de Caja (Admin y Sales) */}
-              {visibleDashboardItems.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
-                    {visibleDashboardItems.map((item) => {
-                      const Icon = item.icon;
-                      const active = isActive(item.path);
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300">
+              {/* Botones principales (Cierre de Caja, Ventas Mensuales para Sales) */}
+              {visibleDashboardItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
 
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => handleNavigation(item.path)}
-                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
-                            ? `${getActiveColor(item.color)} shadow-md transform scale-105`
-                            : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
-                            }`}
-                        >
-                          <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
-                          <span className="text-sm">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${active
+                        ? `${getActiveColor(item.color)} shadow-md transform scale-105`
+                        : `text-gray-700 ${getHoverColor(item.color)} border border-gray-200`
+                      }`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
+                    <span className="text-sm">{item.label}</span>
+                  </button>
+                );
+              })}
 
               {/* Dropdown: Estadísticas Avanzadas (Solo Admin) */}
               {canAccess(['admin']) && (
@@ -233,8 +227,8 @@ const MainLayout = ({ children }) => {
                   <button
                     onClick={() => toggleMenu('advanced')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${expandedMenu === 'advanced'
-                      ? 'bg-yellow-500 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border border-gray-200'
+                        ? 'bg-yellow-500 text-white shadow-md'
+                        : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 border border-gray-200'
                       }`}
                   >
                     <Zap className={`w-4 h-4 ${expandedMenu === 'advanced' ? 'text-white' : ''}`} />
@@ -246,7 +240,7 @@ const MainLayout = ({ children }) => {
                     <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[280px]">
                       <div className="py-2">
                         <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/analytics'); setExpandedMenu(null); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/analytics'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
                           <TrendingUp className="w-5 h-5 text-orange-600" />
@@ -257,7 +251,7 @@ const MainLayout = ({ children }) => {
                         </button>
 
                         <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/productos'); setExpandedMenu(null); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/productos'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
                           <Package className="w-5 h-5 text-green-600" />
@@ -268,7 +262,7 @@ const MainLayout = ({ children }) => {
                         </button>
 
                         <button
-                          onClick={() => { handleNavigation('/estadisticas-avanzadas/inventario'); setExpandedMenu(null); }}
+                          onClick={() => { handleNavigation('/estadisticas-avanzadas/inventario'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
                           <BarChart3 className="w-5 h-5 text-teal-600" />
@@ -279,7 +273,7 @@ const MainLayout = ({ children }) => {
                         </button>
 
                         <button
-                          onClick={() => { handleNavigation('/monthly-sales'); setExpandedMenu(null); }}
+                          onClick={() => { handleNavigation('/monthly-sales'); toggleMenu('advanced'); }}
                           className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
                           <ShoppingBag className="w-5 h-5 text-purple-600" />
