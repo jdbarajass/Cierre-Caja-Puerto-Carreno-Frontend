@@ -31,6 +31,8 @@ const Dashboard = () => {
   const [validationWarning, setValidationWarning] = useState(null);
   const [isVoidedModalOpen, setIsVoidedModalOpen] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('jpeg');
+  const [desfaseSugerido, setDesfaseSugerido] = useState(null);
+  const [showDesfaseSection, setShowDesfaseSection] = useState(false);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -48,7 +50,10 @@ const Dashboard = () => {
     gastos_operativos: '',
     gastos_operativos_nota: '',
     prestamos: '',
-    prestamos_nota: ''
+    prestamos_nota: '',
+    desfase_tipo: '',
+    desfase_valor: '',
+    desfase_nota: ''
   });
 
   const [metodosPago, setMetodosPago] = useState({
@@ -176,6 +181,15 @@ const Dashboard = () => {
       return;
     }
 
+    // Validar desfases si están presentes
+    if (adjustments.desfase_tipo && adjustments.desfase_valor) {
+      if (!adjustments.desfase_nota || adjustments.desfase_nota.trim().length < 4) {
+        setValidationWarning('La nota del desfase debe tener al menos 4 caracteres explicando la causa y responsable.');
+        setTimeout(() => setValidationWarning(null), 5000);
+        return;
+      }
+    }
+
     // Preparar datos para el modal de confirmación
     const excedentesArray = excedentes
       .filter(exc => (parseInt(exc.valor) || 0) > 0)
@@ -238,6 +252,15 @@ const Dashboard = () => {
         }
       };
 
+      // Agregar desfases si están registrados
+      if (adjustments.desfase_tipo && adjustments.desfase_valor && adjustments.desfase_nota) {
+        payload.desfases = [{
+          tipo: adjustments.desfase_tipo,
+          valor: parseInt(adjustments.desfase_valor) || 0,
+          nota: adjustments.desfase_nota
+        }];
+      }
+
       const data = await submitCashClosing(payload);
 
       if (data.cash_count && data.cash_count.base) {
@@ -279,6 +302,27 @@ const Dashboard = () => {
       if (data.validation && data.validation.cierre_validado) {
         setShowSuccessModal(true);
       } else if (data.validation && !data.validation.cierre_validado) {
+        // Verificar si hay desfase detectado
+        if (data.validation.desfase_sugerido && data.validation.desfase_sugerido.detectado) {
+          setDesfaseSugerido(data.validation.desfase_sugerido);
+          setShowDesfaseSection(true);
+          
+          // Auto-rellenar el formulario de desfases
+          setAdjustments(prev => ({
+            ...prev,
+            desfase_tipo: data.validation.desfase_sugerido.tipo,
+            desfase_valor: data.validation.desfase_sugerido.valor.toString()
+          }));
+          
+          // Scroll a la sección de desfases después de un breve delay
+          setTimeout(() => {
+            const desfaseNotaElement = document.getElementById('desfase-nota');
+            if (desfaseNotaElement) {
+              desfaseNotaElement.focus();
+              desfaseNotaElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+        }
         setShowWarningModal(true);
       }
 
@@ -294,7 +338,17 @@ const Dashboard = () => {
     setCoins({ '50': '', '100': '', '200': '', '500': '', '1000': '' });
     setBills({ '2000': '', '5000': '', '10000': '', '20000': '', '50000': '', '100000': '' });
     setExcedentes([{ id: 1, tipo: 'efectivo', subtipo: '', valor: '' }]);
-    setAdjustments({ gastos_operativos: '', gastos_operativos_nota: '', prestamos: '', prestamos_nota: '' });
+    setAdjustments({ 
+      gastos_operativos: '', 
+      gastos_operativos_nota: '', 
+      prestamos: '', 
+      prestamos_nota: '',
+      desfase_tipo: '',
+      desfase_valor: '',
+      desfase_nota: ''
+    });
+    setDesfaseSugerido(null);
+    setShowDesfaseSection(false);
     setMetodosPago({
       addi_datafono: '',
       nequi_luz_helena: '',
@@ -862,6 +916,104 @@ const Dashboard = () => {
                   />
                 </div>
               </div>
+
+              {/* Botón para mostrar sección de desfases manualmente */}
+              {!showDesfaseSection && (
+                <div className="mt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowDesfaseSection(true)}
+                    className="text-sm text-amber-600 hover:text-amber-700 underline flex items-center gap-1 mx-auto"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    ¿Necesitas registrar un desfase? Click aquí
+                  </button>
+                </div>
+              )}
+
+              {/* Sección de Desfases */}
+              {showDesfaseSection && (
+                <div className="mt-4 border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Desfases en Caja
+                  </label>
+
+                  {/* Alerta de desfase detectado */}
+                  {desfaseSugerido && (
+                    <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+                      <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                            ⚠️ DESFASE DETECTADO
+                          </h3>
+                          <p className="text-sm text-amber-700">
+                            {desfaseSugerido.mensaje}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {/* Tipo de Desfase */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Tipo de Desfase
+                      </label>
+                      <select
+                        value={adjustments.desfase_tipo}
+                        onChange={(e) => setAdjustments({ ...adjustments, desfase_tipo: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        disabled={desfaseSugerido !== null}
+                      >
+                        <option value="">Seleccionar tipo...</option>
+                        <option value="faltante_caja">Faltante en Caja</option>
+                        <option value="sobrante_caja">Sobrante en Caja</option>
+                      </select>
+                    </div>
+
+                    {/* Valor del Desfase */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Valor del Desfase (COP)
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={formatNumberWithThousands(adjustments.desfase_valor)}
+                        onChange={(e) => setAdjustments({ ...adjustments, desfase_valor: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        placeholder="$0"
+                        disabled={desfaseSugerido !== null}
+                      />
+                    </div>
+
+                    {/* Nota Explicativa */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Nota Explicativa (Responsable/Causa) *
+                      </label>
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                        <textarea
+                          id="desfase-nota"
+                          value={adjustments.desfase_nota}
+                          onChange={(e) => setAdjustments({ ...adjustments, desfase_nota: e.target.value })}
+                          className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
+                          placeholder="Ej: Faltante por error en vueltas - Responsable: María González"
+                          rows="3"
+                          minLength="4"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Mínimo 4 caracteres. Explica la causa y responsable del desfase.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             </div>
           </div>
@@ -1115,6 +1267,47 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* Sección de Desfase Detectado */}
+              {results.validation.desfase_sugerido && results.validation.desfase_sugerido.detectado && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 rounded-xl p-5 mb-6 shadow-md">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="bg-amber-500 rounded-full p-2 flex-shrink-0">
+                      <AlertCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-lg mb-1">
+                        ⚠️ DESFASE DETECTADO EN EFECTIVO
+                      </h4>
+                      <p className="text-sm text-gray-700 mb-3">
+                        {results.validation.desfase_sugerido.mensaje}
+                      </p>
+                      <div className="bg-white rounded-lg p-3 border-2 border-amber-300">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Tipo:</span>
+                            <span className="ml-2 font-semibold text-amber-900">
+                              {results.validation.desfase_sugerido.tipo === 'faltante_caja' ? 'Faltante en Caja' : 'Sobrante en Caja'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Valor:</span>
+                            <span className="ml-2 font-bold text-amber-900">
+                              {results.validation.desfase_sugerido.valor_formatted}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-amber-100 rounded-lg border border-amber-300">
+                        <p className="text-xs font-medium text-amber-900">
+                          📝 Para completar el cierre, registra este desfase en la sección "Desfases en Caja"
+                          con una nota explicativa indicando el responsable o la causa del {results.validation.desfase_sugerido.tipo === 'faltante_caja' ? 'faltante' : 'sobrante'}.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Resumen General del Cierre */}
               <div className="bg-gradient-to-br from-gray-50 to-slate-100 border border-gray-200 rounded-xl p-4 mb-6">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -1208,6 +1401,31 @@ const Dashboard = () => {
                   )}
                 </div>
               </div>
+
+              {/* Desfases Registrados */}
+              {results.desfases_detalle && results.desfases_detalle.length > 0 && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-4 mb-6">
+                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    Desfases Registrados
+                  </h4>
+                  <div className="space-y-2">
+                    {results.desfases_detalle.map((desfase, index) => (
+                      <div key={index} className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-semibold text-gray-900">{desfase.tipo}</span>
+                          <span className="font-bold text-amber-900">{formatCurrency(desfase.valor)}</span>
+                        </div>
+                        {desfase.nota && (
+                          <div className="text-xs text-gray-600 bg-gray-50 rounded p-2 border border-gray-200">
+                            <span className="font-medium">Nota:</span> {desfase.nota}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button
@@ -1491,6 +1709,31 @@ const Dashboard = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Desfases Registrados en el Cierre Exitoso */}
+                {results.desfases_detalle && results.desfases_detalle.length > 0 && (
+                  <div className="mt-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-4 shadow-sm">
+                    <h4 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                      Desfases Registrados
+                    </h4>
+                    <div className="space-y-2">
+                      {results.desfases_detalle.map((desfase, index) => (
+                        <div key={index} className="bg-white rounded-lg p-3 border border-amber-200">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-semibold text-gray-900">{desfase.tipo}</span>
+                            <span className="text-lg font-bold text-amber-900">{formatCurrency(desfase.valor)}</span>
+                          </div>
+                          {desfase.nota && (
+                            <div className="text-xs text-gray-700 bg-amber-50 rounded p-2 border border-amber-200">
+                              <span className="font-medium">Nota:</span> {desfase.nota}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Título de la sección */}
@@ -1725,6 +1968,31 @@ const Dashboard = () => {
                         <div className="font-semibold">{results.cash_count.adjustments.venta_efectivo_diaria_alegra_formatted}</div>
                       </div>
                     </div>
+
+                    {/* Desfases si existen */}
+                    {results.desfases_detalle && results.desfases_detalle.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-amber-200">
+                        <div className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          Desfases Registrados
+                        </div>
+                        <div className="space-y-2">
+                          {results.desfases_detalle.map((desfase, index) => (
+                            <div key={index} className="bg-amber-50 rounded p-2 border border-amber-200">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-medium text-gray-700">{desfase.tipo}</span>
+                                <span className="text-sm font-bold text-amber-900">{formatCurrency(desfase.valor)}</span>
+                              </div>
+                              {desfase.nota && (
+                                <div className="text-xs text-gray-600 italic">
+                                  {desfase.nota}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
