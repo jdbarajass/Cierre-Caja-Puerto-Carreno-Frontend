@@ -133,11 +133,11 @@ const Dashboard = () => {
 
   // Calcular totales de métodos de pago
   const totalTransferencias = (parseInt(metodosPago.nequi_luz_helena) || 0) +
-                               (parseInt(metodosPago.daviplata_jose) || 0) +
-                               (parseInt(metodosPago.qr_julieth) || 0);
+    (parseInt(metodosPago.daviplata_jose) || 0) +
+    (parseInt(metodosPago.qr_julieth) || 0);
   const totalDatafono = (parseInt(metodosPago.addi_datafono) || 0) +
-                        (parseInt(metodosPago.tarjeta_debito) || 0) +
-                        (parseInt(metodosPago.tarjeta_credito) || 0);
+    (parseInt(metodosPago.tarjeta_debito) || 0) +
+    (parseInt(metodosPago.tarjeta_credito) || 0);
 
   const agregarExcedente = () => {
     if (excedentes.length < 3) {
@@ -306,14 +306,14 @@ const Dashboard = () => {
         if (data.validation.desfase_sugerido && data.validation.desfase_sugerido.detectado) {
           setDesfaseSugerido(data.validation.desfase_sugerido);
           setShowDesfaseSection(true);
-          
+
           // Auto-rellenar el formulario de desfases
           setAdjustments(prev => ({
             ...prev,
             desfase_tipo: data.validation.desfase_sugerido.tipo,
             desfase_valor: data.validation.desfase_sugerido.valor.toString()
           }));
-          
+
           // Scroll a la sección de desfases después de un breve delay
           setTimeout(() => {
             const desfaseNotaElement = document.getElementById('desfase-nota');
@@ -338,10 +338,10 @@ const Dashboard = () => {
     setCoins({ '50': '', '100': '', '200': '', '500': '', '1000': '' });
     setBills({ '2000': '', '5000': '', '10000': '', '20000': '', '50000': '', '100000': '' });
     setExcedentes([{ id: 1, tipo: 'efectivo', subtipo: '', valor: '' }]);
-    setAdjustments({ 
-      gastos_operativos: '', 
-      gastos_operativos_nota: '', 
-      prestamos: '', 
+    setAdjustments({
+      gastos_operativos: '',
+      gastos_operativos_nota: '',
+      prestamos: '',
       prestamos_nota: '',
       desfase_tipo: '',
       desfase_valor: '',
@@ -782,239 +782,237 @@ const Dashboard = () => {
 
             {/* Columna Derecha: Ajustes y Movimientos */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Ajustes y Movimientos</h2>
-            </div>
-
-            <div className="mb-4 sm:mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm sm:text-base font-medium text-gray-700">
-                  Excedentes (Opcional)
-                </label>
-                {excedentes.length < 3 && (
-                  <button
-                    type="button"
-                    onClick={agregarExcedente}
-                    className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-xs sm:text-sm"
-                  >
-                    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                    Agregar
-                  </button>
-                )}
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Ajustes y Movimientos</h2>
               </div>
 
-              <div className="space-y-3">
-                {excedentes.map((excedente) => (
-                  <div key={excedente.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="flex-1">
-                        <select
-                          value={excedente.tipo}
-                          onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                        >
-                          {tiposExcedente.map(tipo => (
-                            <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                      {excedente.tipo === 'qr_transferencias' && (
+              <div className="mb-4 sm:mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm sm:text-base font-medium text-gray-700">
+                    Excedentes (Opcional)
+                  </label>
+                  {excedentes.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={agregarExcedente}
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-xs sm:text-sm"
+                    >
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Agregar
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {excedentes.map((excedente) => (
+                    <div key={excedente.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <div className="flex-1">
                           <select
-                            value={excedente.subtipo}
-                            onChange={(e) => actualizarSubtipoExcedente(excedente.id, e.target.value)}
+                            value={excedente.tipo}
+                            onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                           >
-                            {subtiposTransferencia.map(sub => (
-                              <option key={sub.value} value={sub.value}>{sub.label}</option>
+                            {tiposExcedente.map(tipo => (
+                              <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
                             ))}
                           </select>
                         </div>
-                      )}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={formatNumberWithThousands(excedente.valor)}
-                          onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                          placeholder="$0"
-                        />
-                        {excedentes.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => eliminarExcedente(excedente.id)}
-                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                        {excedente.tipo === 'qr_transferencias' && (
+                          <div className="flex-1">
+                            <select
+                              value={excedente.subtipo}
+                              onChange={(e) => actualizarSubtipoExcedente(excedente.id, e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                            >
+                              {subtiposTransferencia.map(sub => (
+                                <option key={sub.value} value={sub.value}>{sub.label}</option>
+                              ))}
+                            </select>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {totalExcedentes > 0 && (
-                <div className="mt-3 p-2 bg-purple-50 rounded-lg">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-gray-700">Total Excedentes:</span>
-                    <span className="font-bold text-purple-600">{formatCurrency(totalExcedentes)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gastos Operativos
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={formatNumberWithThousands(adjustments.gastos_operativos)}
-                  onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
-                  placeholder="$0"
-                />
-                <div className="relative">
-                  <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={adjustments.gastos_operativos_nota}
-                    onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos_nota: e.target.value })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                    placeholder="Nota: ej. Compra de papelería..."
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Préstamos
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={formatNumberWithThousands(adjustments.prestamos)}
-                  onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
-                  placeholder="$0"
-                />
-                <div className="relative">
-                  <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={adjustments.prestamos_nota}
-                    onChange={(e) => setAdjustments({ ...adjustments, prestamos_nota: e.target.value })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                    placeholder="Nota: ej. Préstamo a María..."
-                  />
-                </div>
-              </div>
-
-              {/* Botón para mostrar sección de desfases manualmente */}
-              {!showDesfaseSection && (
-                <div className="mt-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowDesfaseSection(true)}
-                    className="text-sm text-amber-600 hover:text-amber-700 underline flex items-center gap-1 mx-auto"
-                  >
-                    <AlertCircle className="w-4 h-4" />
-                    ¿Necesitas registrar un desfase? Click aquí
-                  </button>
-                </div>
-              )}
-
-              {/* Sección de Desfases */}
-              {showDesfaseSection && (
-                <div className="mt-4 border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Desfases en Caja
-                  </label>
-
-                  {/* Alerta de desfase detectado */}
-                  {desfaseSugerido && (
-                    <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
-                      <div className="flex items-start">
-                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold text-amber-800 mb-1">
-                            ⚠️ DESFASE DETECTADO
-                          </h3>
-                          <p className="text-sm text-amber-700">
-                            {desfaseSugerido.mensaje}
-                          </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={formatNumberWithThousands(excedente.valor)}
+                            onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                            placeholder="$0"
+                          />
+                          {excedentes.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => eliminarExcedente(excedente.id)}
+                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
-                  )}
+                  ))}
+                </div>
 
-                  <div className="space-y-3">
-                    {/* Tipo de Desfase */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Tipo de Desfase
-                      </label>
-                      <select
-                        value={adjustments.desfase_tipo}
-                        onChange={(e) => setAdjustments({ ...adjustments, desfase_tipo: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                        disabled={desfaseSugerido !== null}
-                      >
-                        <option value="">Seleccionar tipo...</option>
-                        <option value="faltante_caja">Faltante en Caja</option>
-                        <option value="sobrante_caja">Sobrante en Caja</option>
-                      </select>
-                    </div>
-
-                    {/* Valor del Desfase */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Valor del Desfase (COP)
-                      </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formatNumberWithThousands(adjustments.desfase_valor)}
-                        onChange={(e) => setAdjustments({ ...adjustments, desfase_valor: handleNumericInput(e.target.value) })}
-                        onFocus={(e) => e.target.select()}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                        placeholder="$0"
-                        disabled={desfaseSugerido !== null}
-                      />
-                    </div>
-
-                    {/* Nota Explicativa */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Nota Explicativa (Responsable/Causa) *
-                      </label>
-                      <div className="relative">
-                        <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                        <textarea
-                          id="desfase-nota"
-                          value={adjustments.desfase_nota}
-                          onChange={(e) => setAdjustments({ ...adjustments, desfase_nota: e.target.value })}
-                          className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
-                          placeholder="Ej: Faltante por error en vueltas - Responsable: María González"
-                          rows="3"
-                          minLength="4"
-                        />
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Mínimo 4 caracteres. Explica la causa y responsable del desfase.
-                      </p>
+                {totalExcedentes > 0 && (
+                  <div className="mt-3 p-2 bg-purple-50 rounded-lg">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-medium text-gray-700">Total Excedentes:</span>
+                      <span className="font-bold text-purple-600">{formatCurrency(totalExcedentes)}</span>
                     </div>
                   </div>
+                )}
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gastos Operativos
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberWithThousands(adjustments.gastos_operativos)}
+                    onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
+                    placeholder="$0"
+                  />
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={adjustments.gastos_operativos_nota}
+                      onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos_nota: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      placeholder="Nota: ej. Compra de papelería..."
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Préstamos
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={formatNumberWithThousands(adjustments.prestamos)}
+                    onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
+                    onFocus={(e) => e.target.select()}
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
+                    placeholder="$0"
+                  />
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={adjustments.prestamos_nota}
+                      onChange={(e) => setAdjustments({ ...adjustments, prestamos_nota: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      placeholder="Nota: ej. Préstamo a María..."
+                    />
+                  </div>
+                </div>
+
+                {/* Botón para mostrar/ocultar sección de desfases manualmente */}
+                <div className="mt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowDesfaseSection(!showDesfaseSection)}
+                    className={`text-sm ${showDesfaseSection ? 'text-gray-600 hover:text-gray-700' : 'text-amber-600 hover:text-amber-700'} underline flex items-center gap-1 mx-auto`}
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    {showDesfaseSection ? '✓ Ocultar sección de desfases' : '¿Necesitas registrar un desfase? Click aquí'}
+                  </button>
+                </div>
+
+                {/* Sección de Desfases */}
+                {showDesfaseSection && (
+                  <div className="mt-4 border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Desfases en Caja
+                    </label>
+
+                    {/* Alerta de desfase detectado */}
+                    {desfaseSugerido && (
+                      <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+                        <div className="flex items-start">
+                          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                              ⚠️ DESFASE DETECTADO
+                            </h3>
+                            <p className="text-sm text-amber-700">
+                              {desfaseSugerido.mensaje}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {/* Tipo de Desfase */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Tipo de Desfase
+                        </label>
+                        <select
+                          value={adjustments.desfase_tipo}
+                          onChange={(e) => setAdjustments({ ...adjustments, desfase_tipo: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          disabled={desfaseSugerido !== null}
+                        >
+                          <option value="">Seleccionar tipo...</option>
+                          <option value="faltante_caja">Faltante en Caja</option>
+                          <option value="sobrante_caja">Sobrante en Caja</option>
+                        </select>
+                      </div>
+
+                      {/* Valor del Desfase */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Valor del Desfase (COP)
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={formatNumberWithThousands(adjustments.desfase_valor)}
+                          onChange={(e) => setAdjustments({ ...adjustments, desfase_valor: handleNumericInput(e.target.value) })}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          placeholder="$0"
+                          disabled={desfaseSugerido !== null}
+                        />
+                      </div>
+
+                      {/* Nota Explicativa */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          Nota Explicativa (Responsable/Causa) *
+                        </label>
+                        <div className="relative">
+                          <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                          <textarea
+                            id="desfase-nota"
+                            value={adjustments.desfase_nota}
+                            onChange={(e) => setAdjustments({ ...adjustments, desfase_nota: e.target.value })}
+                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
+                            placeholder="Ej: Faltante por error en vueltas - Responsable: María González"
+                            rows="3"
+                            minLength="4"
+                          />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Mínimo 4 caracteres. Explica la causa y responsable del desfase.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1479,13 +1477,12 @@ const Dashboard = () => {
 
               {/* Sección de Validación */}
               {results.validation && (
-                <div className={`mb-4 sm:mb-6 p-4 rounded-xl border-2 ${
-                  results.validation.validation_status === 'success'
+                <div className={`mb-4 sm:mb-6 p-4 rounded-xl border-2 ${results.validation.validation_status === 'success'
                     ? 'bg-green-50 border-green-200'
                     : results.validation.validation_status === 'warning'
-                    ? 'bg-yellow-50 border-yellow-200'
-                    : 'bg-red-50 border-red-200'
-                }`}>
+                      ? 'bg-yellow-50 border-yellow-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}>
                   <div className="flex items-start gap-3">
                     {results.validation.validation_status === 'success' ? (
                       <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1493,18 +1490,16 @@ const Dashboard = () => {
                       <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
                     )}
                     <div className="flex-1">
-                      <h3 className={`text-lg font-semibold mb-2 ${
-                        results.validation.validation_status === 'success'
+                      <h3 className={`text-lg font-semibold mb-2 ${results.validation.validation_status === 'success'
                           ? 'text-green-900'
                           : 'text-yellow-900'
-                      }`}>
+                        }`}>
                         Estado de Validación
                       </h3>
-                      <p className={`text-sm mb-3 ${
-                        results.validation.validation_status === 'success'
+                      <p className={`text-sm mb-3 ${results.validation.validation_status === 'success'
                           ? 'text-green-800'
                           : 'text-yellow-800'
-                      }`}>
+                        }`}>
                         {results.validation.mensaje_validacion}
                       </p>
 
@@ -2045,13 +2040,12 @@ const Dashboard = () => {
                       </span>
                     </div>
                     {results.cash_count.base.mensaje_base && (
-                      <div className={`mt-2 p-2 rounded-lg text-xs ${
-                        results.cash_count.base.base_status === 'exacto'
+                      <div className={`mt-2 p-2 rounded-lg text-xs ${results.cash_count.base.base_status === 'exacto'
                           ? 'bg-green-100 text-green-800 border border-green-200'
                           : results.cash_count.base.base_status === 'sobrante'
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}>
+                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                            : 'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
                         <div className="flex items-start gap-1">
                           {results.cash_count.base.base_status === 'exacto' ? (
                             <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />
