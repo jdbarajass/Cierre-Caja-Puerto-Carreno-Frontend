@@ -1499,10 +1499,10 @@ const Dashboard = () => {
               {/* Sección de Validación */}
               {results.validation && (
                 <div className={`mb-4 sm:mb-6 p-4 rounded-xl border-2 ${results.validation.validation_status === 'success'
-                    ? 'bg-green-50 border-green-200'
-                    : results.validation.validation_status === 'warning'
-                      ? 'bg-yellow-50 border-yellow-200'
-                      : 'bg-red-50 border-red-200'
+                  ? 'bg-green-50 border-green-200'
+                  : results.validation.validation_status === 'warning'
+                    ? 'bg-yellow-50 border-yellow-200'
+                    : 'bg-red-50 border-red-200'
                   }`}>
                   <div className="flex items-start gap-3">
                     {results.validation.validation_status === 'success' ? (
@@ -1512,14 +1512,14 @@ const Dashboard = () => {
                     )}
                     <div className="flex-1">
                       <h3 className={`text-lg font-semibold mb-2 ${results.validation.validation_status === 'success'
-                          ? 'text-green-900'
-                          : 'text-yellow-900'
+                        ? 'text-green-900'
+                        : 'text-yellow-900'
                         }`}>
                         Estado de Validación
                       </h3>
                       <p className={`text-sm mb-3 ${results.validation.validation_status === 'success'
-                          ? 'text-green-800'
-                          : 'text-yellow-800'
+                        ? 'text-green-800'
+                        : 'text-yellow-800'
                         }`}>
                         {results.validation.mensaje_validacion}
                       </p>
@@ -1633,7 +1633,7 @@ const Dashboard = () => {
                     <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
                       <div className="text-[10px] font-semibold mb-0.5 opacity-90">EFECTIVO VENTAS (ALEGRA)</div>
                       <div className="text-lg font-bold">
-                        {results.detalle_consignacion?.venta_efectivo_formatted || results.alegra.results.cash.formatted}
+                        {results.alegra.results.cash.formatted}
                       </div>
                     </div>
                   )}
@@ -1647,7 +1647,7 @@ const Dashboard = () => {
                       </div>
                       {/* Mostrar detalle desglosado si existe */}
                       {results.detalle_consignacion?.detalle && (
-                        <div className="text-[9px] opacity-75 mt-1 font-mono">
+                        <div className="text-[11px] opacity-90 mt-1.5 font-mono leading-relaxed">
                           {results.detalle_consignacion.detalle}
                         </div>
                       )}
@@ -2046,7 +2046,7 @@ const Dashboard = () => {
                       </div>
                       <div>
                         <div className="text-gray-600 mb-1">Venta Efectivo Alegra</div>
-                        <div className="font-semibold">{results.cash_count.adjustments.venta_efectivo_diaria_alegra_formatted}</div>
+                        <div className="font-semibold">{results.alegra.results.cash.formatted}</div>
                       </div>
                     </div>
 
@@ -2127,10 +2127,10 @@ const Dashboard = () => {
                     </div>
                     {results.cash_count.base.mensaje_base && (
                       <div className={`mt-2 p-2 rounded-lg text-xs ${results.cash_count.base.base_status === 'exacto'
-                          ? 'bg-green-100 text-green-800 border border-green-200'
-                          : results.cash_count.base.base_status === 'sobrante'
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                            : 'bg-red-100 text-red-800 border border-red-200'
+                        ? 'bg-green-100 text-green-800 border border-green-200'
+                        : results.cash_count.base.base_status === 'sobrante'
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          : 'bg-red-100 text-red-800 border border-red-200'
                         }`}>
                         <div className="flex items-start gap-1">
                           {results.cash_count.base.base_status === 'exacto' ? (
