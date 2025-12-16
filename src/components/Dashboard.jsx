@@ -9,7 +9,6 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
-import SalesComparisonYoY from './SalesComparisonYoY';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -1583,9 +1582,6 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-
-              {/* Comparación con Año Anterior */}
-              <SalesComparisonYoY date={closingDate} />
 
               {/* Resumen de Cierre */}
               <div className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
