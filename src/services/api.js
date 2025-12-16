@@ -280,7 +280,28 @@ export const submitCashClosing = async (payload) => {
   return await response.json();
 };
 
+/**
+ * Función para obtener comparación de ventas año sobre año
+ * @param {string} date - Fecha opcional en formato YYYY-MM-DD (si no se proporciona, usa la fecha actual)
+ * @returns {Promise} - Promesa con los datos de comparación
+ */
+export const getSalesComparisonYoY = async (date = null) => {
+  const endpoint = date ? `/api/sales_comparison_yoy?date=${date}` : '/api/sales_comparison_yoy';
+
+  const response = await authenticatedFetch(endpoint, {
+    method: 'GET',
+  }, 60000); // Timeout de 60 segundos para esta petición
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al obtener comparación de ventas');
+  }
+
+  return await response.json();
+};
+
 export default {
   authenticatedFetch,
   submitCashClosing,
+  getSalesComparisonYoY,
 };
