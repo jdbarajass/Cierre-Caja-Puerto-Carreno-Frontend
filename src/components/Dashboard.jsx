@@ -626,6 +626,7 @@ const Dashboard = () => {
                       value={coins[denom]}
                       onChange={(e) => setCoins({ ...coins, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
+                      maxLength="9"
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
                     />
@@ -660,6 +661,7 @@ const Dashboard = () => {
                       value={bills[denom]}
                       onChange={(e) => setBills({ ...bills, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
+                      maxLength="9"
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
                     />
@@ -700,6 +702,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.nequi_luz_helena)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -712,6 +715,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.daviplata_jose)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -724,6 +728,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.qr_julieth)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -751,6 +756,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.addi_datafono)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -763,6 +769,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.tarjeta_debito)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -775,6 +782,7 @@ const Dashboard = () => {
                         value={formatNumberWithThousands(metodosPago.tarjeta_credito)}
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
+                        maxLength="9"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                         placeholder="0"
                       />
@@ -851,6 +859,7 @@ const Dashboard = () => {
                             value={formatNumberWithThousands(excedente.valor)}
                             onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
                             onFocus={(e) => e.target.select()}
+                            maxLength="9"
                             className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                             placeholder="$0"
                           />
@@ -890,6 +899,7 @@ const Dashboard = () => {
                     value={formatNumberWithThousands(adjustments.gastos_operativos)}
                     onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
                     onFocus={(e) => e.target.select()}
+                    maxLength="9"
                     className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                     placeholder="$0"
                   />
@@ -914,6 +924,7 @@ const Dashboard = () => {
                     value={formatNumberWithThousands(adjustments.prestamos)}
                     onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
                     onFocus={(e) => e.target.select()}
+                    maxLength="9"
                     className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
                     placeholder="$0"
                   />
@@ -1005,6 +1016,7 @@ const Dashboard = () => {
                           value={formatNumberWithThousands(adjustments.desfase_valor)}
                           onChange={(e) => setAdjustments({ ...adjustments, desfase_valor: handleNumericInput(e.target.value) })}
                           onFocus={(e) => e.target.select()}
+                          maxLength="9"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                           placeholder="$0"
                           disabled={desfaseSugerido !== null}
@@ -1698,44 +1710,44 @@ const Dashboard = () => {
                   {(results.metodos_pago_registrados.nequi_luz_helena > 0 ||
                     results.metodos_pago_registrados.daviplata_jose > 0 ||
                     results.metodos_pago_registrados.qr_julieth > 0) && (
-                    <div className="bg-white rounded-lg p-3 border border-purple-200 shadow-sm">
-                      <div className="text-xs font-medium text-gray-600 mb-2">Transferencias</div>
-                      <div className="space-y-1 text-xs">
-                        {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Nequi:</span>
-                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</span>
-                          </div>
-                        )}
-                        {results.metodos_pago_registrados.daviplata_jose > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Daviplata:</span>
-                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</span>
-                          </div>
-                        )}
-                        {results.metodos_pago_registrados.qr_julieth > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">QR:</span>
-                            <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.qr_julieth)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between pt-1 border-t border-gray-200">
-                          <span className="text-gray-700 font-medium">Total:</span>
-                          <span className="font-bold text-purple-700">
-                            {results.metodos_pago_registrados.total_transferencias_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
-                          </span>
-                        </div>
-                        {/* Mostrar detalle con excedentes si existe */}
-                        {results.metodos_pago_registrados.detalle_transferencias && (
-                          <div className="pt-1 mt-1 border-t border-purple-100">
-                            <div className="text-xs text-gray-600 italic bg-purple-50 rounded p-2">
-                              {results.metodos_pago_registrados.detalle_transferencias}
+                      <div className="bg-white rounded-lg p-3 border border-purple-200 shadow-sm">
+                        <div className="text-xs font-medium text-gray-600 mb-2">Transferencias</div>
+                        <div className="space-y-1 text-xs">
+                          {results.metodos_pago_registrados.nequi_luz_helena > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Nequi:</span>
+                              <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.nequi_luz_helena)}</span>
                             </div>
+                          )}
+                          {results.metodos_pago_registrados.daviplata_jose > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Daviplata:</span>
+                              <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.daviplata_jose)}</span>
+                            </div>
+                          )}
+                          {results.metodos_pago_registrados.qr_julieth > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">QR:</span>
+                              <span className="font-semibold">{formatCurrency(results.metodos_pago_registrados.qr_julieth)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between pt-1 border-t border-gray-200">
+                            <span className="text-gray-700 font-medium">Total:</span>
+                            <span className="font-bold text-purple-700">
+                              {results.metodos_pago_registrados.total_transferencias_con_excedente_formatted || formatCurrency(results.metodos_pago_registrados.total_transferencias_registradas)}
+                            </span>
                           </div>
-                        )}
+                          {/* Mostrar detalle con excedentes si existe */}
+                          {results.metodos_pago_registrados.detalle_transferencias && (
+                            <div className="pt-1 mt-1 border-t border-purple-100">
+                              <div className="text-xs text-gray-600 italic bg-purple-50 rounded p-2">
+                                {results.metodos_pago_registrados.detalle_transferencias}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Datafono - Solo si hay tarjetas */}
                   {(results.metodos_pago_registrados.tarjeta_debito > 0 || results.metodos_pago_registrados.tarjeta_credito > 0) && (
