@@ -86,13 +86,13 @@ export const getSalesTotals = async (params = {}) => {
 };
 
 /**
- * Obtiene los documentos de ventas detallados (facturas)
+ * Obtiene TODOS los documentos de ventas detallados (facturas) para un rango de fechas
+ * El backend ahora implementa paginación automática y trae TODAS las facturas (30 en 30)
+ *
  * @param {Object} params - Parámetros de consulta
  * @param {string} params.from - Fecha de inicio (YYYY-MM-DD) - REQUERIDO
  * @param {string} params.to - Fecha de fin (YYYY-MM-DD) - REQUERIDO
- * @param {number} params.limit - Límite de resultados (default: 30)
- * @param {number} params.start - Offset para paginación (default: 0)
- * @returns {Promise<Object>} - Datos de documentos de ventas
+ * @returns {Promise<Object>} - Datos con TODOS los documentos de ventas
  */
 export const getSalesDocuments = async (params = {}) => {
   try {
@@ -103,13 +103,11 @@ export const getSalesDocuments = async (params = {}) => {
     const queryParams = new URLSearchParams();
     queryParams.append('from', params.from);
     queryParams.append('to', params.to);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.start) queryParams.append('start', params.start.toString());
 
     const queryString = queryParams.toString();
     const endpoint = `/api/direct/sales/documents?${queryString}`;
 
-    logger.info('Obteniendo documentos de ventas (API Directa):', params);
+    logger.info('Obteniendo TODOS los documentos de ventas (API Directa con paginación automática):', params);
     const response = await authenticatedFetch(endpoint, { method: 'GET' }, DIRECT_API_TIMEOUT);
 
     if (!response.ok) {
@@ -124,8 +122,44 @@ export const getSalesDocuments = async (params = {}) => {
   }
 };
 
+/**
+ * Obtiene un resumen rápido de ventas (endpoint rápido)
+ * @param {Object} params - Parámetros de consulta
+ * @param {string} params.from - Fecha de inicio (YYYY-MM-DD) - REQUERIDO
+ * @param {string} params.to - Fecha de fin (YYYY-MM-DD) - REQUERIDO
+ * @returns {Promise<Object>} - Resumen rápido de ventas
+ */
+export const getQuickSalesSummary = async (params = {}) => {
+  try {
+    if (!params.from || !params.to) {
+      throw new Error('Los parámetros "from" y "to" son requeridos');
+    }
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('from', params.from);
+    queryParams.append('to', params.to);
+
+    const queryString = queryParams.toString();
+    const endpoint = `/api/sales/quick-summary?${queryString}`;
+
+    logger.info('Obteniendo resumen rápido de ventas:', params);
+    const response = await authenticatedFetch(endpoint, { method: 'GET' }, 30000); // 30 segundos timeout
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error al obtener resumen de ventas');
+    }
+
+    return await response.json();
+  } catch (error) {
+    logger.error('Error en getQuickSalesSummary:', error);
+    throw error;
+  }
+};
+
 export default {
   getInventoryValueReport,
   getSalesTotals,
   getSalesDocuments,
+  getQuickSalesSummary,
 };

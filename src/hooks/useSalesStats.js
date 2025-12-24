@@ -15,7 +15,10 @@ export const useSalesStats = () => {
     error: null
   });
 
-  const fetchSalesStats = async () => {
+  const fetchSalesStats = async (retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 8000; // 8 segundos de espera entre reintentos
+
     try {
       // Obtener fecha actual en Colombia usando la utilidad correcta
       const today = getColombiaTodayString(); // YYYY-MM-DD en hora de Colombia
@@ -26,11 +29,21 @@ export const useSalesStats = () => {
       const month = String(colombiaDate.getMonth() + 1).padStart(2, '0');
       const startDate = `${year}-${month}-01`;
 
-      logger.info('📊 Obteniendo estadísticas de ventas (quick-summary)', { today, startDate });
+      logger.info('📊 Obteniendo estadísticas de ventas (quick-summary)', { today, startDate, retryCount });
       console.log('📅 Fechas:', { today, startDate });
 
-      // Timeout más corto ya que el endpoint es más rápido (30 segundos)
-      const SALES_TIMEOUT = 30000;
+      // Si es un reintento, mostrar mensaje al usuario
+      if (retryCount > 0) {
+        console.log(`🔄 Reintento ${retryCount}/${MAX_RETRIES} - El servidor se está iniciando...`);
+        setSalesStats(prev => ({
+          ...prev,
+          loading: true,
+          error: `Servidor iniciando... Intento ${retryCount}/${MAX_RETRIES}`
+        }));
+      }
+
+      // Timeout más largo para dar tiempo al servidor a iniciarse (60 segundos)
+      const SALES_TIMEOUT = 60000;
 
       // Peticiones en paralelo usando el nuevo endpoint rápido
       const [dailyResponse, monthlyResponse] = await Promise.all([
@@ -81,6 +94,27 @@ export const useSalesStats = () => {
       const monthlySales = monthlyResponse?.total_sales || 0;
       console.log('💰 Venta del mes procesada:', monthlySales, `(${monthlyResponse?.document_count || 0} documentos)`);
 
+      // Detectar si el servidor está en cold start (ambas respuestas son null o zero)
+      const isColdStart = (!dailyResponse && !monthlyResponse) || (dailySales === 0 && monthlySales === 0 && retryCount === 0);
+
+      // Si es cold start y no hemos alcanzado el máximo de reintentos, reintentar
+      if (isColdStart && retryCount < MAX_RETRIES) {
+        console.log(`⏳ Servidor posiblemente en cold start. Esperando ${RETRY_DELAY/1000} segundos antes de reintentar...`);
+        setSalesStats({
+          dailySales: 0,
+          monthlySales: 0,
+          loading: true,
+          error: `El servidor se está iniciando. Reintentando en ${RETRY_DELAY/1000} segundos... (${retryCount + 1}/${MAX_RETRIES})`
+        });
+
+        // Esperar antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+
+        // Reintentar
+        return fetchSalesStats(retryCount + 1);
+      }
+
+      // Si llegamos aquí, o tenemos datos válidos o alcanzamos el máximo de reintentos
       setSalesStats({
         dailySales,
         monthlySales,
@@ -93,10 +127,30 @@ export const useSalesStats = () => {
     } catch (error) {
       console.error('❌ Error general al obtener estadísticas:', error);
       logger.error('Error al obtener estadísticas de ventas', error);
+
+      // Si es un error de red/timeout y no hemos alcanzado el máximo de reintentos
+      if (retryCount < MAX_RETRIES && (error.name === 'TypeError' || error.message.includes('timeout') || error.message.includes('network'))) {
+        console.log(`⏳ Error de conexión. Esperando ${RETRY_DELAY/1000} segundos antes de reintentar...`);
+        setSalesStats(prev => ({
+          ...prev,
+          loading: true,
+          error: `Conectando al servidor... Reintentando en ${RETRY_DELAY/1000} segundos... (${retryCount + 1}/${MAX_RETRIES})`
+        }));
+
+        // Esperar antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+
+        // Reintentar
+        return fetchSalesStats(retryCount + 1);
+      }
+
+      // Si alcanzamos el máximo de reintentos o es otro tipo de error
       setSalesStats(prev => ({
         ...prev,
         loading: false,
-        error: error.message
+        error: retryCount >= MAX_RETRIES
+          ? 'El servidor no responde. Por favor, intenta nuevamente en unos minutos.'
+          : error.message
       }));
     }
   };
