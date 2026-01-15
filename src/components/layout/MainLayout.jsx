@@ -34,6 +34,7 @@ const MainLayout = ({ children }) => {
     dailyComparison,
     monthlyComparison,
     nextDayLastYear,
+    previousDay,
     loading: salesLoading
   } = useSalesComparison();
 
@@ -364,9 +365,11 @@ const MainLayout = ({ children }) => {
                     <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Día</h3>
 
                     {salesLoading ? (
-                      <div className="animate-pulse">
-                        <div className="h-12 bg-gray-200 rounded w-3/4 mb-3"></div>
-                        <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+                      <div className="flex items-center justify-center py-8">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                          <span className="text-sm">Cargando...</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -377,32 +380,57 @@ const MainLayout = ({ children }) => {
                           </p>
                         </div>
 
-                        {/* NIVEL 2: Comparación - SECUNDARIO */}
-                        {dailyComparison && (
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-500">vs 2024:</span>
-                            <span className="text-sm font-medium text-gray-600">{dailyComparison.previous.formatted}</span>
-                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-                              dailyComparison.isGrowth
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
-                            }`}>
-                              <span className="text-xs font-semibold">
-                                {dailyComparison.isGrowth ? '↑' : '↓'} {Math.abs(dailyComparison.percentageChange)}%
-                              </span>
+                        {/* NIVEL 2: Fechas del año anterior con porcentajes */}
+                        <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
+                          {/* Fecha de hace un año */}
+                          {dailyComparison && dailyComparison.previous && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Venta {dailyComparison.previous.date}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{dailyComparison.previous.formatted}</span>
+                                {(() => {
+                                  const prevTotal = dailyComparison.previous.total || 0;
+                                  const currentTotal = dailySales || 0;
+                                  const percentage = prevTotal > 0
+                                    ? ((currentTotal - prevTotal) / prevTotal) * 100
+                                    : (currentTotal > 0 ? 100 : 0);
+                                  const isGrowth = percentage >= 0;
+                                  return (
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                      isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                    }`}>
+                                      {isGrowth ? '↑' : '↓'} {Math.abs(Math.round(percentage * 100) / 100)}%
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* NIVEL 3: Detalle - TERCIARIO */}
-                        {nextDayLastYear && nextDayLastYear.date && (
-                          <div className="pt-3 mt-3 border-t border-gray-100">
+                          )}
+                          {/* Día siguiente del año anterior */}
+                          {nextDayLastYear && nextDayLastYear.date && (
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">Venta {nextDayLastYear.date}</span>
-                              <span className="font-medium text-gray-700">{nextDayLastYear.formatted}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{nextDayLastYear.formatted}</span>
+                                {(() => {
+                                  const nextDayTotal = nextDayLastYear.total || 0;
+                                  const currentTotal = dailySales || 0;
+                                  const percentage = nextDayTotal > 0
+                                    ? ((currentTotal - nextDayTotal) / nextDayTotal) * 100
+                                    : (currentTotal > 0 ? 100 : 0);
+                                  const isGrowth = percentage >= 0;
+                                  return (
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                      isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                    }`}>
+                                      {isGrowth ? '↑' : '↓'} {Math.abs(Math.round(percentage * 100) / 100)}%
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -420,9 +448,11 @@ const MainLayout = ({ children }) => {
                     <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Mes</h3>
 
                     {salesLoading ? (
-                      <div className="animate-pulse">
-                        <div className="h-12 bg-gray-200 rounded w-3/4 mb-3"></div>
-                        <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+                      <div className="flex items-center justify-center py-8">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                          <span className="text-sm">Cargando...</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -433,19 +463,19 @@ const MainLayout = ({ children }) => {
                           </p>
                         </div>
 
-                        {/* NIVEL 2: Comparación - SECUNDARIO */}
-                        {monthlyComparison && (
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-500">vs 2024:</span>
-                            <span className="text-sm font-medium text-gray-600">{monthlyComparison.previous.formatted}</span>
-                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-                              monthlyComparison.isGrowth
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
-                            }`}>
-                              <span className="text-xs font-semibold">
-                                {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
-                              </span>
+                        {/* NIVEL 2: Comparación con año anterior */}
+                        {monthlyComparison && monthlyComparison.previous && (
+                          <div className="pt-3 mt-3 border-t border-gray-100">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Mes {monthlyComparison.previous.period.split('-')[0]}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{monthlyComparison.previous.formatted}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                  monthlyComparison.isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                }`}>
+                                  {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
+                                </span>
+                              </div>
                             </div>
                           </div>
                         )}

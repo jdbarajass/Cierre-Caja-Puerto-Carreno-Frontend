@@ -18,6 +18,7 @@ export const useSalesComparison = () => {
     dailyComparison: null,
     monthlyComparison: null,
     nextDayLastYear: null,
+    previousDay: null, // Día anterior (ayer)
     loading: true,
     error: null
   });
@@ -44,6 +45,14 @@ export const useSalesComparison = () => {
       const nextDayDay = String(nextDayLastYearDate.getDate()).padStart(2, '0');
       const nextDayLastYear = `${nextDayYear}-${nextDayMonth}-${nextDayDay}`;
 
+      // Calcular día anterior (ayer)
+      const previousDayDate = new Date(colombiaDate);
+      previousDayDate.setDate(previousDayDate.getDate() - 1);
+      const prevYear = previousDayDate.getFullYear();
+      const prevMonth = String(previousDayDate.getMonth() + 1).padStart(2, '0');
+      const prevDay = String(previousDayDate.getDate()).padStart(2, '0');
+      const yesterday = `${prevYear}-${prevMonth}-${prevDay}`;
+
       // Obtener el primer día del mes actual y año anterior
       const currentYear = colombiaDate.getFullYear();
       const currentMonth = String(colombiaDate.getMonth() + 1).padStart(2, '0');
@@ -52,6 +61,7 @@ export const useSalesComparison = () => {
 
       logger.info('📊 Obteniendo estadísticas de ventas (optimizado - grupos secuenciales)', {
         today,
+        yesterday,
         todayLastYear,
         nextDayLastYear,
         startOfMonth,
@@ -77,11 +87,12 @@ export const useSalesComparison = () => {
       ]);
       logger.info('✅ Grupo 1 completado');
 
-      // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior - 3 peticiones en paralelo
+      // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior y ayer - 4 peticiones en paralelo
       // Estos datos son para comparación, menos críticos
-      logger.info('🔄 Grupo 2: Obteniendo datos año anterior (comparación)...');
-      logger.info(`📅 Petición día siguiente: /api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`);
-      const [previousDayResponse, nextDayLastYearResponse, previousMonthResponse] = await Promise.all([
+      logger.info('🔄 Grupo 2: Obteniendo datos año anterior y día anterior (comparación)...');
+      logger.info(`📅 Petición día siguiente año anterior: /api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`);
+      logger.info(`📅 Petición día anterior (ayer): /api/sales/quick-summary?from=${yesterday}&to=${yesterday}`);
+      const [previousDayResponse, nextDayLastYearResponse, yesterdayResponse, previousMonthResponse] = await Promise.all([
         // Mismo día año anterior
         authenticatedFetch(`/api/sales/quick-summary?from=${todayLastYear}&to=${todayLastYear}`, {
           method: 'GET',
@@ -89,6 +100,11 @@ export const useSalesComparison = () => {
 
         // Día siguiente del año anterior
         authenticatedFetch(`/api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`, {
+          method: 'GET',
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
+
+        // Día anterior (ayer)
+        authenticatedFetch(`/api/sales/quick-summary?from=${yesterday}&to=${yesterday}`, {
           method: 'GET',
         }).then(res => res.ok ? res.json() : null).catch(() => null),
 
@@ -122,6 +138,15 @@ export const useSalesComparison = () => {
         fecha: nextDayLastYear,
         respuesta: nextDayLastYearResponse,
         total: nextDayTotal
+      });
+
+      // Procesar datos del día anterior (ayer)
+      const yesterdayTotal = yesterdayResponse?.total_sales || 0;
+
+      logger.info('📅 Día anterior (ayer):', {
+        fecha: yesterday,
+        respuesta: yesterdayResponse,
+        total: yesterdayTotal
       });
 
       // Formatear moneda
@@ -175,6 +200,11 @@ export const useSalesComparison = () => {
           date: nextDayLastYear,
           total: nextDayTotal,
           formatted: formatCurrency(nextDayTotal)
+        },
+        previousDay: {
+          date: yesterday,
+          total: yesterdayTotal,
+          formatted: formatCurrency(yesterdayTotal)
         },
         loading: false,
         error: null

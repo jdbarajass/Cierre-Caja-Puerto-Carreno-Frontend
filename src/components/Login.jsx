@@ -10,6 +10,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [retryInfo, setRetryInfo] = useState(null);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,9 +22,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setRetryInfo(null);
 
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, (info) => {
+        setRetryInfo(info);
+      });
 
       if (result.success) {
         navigate('/');
@@ -34,6 +38,7 @@ const Login = () => {
       setError('Error al iniciar sesión. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
+      setRetryInfo(null);
     }
   };
 
@@ -69,6 +74,21 @@ const Login = () => {
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Retry Info Message */}
+          {retryInfo && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0 mt-0.5"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900">{retryInfo.message}</p>
+                {retryInfo.isWaiting && (
+                  <p className="text-xs text-blue-700 mt-1">
+                    El servidor está iniciando, por favor espera...
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

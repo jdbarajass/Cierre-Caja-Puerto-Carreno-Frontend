@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, onRetryUpdate = null) => {
     // Verificar bloqueo por intentos fallidos
     if (isLockedOut()) {
       const timeLeft = Math.ceil((lockoutUntil - Date.now()) / 1000 / 60);
@@ -93,67 +93,115 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: 'La contraseña debe tener al menos 8 caracteres' };
     }
 
-    try {
-      // Llamar al backend para autenticación real con JWT
-      const response = await authenticatedFetch('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+    // Configuración de reintentos para servidor que puede estar en sleep mode
+    const MAX_RETRIES = 4; // Total 4 intentos (1 inicial + 3 reintentos)
+    const RETRY_DELAYS = [3000, 5000, 8000]; // Delays en ms entre reintentos
 
-      const data = await response.json();
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Notificar el intento actual
+        if (onRetryUpdate && attempt > 1) {
+          onRetryUpdate({
+            attempt,
+            maxAttempts: MAX_RETRIES,
+            message: `Reintentando conexión... (${attempt}/${MAX_RETRIES})`
+          });
+        }
 
-      if (!response.ok) {
-        // Incrementar intentos fallidos
-        const newAttempts = loginAttempts + 1;
-        setLoginAttempts(newAttempts);
+        logger.info(`Intento de login ${attempt}/${MAX_RETRIES} para:`, email);
 
-        if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-          const lockout = Date.now() + LOCKOUT_TIME;
-          setLockoutUntil(lockout);
-          logger.warn(`Cuenta bloqueada después de ${MAX_LOGIN_ATTEMPTS} intentos fallidos`);
+        // Llamar al backend para autenticación real con JWT
+        const response = await authenticatedFetch('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Si es un error de credenciales (400, 401), NO reintentar
+          if (response.status === 400 || response.status === 401) {
+            // Incrementar intentos fallidos
+            const newAttempts = loginAttempts + 1;
+            setLoginAttempts(newAttempts);
+
+            if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+              const lockout = Date.now() + LOCKOUT_TIME;
+              setLockoutUntil(lockout);
+              logger.warn(`Cuenta bloqueada después de ${MAX_LOGIN_ATTEMPTS} intentos fallidos`);
+              return {
+                success: false,
+                error: `Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.`
+              };
+            }
+
+            logger.warn(`Intento de login fallido (${newAttempts}/${MAX_LOGIN_ATTEMPTS})`);
+            return {
+              success: false,
+              error: data.message || `Credenciales incorrectas (${newAttempts}/${MAX_LOGIN_ATTEMPTS} intentos)`
+            };
+          }
+
+          // Para otros errores HTTP, continuar con reintentos
+          throw new Error(data.message || 'Error del servidor');
+        }
+
+        // Login exitoso - resetear intentos
+        setLoginAttempts(0);
+        setLockoutUntil(null);
+
+        // Guardar token JWT y datos del usuario del backend
+        const jwtToken = data.token;
+        const userData = {
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
+          loginTime: new Date().toISOString()
+        };
+
+        // Guardar en almacenamiento seguro
+        secureSetItem('authToken', jwtToken);
+        secureSetItem('authUser', userData);
+
+        setToken(jwtToken);
+        setUser(userData);
+
+        logger.info('Login exitoso para:', email);
+        return { success: true };
+
+      } catch (error) {
+        logger.error(`Error en intento ${attempt}/${MAX_RETRIES}:`, error.message);
+
+        // Si es el último intento, retornar error
+        if (attempt === MAX_RETRIES) {
           return {
             success: false,
-            error: `Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos.`
+            error: 'El servidor no responde. Por favor verifica tu conexión o intenta más tarde.'
           };
         }
 
-        logger.warn(`Intento de login fallido (${newAttempts}/${MAX_LOGIN_ATTEMPTS})`);
-        return {
-          success: false,
-          error: data.message || `Credenciales incorrectas (${newAttempts}/${MAX_LOGIN_ATTEMPTS} intentos)`
-        };
+        // Si no es el último intento, esperar antes de reintentar
+        const delay = RETRY_DELAYS[attempt - 1];
+        logger.info(`Esperando ${delay}ms antes del próximo intento...`);
+
+        if (onRetryUpdate) {
+          onRetryUpdate({
+            attempt,
+            maxAttempts: MAX_RETRIES,
+            message: `Servidor iniciando... Reintentando en ${delay / 1000}s`,
+            isWaiting: true
+          });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-
-      // Login exitoso - resetear intentos
-      setLoginAttempts(0);
-      setLockoutUntil(null);
-
-      // Guardar token JWT y datos del usuario del backend
-      const jwtToken = data.token;
-      const userData = {
-        email: data.user.email,
-        name: data.user.name,
-        role: data.user.role,
-        loginTime: new Date().toISOString()
-      };
-
-      // Guardar en almacenamiento seguro
-      secureSetItem('authToken', jwtToken);
-      secureSetItem('authUser', userData);
-
-      setToken(jwtToken);
-      setUser(userData);
-
-      logger.info('Login exitoso para:', email);
-      return { success: true };
-
-    } catch (error) {
-      logger.error('Error en login:', error.message);
-      return {
-        success: false,
-        error: 'Error al conectar con el servidor. Por favor intente nuevamente.'
-      };
     }
+
+    // Este código no debería alcanzarse, pero por seguridad
+    return {
+      success: false,
+      error: 'Error al conectar con el servidor. Por favor intente nuevamente.'
+    };
   };
 
   const logout = () => {
