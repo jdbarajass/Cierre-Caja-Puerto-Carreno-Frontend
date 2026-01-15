@@ -467,7 +467,20 @@ const MainLayout = ({ children }) => {
                         {monthlyComparison && monthlyComparison.previous && (
                           <div className="pt-3 mt-3 border-t border-gray-100">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Mes {monthlyComparison.previous.period.split('-')[0]}</span>
+                              <span className="text-gray-500">
+                                {(() => {
+                                  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                                  const periodo = monthlyComparison.previous.period;
+                                  const partes = periodo.split('-');
+                                  if (partes.length >= 2) {
+                                    const year = partes[0];
+                                    const monthNum = parseInt(partes[1], 10);
+                                    const monthName = meses[monthNum - 1] || '';
+                                    return monthName ? `${monthName} ${year}` : year;
+                                  }
+                                  return periodo;
+                                })()}
+                              </span>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-gray-700">{monthlyComparison.previous.formatted}</span>
                                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
