@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Calendar, DollarSign, TrendingUp, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { submitCashClosing } from '../services/api';
+import { submitCashClosing, getPreconsulta } from '../services/api';
 import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -34,6 +34,12 @@ const Dashboard = () => {
   const [downloadFormat, setDownloadFormat] = useState('jpeg');
   const [desfaseSugerido, setDesfaseSugerido] = useState(null);
   const [showDesfaseSection, setShowDesfaseSection] = useState(false);
+
+  // Estados para la preconsulta
+  const [preconsultaData, setPreconsultaData] = useState(null);
+  const [preconsultaRealizada, setPreconsultaRealizada] = useState(false);
+  const [loadingPreconsulta, setLoadingPreconsulta] = useState(false);
+  const [errorPreconsulta, setErrorPreconsulta] = useState(null);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -179,6 +185,37 @@ const Dashboard = () => {
       desfase_nota: ''
     });
     setDesfaseSugerido(null);
+  };
+
+  // Función para realizar la preconsulta a Alegra
+  const handlePreconsulta = async () => {
+    setLoadingPreconsulta(true);
+    setErrorPreconsulta(null);
+
+    try {
+      const data = await getPreconsulta(closingDate);
+
+      if (data.success) {
+        setPreconsultaData(data);
+        setPreconsultaRealizada(true);
+        setErrorPreconsulta(null);
+      } else {
+        setErrorPreconsulta(data.error || 'Error al realizar la preconsulta');
+        setPreconsultaRealizada(false);
+      }
+    } catch (err) {
+      setErrorPreconsulta(err.message || 'Error de conexión al realizar la preconsulta');
+      setPreconsultaRealizada(false);
+    } finally {
+      setLoadingPreconsulta(false);
+    }
+  };
+
+  // Función para resetear la preconsulta (cuando cambia la fecha)
+  const resetPreconsulta = () => {
+    setPreconsultaData(null);
+    setPreconsultaRealizada(false);
+    setErrorPreconsulta(null);
   };
 
   const handleSubmit = async () => {
@@ -599,14 +636,153 @@ const Dashboard = () => {
                   setTimeout(() => setValidationWarning(null), 5000);
                 } else {
                   setClosingDate(selectedDate);
+                  resetPreconsulta(); // Resetear preconsulta al cambiar fecha
                 }
               }}
               max={getColombiaTodayString()}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
               required
             />
+
+            {/* Botón de Preconsulta */}
+            {!preconsultaRealizada && (
+              <div className="mt-4">
+                <button
+                  onClick={handlePreconsulta}
+                  disabled={loadingPreconsulta}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
+                >
+                  {loadingPreconsulta ? (
+                    <>
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                      Consultando Alegra...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                      Realizar Preconsulta
+                    </>
+                  )}
+                </button>
+
+                {/* Error de preconsulta */}
+                {errorPreconsulta && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-700">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <p className="text-sm">{errorPreconsulta}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Datos de la Preconsulta */}
+            {preconsultaRealizada && preconsultaData && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <h3 className="text-base font-semibold text-green-800">Datos de Alegra - {preconsultaData.date}</h3>
+                </div>
+
+                {/* Facturación Electrónica */}
+                {preconsultaData.facturacion_electronica && preconsultaData.facturacion_electronica.cantidad > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+                      <FileText className="w-4 h-4" />
+                      Facturación Electrónica
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-indigo-100">
+                        <p className="text-xs text-gray-500 mb-1">Factura Inicial</p>
+                        <p className="text-lg font-bold text-indigo-700">{preconsultaData.facturacion_electronica.factura_inicial || 'N/A'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-indigo-100">
+                        <p className="text-xs text-gray-500 mb-1">Factura Final</p>
+                        <p className="text-lg font-bold text-indigo-700">{preconsultaData.facturacion_electronica.factura_final || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-indigo-600 mt-1 text-right">{preconsultaData.facturacion_electronica.cantidad} facturas electrónicas</p>
+                  </div>
+                )}
+
+                {/* Facturación Principal */}
+                {preconsultaData.facturacion_principal && preconsultaData.facturacion_principal.cantidad > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1">
+                      <FileText className="w-4 h-4" />
+                      Facturación Principal
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-green-100">
+                        <p className="text-xs text-gray-500 mb-1">Factura Inicial</p>
+                        <p className="text-lg font-bold text-green-700">{preconsultaData.facturacion_principal.factura_inicial || 'N/A'}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-green-100">
+                        <p className="text-xs text-gray-500 mb-1">Factura Final</p>
+                        <p className="text-lg font-bold text-green-700">{preconsultaData.facturacion_principal.factura_final || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-600 mt-1 text-right">{preconsultaData.facturacion_principal.cantidad} facturas principales</p>
+                  </div>
+                )}
+
+                {/* Cantidad total de facturas */}
+                <div className="bg-white p-3 rounded-lg border border-green-100 mb-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Total Facturas Activas:</span>
+                    <span className="text-lg font-bold text-green-700">{preconsultaData.cantidad_facturas}</span>
+                  </div>
+                  {preconsultaData.facturas_anuladas > 0 && (
+                    <div className="flex justify-between items-center mt-1 text-orange-600">
+                      <span className="text-xs">Facturas Anuladas:</span>
+                      <span className="text-sm font-semibold">{preconsultaData.facturas_anuladas}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Totales por método de pago */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-white p-3 rounded-lg border border-blue-100">
+                    <p className="text-xs text-gray-500 mb-1">Efectivo</p>
+                    <p className="text-base font-bold text-blue-700">{preconsultaData.totales.efectivo.formatted}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-purple-100">
+                    <p className="text-xs text-gray-500 mb-1">Transferencia</p>
+                    <p className="text-base font-bold text-purple-700">{preconsultaData.totales.transferencia.formatted}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-orange-100">
+                    <p className="text-xs text-gray-500 mb-1">Tarjeta Débito</p>
+                    <p className="text-base font-bold text-orange-700">{preconsultaData.totales.tarjeta_debito.formatted}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-pink-100">
+                    <p className="text-xs text-gray-500 mb-1">Tarjeta Crédito</p>
+                    <p className="text-base font-bold text-pink-700">{preconsultaData.totales.tarjeta_credito.formatted}</p>
+                  </div>
+                </div>
+
+                {/* Total de ventas */}
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-lg text-white">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">TOTAL VENTAS DEL DÍA</span>
+                    <span className="text-xl font-bold">{preconsultaData.total_ventas.formatted}</span>
+                  </div>
+                </div>
+
+                {/* Botón para hacer nueva consulta */}
+                <button
+                  onClick={resetPreconsulta}
+                  className="mt-3 w-full text-sm text-gray-600 hover:text-gray-800 underline"
+                >
+                  Cambiar fecha / Nueva consulta
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* El resto del formulario solo se muestra si la preconsulta fue realizada */}
+          {preconsultaRealizada && (
+            <>
           {/* Monedas y Billetes */}
           <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -1119,6 +1295,8 @@ const Dashboard = () => {
               Limpiar
             </button>
           </div>
+            </>
+          )}
         </div>
 
         {/* Modal de Éxito */}

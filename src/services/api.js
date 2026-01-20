@@ -343,6 +343,25 @@ export const submitCashClosing = async (payload) => {
 };
 
 /**
+ * Función para realizar preconsulta a Alegra
+ * Obtiene resumen de ventas antes de hacer el cierre de caja
+ * @param {string} date - Fecha en formato YYYY-MM-DD
+ * @returns {Promise} - Promesa con los datos de la preconsulta
+ */
+export const getPreconsulta = async (date) => {
+  const response = await authenticatedFetch(`/api/preconsulta?date=${date}`, {
+    method: 'GET',
+  }, 60000); // Timeout de 60 segundos
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Error al realizar la preconsulta');
+  }
+
+  return await response.json();
+};
+
+/**
  * Función para obtener comparación de ventas año sobre año
  * @param {string} date - Fecha opcional en formato YYYY-MM-DD (si no se proporciona, usa la fecha actual)
  * @returns {Promise} - Promesa con los datos de comparación
@@ -379,6 +398,7 @@ export const getApiDocsUrl = () => {
 export default {
   authenticatedFetch,
   submitCashClosing,
+  getPreconsulta,
   getSalesComparisonYoY,
   getApiDocsUrl,
   clearBackendBlacklist,
