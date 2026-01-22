@@ -32,7 +32,9 @@ const MainLayout = ({ children }) => {
     dailySales,
     monthlySales,
     inventoryTotal,
+    billsOpenTotal,
     loadingInventory,
+    loadingBills,
     dailyComparison,
     monthlyComparison,
     nextDayLastYear,
@@ -457,7 +459,7 @@ const MainLayout = ({ children }) => {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-2">
                         {/* NIVEL 1: Valor Principal - PROTAGONISTA */}
                         <div>
                           <p className="text-4xl font-bold text-gray-900 leading-none">
@@ -467,7 +469,7 @@ const MainLayout = ({ children }) => {
 
                         {/* NIVEL 2: Comparación con año anterior */}
                         {monthlyComparison && monthlyComparison.previous && (
-                          <div className="pt-3 mt-3 border-t border-gray-100">
+                          <div className="pt-2 mt-2 border-t border-gray-100">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-gray-500">
                                 {(() => {
@@ -496,7 +498,7 @@ const MainLayout = ({ children }) => {
                         )}
 
                         {/* NIVEL 3: Inventario Total */}
-                        <div className="pt-3 mt-3 border-t border-gray-100">
+                        <div className="pt-2 mt-2 border-t border-gray-100">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Inventario Total</span>
                             {loadingInventory ? (
@@ -507,6 +509,33 @@ const MainLayout = ({ children }) => {
                               <span className="text-sm font-bold text-purple-700">
                                 {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
                               </span>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* NIVEL 4: Cuentas Por Pagar */}
+                        <div className="pt-2 mt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuentas Por Pagar</span>
+                            {loadingBills ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
+                              </div>
+                            ) : billsOpenTotal ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-red-700">
+                                  {billsOpenTotal.amountFormatted || formatCurrency(billsOpenTotal.amount)}
+                                </span>
+                                {billsOpenTotal.totalDocuments > 0 && (
+                                  <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                    {billsOpenTotal.totalDocuments} doc.
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <div className="flex items-center gap-1.5">
                                 <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>

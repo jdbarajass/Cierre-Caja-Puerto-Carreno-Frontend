@@ -19,7 +19,9 @@ export const useSalesComparison = () => {
     dailySales: null,
     monthlySales: null,
     inventoryTotal: null,
+    billsOpenTotal: null,
     loadingInventory: true,
+    loadingBills: true,
     // Comparaciones año sobre año
     dailyComparison: null,
     monthlyComparison: null,
@@ -120,6 +122,36 @@ export const useSalesComparison = () => {
         .catch(err => {
           setComparison(prev => ({ ...prev, inventoryTotal: null, loadingInventory: false }));
           logger.error('❌ Error en petición de inventario:', err);
+        });
+
+      // 💳 CUENTAS POR PAGAR (ASÍNCRONO INDEPENDIENTE): Se lanza sin bloquear otras peticiones
+      logger.info('💳 Lanzando petición de cuentas por pagar (asíncrono)...');
+      authenticatedFetch(`/api/bills/open-totals?from_date=${startOfMonth}&to_date=${today}`, {
+        method: 'GET',
+      })
+        .then(async res => {
+          if (res.ok) {
+            const data = await res.json();
+            setComparison(prev => ({
+              ...prev,
+              billsOpenTotal: {
+                amount: data?.missing_amount || 0,
+                amountFormatted: data?.missing_amount_formatted,
+                totalDocuments: data?.total_documents || 0,
+                fromDate: data?.from_date,
+                toDate: data?.to_date
+              },
+              loadingBills: false
+            }));
+            logger.info('✅ Cuentas por pagar actualizadas:', data?.missing_amount_formatted);
+          } else {
+            setComparison(prev => ({ ...prev, billsOpenTotal: null, loadingBills: false }));
+            logger.error('❌ Error obteniendo cuentas por pagar');
+          }
+        })
+        .catch(err => {
+          setComparison(prev => ({ ...prev, billsOpenTotal: null, loadingBills: false }));
+          logger.error('❌ Error en petición de cuentas por pagar:', err);
         });
 
       // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior y ayer - 4 peticiones en paralelo
