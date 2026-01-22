@@ -31,6 +31,8 @@ const MainLayout = ({ children }) => {
   const {
     dailySales,
     monthlySales,
+    inventoryTotal,
+    loadingInventory,
     dailyComparison,
     monthlyComparison,
     nextDayLastYear,
@@ -492,6 +494,26 @@ const MainLayout = ({ children }) => {
                             </div>
                           </div>
                         )}
+
+                        {/* NIVEL 3: Inventario Total */}
+                        <div className="pt-3 mt-3 border-t border-gray-100">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Inventario Total</span>
+                            {loadingInventory ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div>
+                              </div>
+                            ) : inventoryTotal ? (
+                              <span className="text-sm font-bold text-purple-700">
+                                {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

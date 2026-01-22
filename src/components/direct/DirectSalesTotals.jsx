@@ -462,9 +462,9 @@ const DirectSalesTotals = () => {
                 <div className="bg-blue-50 p-6 rounded-lg">
                   <div className="flex items-center gap-3 mb-2">
                     <ShoppingCart className="w-6 h-6 text-blue-600" />
-                    <p className="text-sm text-gray-600 font-medium">Número de Facturas</p>
+                    <p className="text-sm text-gray-600 font-medium">Días Procesados</p>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">{quickData.document_count || 0}</p>
+                  <p className="text-3xl font-bold text-blue-600">{quickData.days_count || 0}</p>
                 </div>
               </div>
             )}

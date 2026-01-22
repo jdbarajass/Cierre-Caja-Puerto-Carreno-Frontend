@@ -4,21 +4,27 @@ import logger from '../utils/logger';
 import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
 
 /**
- * Hook consolidado para obtener TODAS las estadísticas de ventas
- * Incluye ventas actuales Y comparación año sobre año
+ * Hook consolidado para obtener TODAS las estadísticas del dashboard
+ * Incluye:
+ * - Ventas actuales (día y mes)
+ * - Comparación año sobre año
+ * - Inventario total (asíncrono e independiente)
+ *
  * Optimizado para reducir peticiones concurrentes y duplicadas
- * Usa el endpoint rápido /api/sales/quick-summary
+ * Usa endpoints rápidos de Alegra (/api/sales/quick-summary y /api/inventory/quick-total)
  */
 export const useSalesComparison = () => {
   const [comparison, setComparison] = useState({
-    // Estadísticas actuales (antes en useSalesStats)
+    // Estadísticas actuales
     dailySales: null,
     monthlySales: null,
+    inventoryTotal: null,
+    loadingInventory: true,
     // Comparaciones año sobre año
     dailyComparison: null,
     monthlyComparison: null,
     nextDayLastYear: null,
-    previousDay: null, // Día anterior (ayer)
+    previousDay: null,
     loading: true,
     error: null
   });
@@ -86,6 +92,35 @@ export const useSalesComparison = () => {
         }).then(res => res.ok ? res.json() : null).catch(() => null)
       ]);
       logger.info('✅ Grupo 1 completado');
+
+      // 📦 INVENTARIO (ASÍNCRONO INDEPENDIENTE): Se lanza sin bloquear otras peticiones
+      // Se actualiza cuando esté listo, sin afectar las ventas
+      logger.info('📦 Lanzando petición de inventario (asíncrono)...');
+      authenticatedFetch(`/api/inventory/quick-total?to_date=${today}`, {
+        method: 'GET',
+      })
+        .then(async res => {
+          if (res.ok) {
+            const data = await res.json();
+            setComparison(prev => ({
+              ...prev,
+              inventoryTotal: {
+                value: data?.total_value || 0,
+                valueFormatted: data?.total_value_formatted,
+                toDate: data?.to_date
+              },
+              loadingInventory: false
+            }));
+            logger.info('✅ Inventario total actualizado:', data?.total_value_formatted);
+          } else {
+            setComparison(prev => ({ ...prev, inventoryTotal: null, loadingInventory: false }));
+            logger.error('❌ Error obteniendo inventario total');
+          }
+        })
+        .catch(err => {
+          setComparison(prev => ({ ...prev, inventoryTotal: null, loadingInventory: false }));
+          logger.error('❌ Error en petición de inventario:', err);
+        });
 
       // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior y ayer - 4 peticiones en paralelo
       // Estos datos son para comparación, menos críticos
