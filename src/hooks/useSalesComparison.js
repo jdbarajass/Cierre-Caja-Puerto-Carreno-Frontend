@@ -226,7 +226,8 @@ export const useSalesComparison = () => {
         }).format(value);
       };
 
-      setComparison({
+      setComparison(prev => ({
+        ...prev, // Preservar inventoryTotal, billsOpenTotal, loadingInventory, loadingBills
         // Estadísticas actuales (para reemplazar useSalesStats)
         dailySales: currentDayTotal,
         monthlySales: currentMonthTotal,
@@ -275,7 +276,7 @@ export const useSalesComparison = () => {
         },
         loading: false,
         error: null
-      });
+      }));
 
       logger.info('✅ Comparación año sobre año actualizada');
 
