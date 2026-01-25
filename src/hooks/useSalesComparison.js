@@ -27,6 +27,7 @@ export const useSalesComparison = () => {
     monthlyComparison: null,
     nextDayLastYear: null,
     previousDay: null,
+    fullMonthLastYear: null, // Mes completo del año anterior (para meta mensual)
     loading: true,
     error: null
   });
@@ -67,13 +68,18 @@ export const useSalesComparison = () => {
       const startOfMonth = `${currentYear}-${currentMonth}-01`;
       const startOfMonthLastYear = `${previousYear}-${previousMonth}-01`;
 
+      // Calcular el último día del mes del año anterior (para la meta mensual)
+      const lastDayOfMonthLastYear = new Date(previousYear, parseInt(previousMonth), 0);
+      const endOfMonthLastYear = `${previousYear}-${previousMonth}-${String(lastDayOfMonthLastYear.getDate()).padStart(2, '0')}`;
+
       logger.info('📊 Obteniendo estadísticas de ventas (optimizado - grupos secuenciales)', {
         today,
         yesterday,
         todayLastYear,
         nextDayLastYear,
         startOfMonth,
-        startOfMonthLastYear
+        startOfMonthLastYear,
+        endOfMonthLastYear
       });
 
       // No especificar timeout personalizado - usar timeout adaptativo de api.js
@@ -154,12 +160,13 @@ export const useSalesComparison = () => {
           logger.error('❌ Error en petición de cuentas por pagar:', err);
         });
 
-      // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior y ayer - 4 peticiones en paralelo
+      // ✅ GRUPO 2 (SECUNDARIO): Datos del año anterior y ayer - 5 peticiones en paralelo
       // Estos datos son para comparación, menos críticos
       logger.info('🔄 Grupo 2: Obteniendo datos año anterior y día anterior (comparación)...');
       logger.info(`📅 Petición día siguiente año anterior: /api/sales/quick-summary?from=${nextDayLastYear}&to=${nextDayLastYear}`);
       logger.info(`📅 Petición día anterior (ayer): /api/sales/quick-summary?from=${yesterday}&to=${yesterday}`);
-      const [previousDayResponse, nextDayLastYearResponse, yesterdayResponse, previousMonthResponse] = await Promise.all([
+      logger.info(`📅 Petición mes COMPLETO año anterior (para meta): /api/sales/quick-summary?from=${startOfMonthLastYear}&to=${endOfMonthLastYear}`);
+      const [previousDayResponse, nextDayLastYearResponse, yesterdayResponse, previousMonthResponse, fullMonthLastYearResponse] = await Promise.all([
         // Mismo día año anterior
         authenticatedFetch(`/api/sales/quick-summary?from=${todayLastYear}&to=${todayLastYear}`, {
           method: 'GET',
@@ -175,8 +182,13 @@ export const useSalesComparison = () => {
           method: 'GET',
         }).then(res => res.ok ? res.json() : null).catch(() => null),
 
-        // Mismo mes año anterior
+        // Mismo mes año anterior (hasta el mismo día - para comparación)
         authenticatedFetch(`/api/sales/quick-summary?from=${startOfMonthLastYear}&to=${todayLastYear}`, {
+          method: 'GET',
+        }).then(res => res.ok ? res.json() : null).catch(() => null),
+
+        // Mes COMPLETO año anterior (para calcular la meta mensual)
+        authenticatedFetch(`/api/sales/quick-summary?from=${startOfMonthLastYear}&to=${endOfMonthLastYear}`, {
           method: 'GET',
         }).then(res => res.ok ? res.json() : null).catch(() => null)
       ]);
@@ -197,6 +209,9 @@ export const useSalesComparison = () => {
       const monthPercentageChange = previousMonthTotal > 0
         ? ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100
         : (currentMonthTotal > 0 ? 100 : 0);
+
+      // Procesar mes COMPLETO del año anterior (para meta mensual)
+      const fullMonthLastYearTotal = fullMonthLastYearResponse?.total_sales || 0;
 
       // Procesar datos del día siguiente del año anterior
       const nextDayTotal = nextDayLastYearResponse?.total_sales || 0;
@@ -273,6 +288,12 @@ export const useSalesComparison = () => {
           date: yesterday,
           total: yesterdayTotal,
           formatted: formatCurrency(yesterdayTotal)
+        },
+        // Mes COMPLETO del año anterior (para calcular meta mensual)
+        fullMonthLastYear: {
+          period: `${startOfMonthLastYear} a ${endOfMonthLastYear}`,
+          total: fullMonthLastYearTotal,
+          formatted: formatCurrency(fullMonthLastYearTotal)
         },
         loading: false,
         error: null

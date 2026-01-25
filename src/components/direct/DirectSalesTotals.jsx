@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { TrendingUp, Calendar, Loader2, AlertCircle, DollarSign, ShoppingCart, Clock, Users, Package, CreditCard, BarChart3 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, Calendar, Loader2, AlertCircle, DollarSign, ShoppingCart, Clock, Users, Package, CreditCard, BarChart3, Target, Award, TrendingDown } from 'lucide-react';
 import { getQuickSalesSummary, getSalesDocuments } from '../../services/directApiService';
+import { getSalesComparisonYoY } from '../../services/api';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { fetchWithRetry } from '../../utils/retryHelper';
@@ -32,6 +33,39 @@ const DirectSalesTotals = () => {
     return date.toISOString().split('T')[0];
   });
   const [monthlyToDate, setMonthlyToDate] = useState(getColombiaTodayString());
+
+  // Estado para las metas (YoY comparison)
+  const [goalsLoading, setGoalsLoading] = useState(false);
+  const [goalsError, setGoalsError] = useState(null);
+  const [goalsData, setGoalsData] = useState(null);
+
+  // Cargar metas al montar el componente
+  useEffect(() => {
+    fetchGoals();
+  }, []);
+
+  // Función para cargar las metas desde el endpoint YoY
+  const fetchGoals = async () => {
+    setGoalsLoading(true);
+    setGoalsError(null);
+
+    try {
+      const response = await getSalesComparisonYoY();
+
+      if (response && response.success && response.goals) {
+        setGoalsData(response);
+        setGoalsError(null);
+      } else {
+        throw new Error(response?.error || 'Error al obtener metas de ventas');
+      }
+    } catch (err) {
+      console.error('Error al cargar metas:', err);
+      setGoalsError(err.message || 'Error al cargar las metas');
+      setGoalsData(null);
+    } finally {
+      setGoalsLoading(false);
+    }
+  };
 
   // Función para consultar totales rápidos con reintentos automáticos
   const fetchQuickSummary = async () => {
@@ -346,6 +380,219 @@ const DirectSalesTotals = () => {
         <p className="text-yellow-50">
           Consulta de totales de ventas y análisis detallado de métricas mensuales
         </p>
+      </div>
+
+      {/* Tarjetas de Metas */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-6 h-6 text-emerald-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Metas de Ventas (+25% vs Año Anterior)</h2>
+          </div>
+          <button
+            onClick={fetchGoals}
+            disabled={goalsLoading}
+            className="px-3 py-1 text-sm bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 disabled:opacity-50 transition-colors"
+          >
+            {goalsLoading ? 'Actualizando...' : 'Actualizar'}
+          </button>
+        </div>
+
+        {/* Error de metas */}
+        {goalsError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+            <p className="text-sm text-red-600">{goalsError}</p>
+          </div>
+        )}
+
+        {/* Loading de metas */}
+        {goalsLoading && !goalsData && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+            <span className="ml-2 text-gray-600">Cargando metas...</span>
+          </div>
+        )}
+
+        {/* Tarjetas de metas */}
+        {goalsData && goalsData.goals && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Meta Diaria */}
+            <div className={`p-5 rounded-xl border-2 ${
+              goalsData.goals.daily.is_achieved
+                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300'
+                : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-lg ${goalsData.goals.daily.is_achieved ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                    {goalsData.goals.daily.is_achieved
+                      ? <Award className="w-5 h-5 text-emerald-600" />
+                      : <Target className="w-5 h-5 text-amber-600" />
+                    }
+                  </div>
+                  <span className="font-semibold text-gray-700">Meta Diaria</span>
+                </div>
+                {goalsData.goals.daily.is_achieved && (
+                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+                    META CUMPLIDA
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Venta del mismo día año pasado:</span>
+                  <span className="font-medium text-gray-700">{goalsData.goals.daily.base_previous_year_formatted}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Meta (+25%):</span>
+                  <span className="text-xl font-bold text-gray-800">{goalsData.goals.daily.goal_formatted}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Venta hoy:</span>
+                  <span className={`text-lg font-bold ${goalsData.goals.daily.is_achieved ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {goalsData.goals.daily.current_formatted}
+                  </span>
+                </div>
+
+                {/* Barra de progreso */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Progreso</span>
+                    <span>{goalsData.goals.daily.progress_percentage}%</span>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        goalsData.goals.daily.is_achieved ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}
+                      style={{ width: `${Math.min(100, goalsData.goals.daily.progress_percentage)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {!goalsData.goals.daily.is_achieved && goalsData.goals.daily.remaining > 0 && (
+                  <div className="mt-2 text-center">
+                    <span className="text-sm text-gray-600">Falta: </span>
+                    <span className="font-bold text-amber-600">{goalsData.goals.daily.remaining_formatted}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Meta Mensual */}
+            <div className={`p-5 rounded-xl border-2 ${
+              goalsData.goals.monthly.is_achieved
+                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300'
+                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-lg ${goalsData.goals.monthly.is_achieved ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                    {goalsData.goals.monthly.is_achieved
+                      ? <Award className="w-5 h-5 text-emerald-600" />
+                      : <Target className="w-5 h-5 text-blue-600" />
+                    }
+                  </div>
+                  <span className="font-semibold text-gray-700">Meta Mensual</span>
+                </div>
+                {goalsData.goals.monthly.is_achieved && (
+                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+                    META CUMPLIDA
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Venta mismo mes año pasado:</span>
+                  <span className="font-medium text-gray-700">{goalsData.goals.monthly.base_previous_year_formatted}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Meta (+25%):</span>
+                  <span className="text-xl font-bold text-gray-800">{goalsData.goals.monthly.goal_formatted}</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="text-sm text-gray-600">Venta acumulada:</span>
+                  <span className={`text-lg font-bold ${goalsData.goals.monthly.is_achieved ? 'text-emerald-600' : 'text-blue-600'}`}>
+                    {goalsData.goals.monthly.current_formatted}
+                  </span>
+                </div>
+
+                {/* Barra de progreso */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Progreso</span>
+                    <span>{goalsData.goals.monthly.progress_percentage}%</span>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        goalsData.goals.monthly.is_achieved ? 'bg-emerald-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${Math.min(100, goalsData.goals.monthly.progress_percentage)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {!goalsData.goals.monthly.is_achieved && goalsData.goals.monthly.remaining > 0 && (
+                  <div className="mt-2 text-center">
+                    <span className="text-sm text-gray-600">Falta: </span>
+                    <span className="font-bold text-blue-600">{goalsData.goals.monthly.remaining_formatted}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Comparación YoY adicional */}
+        {goalsData && goalsData.daily_comparison && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className={`p-2 rounded-lg ${
+                  goalsData.daily_comparison.comparison.is_growth ? 'bg-green-100' : 'bg-red-100'
+                }`}>
+                  {goalsData.daily_comparison.comparison.is_growth
+                    ? <TrendingUp className="w-4 h-4 text-green-600" />
+                    : <TrendingDown className="w-4 h-4 text-red-600" />
+                  }
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Cambio diario vs año anterior</p>
+                  <p className={`font-bold ${
+                    goalsData.daily_comparison.comparison.is_growth ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {goalsData.daily_comparison.comparison.is_growth ? '+' : ''}
+                    {goalsData.daily_comparison.comparison.percentage_change}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className={`p-2 rounded-lg ${
+                  goalsData.monthly_comparison.comparison.is_growth ? 'bg-green-100' : 'bg-red-100'
+                }`}>
+                  {goalsData.monthly_comparison.comparison.is_growth
+                    ? <TrendingUp className="w-4 h-4 text-green-600" />
+                    : <TrendingDown className="w-4 h-4 text-red-600" />
+                  }
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Cambio mensual vs año anterior</p>
+                  <p className={`font-bold ${
+                    goalsData.monthly_comparison.comparison.is_growth ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {goalsData.monthly_comparison.comparison.is_growth ? '+' : ''}
+                    {goalsData.monthly_comparison.comparison.percentage_change}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

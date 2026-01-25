@@ -15,7 +15,9 @@ import {
   DollarSign,
   Calendar,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  Target,
+  Award
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -39,6 +41,7 @@ const MainLayout = ({ children }) => {
     monthlyComparison,
     nextDayLastYear,
     previousDay,
+    fullMonthLastYear, // Mes completo del año anterior (para meta mensual)
     loading: salesLoading
   } = useSalesComparison();
 
@@ -384,6 +387,50 @@ const MainLayout = ({ children }) => {
                           </p>
                         </div>
 
+                        {/* META DIARIA */}
+                        {dailyComparison && dailyComparison.previous && dailyComparison.previous.total > 0 && (() => {
+                          const metaDiaria = dailyComparison.previous.total * 1.25;
+                          const progreso = (dailySales / metaDiaria) * 100;
+                          const cumplida = dailySales >= metaDiaria;
+                          const faltante = Math.max(0, metaDiaria - dailySales);
+                          return (
+                            <div className={`p-3 rounded-lg border ${cumplida ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  {cumplida ? (
+                                    <Award className="w-4 h-4 text-emerald-600" />
+                                  ) : (
+                                    <Target className="w-4 h-4 text-amber-600" />
+                                  )}
+                                  <span className="text-xs font-semibold text-gray-700">Meta Diaria (+25%)</span>
+                                </div>
+                                {cumplida && (
+                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">
+                                    CUMPLIDA
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between text-xs mb-2">
+                                <span className="text-gray-600">Meta:</span>
+                                <span className="font-bold text-gray-800">{formatCurrency(metaDiaria)}</span>
+                              </div>
+                              {/* Barra de progreso */}
+                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${cumplida ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                  style={{ width: `${Math.min(100, progreso)}%` }}
+                                />
+                              </div>
+                              <div className="flex justify-between mt-1 text-[10px]">
+                                <span className="text-gray-500">{Math.round(progreso)}%</span>
+                                {!cumplida && faltante > 0 && (
+                                  <span className="text-amber-700 font-medium">Falta: {formatCurrency(faltante)}</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* NIVEL 2: Fechas del año anterior con porcentajes */}
                         <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
                           {/* Fecha de hace un año */}
@@ -466,6 +513,50 @@ const MainLayout = ({ children }) => {
                             {formatCurrency(monthlySales)}
                           </p>
                         </div>
+
+                        {/* META MENSUAL - Basada en el mes COMPLETO del año anterior */}
+                        {fullMonthLastYear && fullMonthLastYear.total > 0 && (() => {
+                          const metaMensual = fullMonthLastYear.total * 1.25;
+                          const progreso = (monthlySales / metaMensual) * 100;
+                          const cumplida = monthlySales >= metaMensual;
+                          const faltante = Math.max(0, metaMensual - monthlySales);
+                          return (
+                            <div className={`p-3 rounded-lg border ${cumplida ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  {cumplida ? (
+                                    <Award className="w-4 h-4 text-emerald-600" />
+                                  ) : (
+                                    <Target className="w-4 h-4 text-blue-600" />
+                                  )}
+                                  <span className="text-xs font-semibold text-gray-700">Meta Mensual (+25%)</span>
+                                </div>
+                                {cumplida && (
+                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">
+                                    CUMPLIDA
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between text-xs mb-2">
+                                <span className="text-gray-600">Meta:</span>
+                                <span className="font-bold text-gray-800">{formatCurrency(metaMensual)}</span>
+                              </div>
+                              {/* Barra de progreso */}
+                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${cumplida ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                  style={{ width: `${Math.min(100, progreso)}%` }}
+                                />
+                              </div>
+                              <div className="flex justify-between mt-1 text-[10px]">
+                                <span className="text-gray-500">{Math.round(progreso)}%</span>
+                                {!cumplida && faltante > 0 && (
+                                  <span className="text-blue-700 font-medium">Falta: {formatCurrency(faltante)}</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* NIVEL 2: Comparación con año anterior */}
                         {monthlyComparison && monthlyComparison.previous && (
