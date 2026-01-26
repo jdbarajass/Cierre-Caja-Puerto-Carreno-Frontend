@@ -92,6 +92,7 @@ const fetchWithTimeout = async (url, options, timeout) => {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
+      credentials: 'include',  // Enviar cookies en todas las peticiones
     });
     clearTimeout(timeoutId);
     return response;

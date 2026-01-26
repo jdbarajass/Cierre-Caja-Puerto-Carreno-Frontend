@@ -17,7 +17,8 @@ import {
   BookOpen,
   ChevronRight,
   Target,
-  Award
+  Award,
+  Users
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -166,8 +167,8 @@ const MainLayout = ({ children }) => {
     setStatsDropdownOpen(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -341,6 +342,19 @@ const MainLayout = ({ children }) => {
                       <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'Administrador KOAJ'}</p>
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
+                    {/* Link de Gestionar Usuarios (solo admin) */}
+                    {canAccess(['admin']) && (
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          navigate('/usuarios');
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors flex items-center gap-3 text-gray-700"
+                      >
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium">Gestionar Usuarios</span>
+                      </button>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
@@ -588,52 +602,56 @@ const MainLayout = ({ children }) => {
                           </div>
                         )}
 
-                        {/* NIVEL 3: Inventario Total */}
-                        <div className="pt-2 mt-2 border-t border-gray-100">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Inventario Total</span>
-                            {loadingInventory ? (
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div>
-                              </div>
-                            ) : inventoryTotal ? (
-                              <span className="text-sm font-bold text-purple-700">
-                                {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
-                              </span>
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* NIVEL 4: Cuentas Por Pagar */}
-                        <div className="pt-2 mt-2 border-t border-gray-100">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuentas Por Pagar</span>
-                            {loadingBills ? (
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
-                              </div>
-                            ) : billsOpenTotal ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-red-700">
-                                  {billsOpenTotal.amountFormatted || formatCurrency(billsOpenTotal.amount)}
+                        {/* NIVEL 3: Inventario Total - Solo Admin */}
+                        {canAccess(['admin']) && (
+                          <div className="pt-2 mt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Inventario Total</span>
+                              {loadingInventory ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div>
+                                </div>
+                              ) : inventoryTotal ? (
+                                <span className="text-sm font-bold text-purple-700">
+                                  {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
                                 </span>
-                                {billsOpenTotal.totalDocuments > 0 && (
-                                  <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                    {billsOpenTotal.totalDocuments} doc.
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
-                              </div>
-                            )}
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* NIVEL 4: Cuentas Por Pagar - Solo Admin */}
+                        {canAccess(['admin']) && (
+                          <div className="pt-2 mt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuentas Por Pagar</span>
+                              {loadingBills ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
+                                </div>
+                              ) : billsOpenTotal ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-red-700">
+                                    {billsOpenTotal.amountFormatted || formatCurrency(billsOpenTotal.amount)}
+                                  </span>
+                                  {billsOpenTotal.totalDocuments > 0 && (
+                                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                      {billsOpenTotal.totalDocuments} doc.
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

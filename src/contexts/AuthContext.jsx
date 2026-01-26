@@ -204,13 +204,22 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
-  const logout = () => {
-    // Limpiar almacenamiento seguro
-    secureRemoveItem('authToken');
-    secureRemoveItem('authUser');
+  const logout = async () => {
+    try {
+      // Llamar al endpoint de logout para eliminar la cookie httpOnly
+      await authenticatedFetch('/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      logger.error('Error en logout:', error);
+    } finally {
+      // Limpiar almacenamiento seguro (por compatibilidad)
+      secureRemoveItem('authToken');
+      secureRemoveItem('authUser');
 
-    setToken(null);
-    setUser(null);
+      setToken(null);
+      setUser(null);
+    }
   };
 
   const isAuthenticated = () => {

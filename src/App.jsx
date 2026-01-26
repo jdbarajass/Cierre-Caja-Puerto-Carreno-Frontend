@@ -19,6 +19,9 @@ const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsD
 const DirectSalesTotals = lazy(() => import('./components/direct/DirectSalesTotals'));
 const DirectSalesDocuments = lazy(() => import('./components/direct/DirectSalesDocuments'));
 
+// Lazy loading de páginas de administración
+const UsersManagement = lazy(() => import('./pages/UsersManagement'));
+
 // Componente de carga
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -57,6 +60,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <MonthlySales />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Gestión de Usuarios (Solo Admin) */}
+              <Route
+                path="/usuarios"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <UsersManagement />
                     </MainLayout>
                   </ProtectedRoute>
                 }
