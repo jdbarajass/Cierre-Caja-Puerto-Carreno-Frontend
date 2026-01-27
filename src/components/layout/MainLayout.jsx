@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Target,
   Award,
-  Users
+  Users,
+  Tag
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -355,6 +356,17 @@ const MainLayout = ({ children }) => {
                         <span className="text-sm font-medium">Gestionar Usuarios</span>
                       </button>
                     )}
+                    {/* Link de Códigos KOAJ (todos los usuarios) */}
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        navigate('/codigos-koaj');
+                      }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors flex items-center gap-3 text-gray-700"
+                    >
+                      <Tag className="w-4 h-4 text-purple-600" />
+                      <span className="text-sm font-medium">Codigos KOAJ</span>
+                    </button>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"

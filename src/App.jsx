@@ -21,6 +21,7 @@ const DirectSalesDocuments = lazy(() => import('./components/direct/DirectSalesD
 
 // Lazy loading de páginas de administración
 const UsersManagement = lazy(() => import('./pages/UsersManagement'));
+const KoajCodes = lazy(() => import('./pages/KoajCodes'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -72,6 +73,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <UsersManagement />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Códigos KOAJ (Admin y Sales) */}
+              <Route
+                path="/codigos-koaj"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
+                    <MainLayout>
+                      <KoajCodes />
                     </MainLayout>
                   </ProtectedRoute>
                 }
