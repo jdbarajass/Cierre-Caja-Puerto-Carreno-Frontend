@@ -68,11 +68,11 @@ const App = () => {
                 }
               />
 
-              {/* Cuentas Recompras (Admin y Partner) */}
+              {/* Cuentas Recompras (Solo Admin) */}
               <Route
                 path="/cuentas-recompras"
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'partner']}>
+                  <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <CuentasRecompras />
                     </MainLayout>

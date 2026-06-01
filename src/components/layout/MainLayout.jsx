@@ -301,8 +301,8 @@ const MainLayout = ({ children }) => {
                   </div>
                 )}
 
-                {/* Cuentas Recompras (Admin y Partner) */}
-                {canAccess(['admin', 'partner']) && (
+                {/* Cuentas Recompras (Solo Admin) */}
+                {canAccess(['admin']) && (
                   <button
                     onClick={() => handleNavigation('/cuentas-recompras')}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${

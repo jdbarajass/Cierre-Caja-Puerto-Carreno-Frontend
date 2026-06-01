@@ -1,57 +1,62 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, Plus, Trash2, Pencil, X, Check, AlertCircle,
-  ChevronRight, TrendingUp, ChevronLeft, ChevronDown
+  ChevronRight, TrendingUp, ChevronLeft, ChevronDown, ChevronUp
 } from 'lucide-react';
 import {
   getEntries, createEntry, updateEntry, deleteEntry
 } from '../services/repurchaseService';
-import { isAdmin } from '../utils/auth';
 
 const fmt = (v) =>
-  v ? new Intl.NumberFormat('es-CO', {
-    style: 'currency', currency: 'COP', minimumFractionDigits: 0
-  }).format(v) : '—';
+  v != null && v !== 0
+    ? new Intl.NumberFormat('es-CO', {
+        style: 'currency', currency: 'COP', minimumFractionDigits: 0
+      }).format(v)
+    : '';
 
-const fmtNum = (v) => v ? fmt(v) : '';
+const fmtForce = (v) =>
+  new Intl.NumberFormat('es-CO', {
+    style: 'currency', currency: 'COP', minimumFractionDigits: 0
+  }).format(v || 0);
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const PAYMENT_COLS = [
-  { key: 'efectivo',  label: 'EFECTIVO',   color: 'bg-green-50'  },
-  { key: 'datafono',  label: 'DATAFONO',   color: 'bg-blue-50'   },
-  { key: 'qr',        label: 'QR',         color: 'bg-purple-50' },
-  { key: 'daviplata', label: 'DAVIPLATA',  color: 'bg-red-50'    },
-  { key: 'nequi',     label: 'NEQUI',      color: 'bg-pink-50'   },
-  { key: 'bbva',      label: 'BBVA',       color: 'bg-cyan-50'   },
+  { key: 'efectivo',  label: 'EFECTIVO'  },
+  { key: 'datafono',  label: 'DATAFONO'  },
+  { key: 'qr',        label: 'QR'        },
+  { key: 'daviplata', label: 'DAVIPLATA' },
+  { key: 'nequi',     label: 'NEQUI'     },
+  { key: 'bbva',      label: 'BBVA'      },
 ];
 
 const today = () => new Date().toISOString().split('T')[0];
 
 const EMPTY = {
   date: today(),
+  descripcion: 'Recompra Jhonatan',
   valor_no_enviado: '',
   efectivo: '', datafono: '', qr: '', daviplata: '', nequi: '', bbva: '',
   sobrante_mes_anterior: '',
+  fecha_compra: '',
   notes: ''
 };
 
 const CuentasRecompras = () => {
-  const admin = isAdmin();
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
-  const [entries, setEntries]       = useState([]);
-  const [totals,  setTotals]        = useState({});
-  const [loading, setLoading]       = useState(false);
-  const [showForm, setShowForm]     = useState(false);
-  const [form, setForm]             = useState(EMPTY);
-  const [editingId, setEditingId]   = useState(null);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState('');
-  const [success, setSuccess]       = useState('');
+  const [entries, setEntries]   = useState([]);
+  const [totals,  setTotals]    = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState(EMPTY);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,39 +74,40 @@ const CuentasRecompras = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  // Navegación mes anterior / siguiente
   const prevMonth = () => {
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
     else setMonth(m => m - 1);
   };
   const nextMonth = () => {
-    if (month === 12) { setMonth(1);  setYear(y => y + 1); }
+    if (month === 12) { setMonth(1); setYear(y => y + 1); }
     else setMonth(m => m + 1);
   };
 
-  const rowTotal = (row) =>
-    (row.efectivo || 0) + (row.datafono || 0) + (row.qr || 0) +
-    (row.daviplata || 0) + (row.nequi || 0) + (row.bbva || 0);
+  const toNum = (v) => parseFloat(v) || 0;
 
-  const grandTotal = () =>
-    entries.reduce((acc, e) => acc + rowTotal(e) + (e.sobrante_mes_anterior || 0), 0);
+  const formTotal = () =>
+    ['efectivo','datafono','qr','daviplata','nequi','bbva'].reduce(
+      (s, k) => s + toNum(form[k]), 0);
+
+  const formFee = () => Math.round(formTotal() * 4 / 1000);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const toNum = (v) => parseFloat(v) || 0;
       const payload = {
         date: form.date,
-        valor_no_enviado:     toNum(form.valor_no_enviado),
-        efectivo:             toNum(form.efectivo),
-        datafono:             toNum(form.datafono),
-        qr:                   toNum(form.qr),
-        daviplata:            toNum(form.daviplata),
-        nequi:                toNum(form.nequi),
-        bbva:                 toNum(form.bbva),
-        sobrante_mes_anterior:toNum(form.sobrante_mes_anterior),
+        descripcion: form.descripcion || 'Recompra Jhonatan',
+        valor_no_enviado: toNum(form.valor_no_enviado),
+        efectivo: toNum(form.efectivo),
+        datafono: toNum(form.datafono),
+        qr: toNum(form.qr),
+        daviplata: toNum(form.daviplata),
+        nequi: toNum(form.nequi),
+        bbva: toNum(form.bbva),
+        sobrante_mes_anterior: toNum(form.sobrante_mes_anterior),
+        fecha_compra: form.fecha_compra || null,
         notes: form.notes,
       };
       if (editingId) {
@@ -126,14 +132,16 @@ const CuentasRecompras = () => {
   const handleEdit = (row) => {
     setForm({
       date: row.date,
-      valor_no_enviado:      String(row.valor_no_enviado || ''),
-      efectivo:              String(row.efectivo   || ''),
-      datafono:              String(row.datafono   || ''),
-      qr:                    String(row.qr         || ''),
-      daviplata:             String(row.daviplata  || ''),
-      nequi:                 String(row.nequi      || ''),
-      bbva:                  String(row.bbva       || ''),
+      descripcion: row.descripcion || 'Recompra Jhonatan',
+      valor_no_enviado: String(row.valor_no_enviado || ''),
+      efectivo: String(row.efectivo   || ''),
+      datafono: String(row.datafono   || ''),
+      qr:       String(row.qr         || ''),
+      daviplata:String(row.daviplata  || ''),
+      nequi:    String(row.nequi      || ''),
+      bbva:     String(row.bbva       || ''),
       sobrante_mes_anterior: String(row.sobrante_mes_anterior || ''),
+      fecha_compra: row.fecha_compra || '',
       notes: row.notes || '',
     });
     setEditingId(row.id);
@@ -154,7 +162,7 @@ const CuentasRecompras = () => {
     setError('');
   };
 
-  const Field = ({ label, k, placeholder = '0' }) => (
+  const F = ({ label, k, placeholder = '' }) => (
     <div>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       <input
@@ -166,8 +174,11 @@ const CuentasRecompras = () => {
     </div>
   );
 
+  const grandTotal = () =>
+    entries.reduce((acc, e) => acc + (e.total_enviado || 0) + (e.sobrante_mes_anterior || 0), 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -178,28 +189,27 @@ const CuentasRecompras = () => {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Cuentas Recompras</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Seguimiento de dinero enviado al socio para recompra de mercancía
+            Control de dinero enviado al socio para recompra de mercancía
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={load} className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          <button onClick={load}
+            className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
             <RefreshCw className="w-4 h-4" /> Actualizar
           </button>
-          {admin && (
-            <button
-              onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY); }}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" /> Agregar fila
-            </button>
-          )}
+          <button
+            onClick={() => { setShowForm(v => !v); setEditingId(null); setForm(EMPTY); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            {showForm && !editingId ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {showForm && !editingId ? 'Cancelar' : 'Agregar fila'}
+          </button>
         </div>
       </div>
 
-      {/* Mensajes */}
+      {/* Alertas */}
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertCircle className="w-4 h-4" /> {error}
+          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
         </div>
       )}
       {success && (
@@ -209,51 +219,72 @@ const CuentasRecompras = () => {
       )}
 
       {/* Formulario */}
-      {showForm && admin && (
+      {showForm && (
         <form onSubmit={handleSubmit} className="bg-white border border-indigo-200 rounded-xl p-6 shadow-sm space-y-5">
           <h3 className="font-semibold text-gray-900 text-base">
             {editingId ? 'Editar registro' : 'Nuevo registro'}
           </h3>
 
-          {/* Fila 1: Fecha + Valor no enviado + Sobrante */}
+          {/* Fila 1: descripción, fecha, fecha compra */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+              <input type="text" placeholder="Recompra Jhonatan" value={form.descripcion}
+                onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha *</label>
               <input type="date" required value={form.date}
                 onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
-            <Field label="Valor aún no enviado" k="valor_no_enviado" />
-            <Field label="Sobrante mes anterior" k="sobrante_mes_anterior" />
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Fecha compra factura</label>
+              <input type="date" value={form.fecha_compra}
+                onChange={e => setForm(f => ({ ...f, fecha_compra: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            </div>
           </div>
 
-          {/* Fila 2: Medios de pago */}
+          {/* Fila 2: pendiente + sobrante */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <F label="Valor aún no enviado" k="valor_no_enviado" />
+            <F label="Sobrante mes anterior" k="sobrante_mes_anterior" />
+          </div>
+
+          {/* Fila 3: medios de pago */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Montos ya enviados al socio por medio de pago</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Montos ya enviados al socio por medio de pago
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {PAYMENT_COLS.map(({ key, label }) => (
-                <Field key={key} label={label} k={key} />
+                <F key={key} label={label} k={key} />
               ))}
             </div>
           </div>
 
-          {/* Total calculado */}
-          <div className="flex flex-wrap items-center gap-6 px-4 py-3 bg-indigo-50 rounded-xl">
-            <div>
-              <p className="text-xs text-indigo-600 font-medium">Total enviado en esta fila</p>
-              <p className="text-xl font-bold text-indigo-800">
-                {fmt(
-                  ['efectivo','datafono','qr','daviplata','nequi','bbva']
-                    .reduce((s,k) => s + (parseFloat(form[k]) || 0), 0)
-                )}
-              </p>
+          {/* Totales calculados */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="px-4 py-3 bg-indigo-50 rounded-xl">
+              <p className="text-xs text-indigo-600 font-medium">Total enviado</p>
+              <p className="text-lg font-bold text-indigo-800">{fmtForce(formTotal())}</p>
+            </div>
+            <div className="px-4 py-3 bg-orange-50 rounded-xl">
+              <p className="text-xs text-orange-600 font-medium">Comisión 4‰</p>
+              <p className="text-lg font-bold text-orange-800">{fmtForce(formFee())}</p>
+            </div>
+            <div className="px-4 py-3 bg-green-50 rounded-xl">
+              <p className="text-xs text-green-600 font-medium">Valor sobrante</p>
+              <p className="text-lg font-bold text-green-800">{fmtForce(formTotal() - formFee())}</p>
             </div>
           </div>
 
           {/* Notas */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Observaciones adicionales..." value={form.notes}
+            <textarea rows={2} placeholder="Observaciones..." value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none" />
           </div>
@@ -271,41 +302,21 @@ const CuentasRecompras = () => {
         </form>
       )}
 
-      {/* Selector de mes */}
+      {/* Navegación mes */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <button onClick={prevMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ChevronLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div className="text-center">
           <p className="text-lg font-bold text-gray-900">{MONTHS[month - 1]} {year}</p>
           <p className="text-xs text-gray-500">{entries.length} registro{entries.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={nextMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ChevronRight className="w-5 h-5 text-gray-600" />
         </button>
       </div>
 
-      {/* Tarjetas de totales del mes */}
-      {entries.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {PAYMENT_COLS.map(({ key, label, color }) => (
-            totals[key] > 0 && (
-              <div key={key} className={`${color} border border-gray-200 rounded-xl p-4`}>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-                <p className="text-lg font-bold text-gray-800 mt-1">{fmt(totals[key])}</p>
-              </div>
-            )
-          ))}
-          <div className="bg-indigo-600 rounded-xl p-4 col-span-2 sm:col-span-1">
-            <p className="text-xs font-semibold text-indigo-200 uppercase tracking-wide">Total enviado</p>
-            <p className="text-xl font-bold text-white mt-1">{fmt(totals.total_enviado)}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Tabla principal */}
+      {/* Tabla */}
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
@@ -314,105 +325,124 @@ const CuentasRecompras = () => {
         <div className="bg-white border border-gray-200 rounded-xl text-center py-16 text-gray-400">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-25" />
           <p className="font-medium">No hay registros para {MONTHS[month - 1]} {year}</p>
-          {admin && (
-            <p className="text-sm mt-1">Haz clic en "Agregar fila" para comenzar</p>
-          )}
+          <p className="text-sm mt-1">Haz clic en "Agregar fila" para comenzar</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[1100px]">
               <thead>
-                <tr className="bg-gray-800 text-white">
-                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide">Fecha</th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wide bg-yellow-700 whitespace-nowrap">
-                    Aún no enviado
+                {/* Fila de grupos de columnas */}
+                <tr className="bg-gray-900 text-white text-xs">
+                  <th colSpan={3} className="px-3 py-2 text-center border-r border-gray-700">
+                    RECOMPRA {MONTHS[month - 1].toUpperCase()} {year}
+                  </th>
+                  <th colSpan={6} className="px-3 py-2 text-center border-r border-gray-700 bg-gray-800">
+                    MEDIOS DE PAGO ENVIADOS
+                  </th>
+                  <th className="px-3 py-2 text-center border-r border-gray-700 bg-indigo-800">TOTAL</th>
+                  <th colSpan={3} className="px-3 py-2 text-center bg-orange-700">
+                    FACTURA RECOMPRA ROPA
+                  </th>
+                  <th className="px-2 py-2 bg-gray-900" />
+                </tr>
+                {/* Fila de encabezados */}
+                <tr className="bg-gray-700 text-white text-xs uppercase tracking-wide">
+                  <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Descripción</th>
+                  <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Fecha</th>
+                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-yellow-800">
+                    Valor no enviado
                   </th>
                   {PAYMENT_COLS.map(({ key, label }) => (
-                    <th key={key} className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wide whitespace-nowrap">
+                    <th key={key} className="text-right px-3 py-2.5 font-semibold whitespace-nowrap">
                       {label}
                     </th>
                   ))}
-                  <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wide bg-indigo-700 whitespace-nowrap">
-                    Sobrante<br/>mes ant.
+                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-indigo-700">
+                    TOTAL
                   </th>
-                  <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wide bg-indigo-800 whitespace-nowrap">
-                    Total fila
+                  <th className="text-center px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
+                    Fecha compra
                   </th>
-                  <th className="px-3 py-3" />
+                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
+                    Valor Compra +<br/>(4×1000)
+                  </th>
+                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
+                    Valor sobrante
+                  </th>
+                  <th className="px-2 py-2.5 bg-gray-700" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {entries.map((row, idx) => {
-                  const total = rowTotal(row) + (row.sobrante_mes_anterior || 0);
-                  return (
-                    <tr key={row.id} className={`hover:bg-indigo-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                      <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{row.date}</td>
-                      <td className="px-3 py-3 text-right text-amber-700 font-medium bg-yellow-50 whitespace-nowrap">
-                        {fmtNum(row.valor_no_enviado)}
+                {entries.map((row, idx) => (
+                  <tr key={row.id} className={`hover:bg-indigo-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-sky-50'}`}>
+                    <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">
+                      {row.descripcion || 'Recompra Jhonatan'}
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">{row.date}</td>
+                    <td className="px-3 py-2.5 text-right text-amber-700 bg-yellow-50 whitespace-nowrap font-medium">
+                      {fmt(row.valor_no_enviado)}
+                    </td>
+                    {PAYMENT_COLS.map(({ key }) => (
+                      <td key={key} className="px-3 py-2.5 text-right text-gray-700 whitespace-nowrap">
+                        {fmt(row[key])}
                       </td>
-                      {PAYMENT_COLS.map(({ key }) => (
-                        <td key={key} className="px-3 py-3 text-right text-gray-700 whitespace-nowrap">
-                          {fmtNum(row[key])}
-                        </td>
-                      ))}
-                      <td className="px-3 py-3 text-right font-semibold text-indigo-600 whitespace-nowrap">
-                        {fmtNum(row.sobrante_mes_anterior)}
-                      </td>
-                      <td className="px-3 py-3 text-right font-bold text-indigo-800 bg-indigo-50 whitespace-nowrap">
-                        {fmt(total)}
-                      </td>
-                      <td className="px-3 py-3">
-                        {admin && (
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <button onClick={() => handleEdit(row)}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleDelete(row.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                    ))}
+                    <td className="px-3 py-2.5 text-right font-bold text-indigo-800 bg-indigo-50 whitespace-nowrap">
+                      {fmtForce(row.total_enviado)}
+                    </td>
+                    <td className="px-3 py-2.5 text-center text-gray-600 text-xs bg-orange-50 whitespace-nowrap">
+                      {row.fecha_compra || '—'}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-orange-700 bg-orange-50 whitespace-nowrap">
+                      {row.fee_4mil ? fmtForce(row.fee_4mil) : '—'}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">
+                      {row.valor_sobrante ? fmtForce(row.valor_sobrante) : '—'}
+                    </td>
+                    <td className="px-2 py-2.5">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <button onClick={() => handleEdit(row)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(row.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
+
               {/* Fila de TOTALES */}
               <tfoot>
-                <tr className="bg-indigo-700 text-white font-bold">
-                  <td className="px-4 py-3 text-sm uppercase tracking-wide">TOTAL MES</td>
-                  <td className="px-3 py-3 text-right text-yellow-200 text-xs">—</td>
+                <tr className="bg-gray-800 text-white font-bold text-sm">
+                  <td className="px-3 py-3 uppercase tracking-wide" colSpan={2}>
+                    TOTAL RECOMPRAS
+                  </td>
+                  <td className="px-3 py-3 text-right text-yellow-300">$ 0</td>
                   {PAYMENT_COLS.map(({ key }) => (
-                    <td key={key} className="px-3 py-3 text-right text-sm whitespace-nowrap">
-                      {totals[key] ? fmt(totals[key]) : '—'}
+                    <td key={key} className="px-3 py-3 text-right whitespace-nowrap">
+                      {totals[key] ? fmtForce(totals[key]) : '—'}
                     </td>
                   ))}
-                  <td className="px-3 py-3 text-right text-sm whitespace-nowrap">
-                    {totals.sobrante_acumulado ? fmt(totals.sobrante_acumulado) : '—'}
+                  <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">
+                    {fmtForce(totals.total_enviado)}
                   </td>
-                  <td className="px-3 py-3 text-right text-base whitespace-nowrap bg-indigo-900">
-                    {fmt(grandTotal())}
+                  <td className="px-3 py-3 text-center bg-orange-700 text-xs">Total Facturas</td>
+                  <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">
+                    {totals.fee_4mil ? fmtForce(totals.fee_4mil) : '—'}
                   </td>
-                  <td />
+                  <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">
+                    {totals.valor_sobrante ? fmtForce(totals.valor_sobrante) : '—'}
+                  </td>
+                  <td className="px-2 py-3 bg-gray-800" />
                 </tr>
               </tfoot>
             </table>
           </div>
-
-          {/* Notas de filas */}
-          {entries.some(e => e.notes) && (
-            <div className="px-4 py-3 border-t border-gray-200 space-y-1">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notas</p>
-              {entries.filter(e => e.notes).map(e => (
-                <p key={e.id} className="text-xs text-gray-600">
-                  <span className="font-medium">{e.date}:</span> {e.notes}
-                </p>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>
