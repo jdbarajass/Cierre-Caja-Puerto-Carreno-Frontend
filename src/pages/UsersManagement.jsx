@@ -499,6 +499,7 @@ const UsersManagement = () => {
                         >
                           <option value="sales">Ventas</option>
                           <option value="admin">Administrador</option>
+                          <option value="partner">Socio (solo recompras)</option>
                         </select>
                       </div>
 

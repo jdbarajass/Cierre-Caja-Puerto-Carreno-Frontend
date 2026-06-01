@@ -19,7 +19,9 @@ import {
   Target,
   Award,
   Users,
-  Tag
+  Tag,
+  Shirt,
+  Repeat
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -297,6 +299,40 @@ const MainLayout = ({ children }) => {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Cuentas Recompras (Admin y Partner) */}
+                {canAccess(['admin', 'partner']) && (
+                  <button
+                    onClick={() => handleNavigation('/cuentas-recompras')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive('/cuentas-recompras')
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive('/cuentas-recompras') ? 'bg-indigo-100' : 'bg-indigo-50'}`}>
+                      <Repeat className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    Recompras
+                  </button>
+                )}
+
+                {/* Control de Empleadas (Admin y Sales, NO partner) */}
+                {canAccess(['admin', 'sales']) && (
+                <button
+                  onClick={() => handleNavigation('/empleadas')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/empleadas')
+                      ? 'bg-pink-50 text-pink-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive('/empleadas') ? 'bg-pink-100' : 'bg-pink-50'}`}>
+                    <Shirt className="w-4 h-4 text-pink-600" />
+                  </div>
+                  Empleadas
+                </button>
                 )}
 
                 {/* Docs API */}

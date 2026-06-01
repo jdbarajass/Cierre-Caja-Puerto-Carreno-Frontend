@@ -22,6 +22,8 @@ const DirectSalesDocuments = lazy(() => import('./components/direct/DirectSalesD
 // Lazy loading de páginas de administración
 const UsersManagement = lazy(() => import('./pages/UsersManagement'));
 const KoajCodes = lazy(() => import('./pages/KoajCodes'));
+const EmployeesLayout = lazy(() => import('./components/employees/EmployeesLayout'));
+const CuentasRecompras = lazy(() => import('./pages/CuentasRecompras'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -61,6 +63,30 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <MonthlySales />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Cuentas Recompras (Admin y Partner) */}
+              <Route
+                path="/cuentas-recompras"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'partner']}>
+                    <MainLayout>
+                      <CuentasRecompras />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Control de Empleadas (Admin y Sales) */}
+              <Route
+                path="/empleadas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
+                    <MainLayout>
+                      <EmployeesLayout />
                     </MainLayout>
                   </ProtectedRoute>
                 }
