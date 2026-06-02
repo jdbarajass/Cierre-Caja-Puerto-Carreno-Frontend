@@ -1,5 +1,44 @@
 # Changelog - Sistema de Gestión Koaj Puerto Carreño
 
+---
+
+## [2026-06-02] - Módulo Control de Empleadas y Cuentas Recompras
+
+### ✨ Nuevo Módulo: Control de Empleadas
+- **Ruta**: `/empleadas` — accesible para `admin` y `sales`
+- **Botón**: "Empleadas" en el navbar principal
+- **5 secciones en tabs**:
+  - **Ropa**: Registro de prendas tomadas con precio, porcentaje de descuento y cálculo automático del valor a pagar
+  - **Préstamos**: Registro de dinero prestado con cargo a quincena
+  - **Permisos**: Registro de permisos, incapacidades, llegadas tarde y salidas tempranas con contadores por tipo
+  - **Vacaciones**: Períodos de vacaciones con cálculo automático de días
+  - **Pagos** (solo admin): Quincenas, primas, comisiones y otros pagos
+- **Identificación por nombre libre**: Campo "Nombre empleada" de texto libre (ej: Mónica, Camila) — no depende de la sesión del usuario
+- **Buscador/filtro**: Filtrar todos los registros de cualquier tab por nombre de empleada
+- **Reglas de acceso**:
+  - Cualquier usuario autenticado puede crear y ver registros
+  - Solo `admin` puede editar y eliminar
+  - La sección "Pagos" es exclusiva para `admin`
+
+### ✨ Nuevo Módulo: Cuentas Recompras
+- **Ruta**: `/cuentas-recompras` — solo `admin`
+- **Botón**: "Recompras" en el navbar (solo admin)
+- **Tabla estilo Excel** para seguimiento mensual de dinero enviado al socio:
+  - Columnas: Descripción, Fecha, Valor no enviado, EFECTIVO, DATAFONO, QR, DAVIPLATA, NEQUI, BBVA, TOTAL
+  - Sección "Factura Recompra Ropa": Fecha compra, Comisión 4‰ (calculada automáticamente), Valor sobrante
+  - Sobrante mes anterior: campo manual para carryover entre meses
+- Navegación por mes (← Junio 2026 →)
+- Fila de TOTALES al final de la tabla
+- Cálculo en tiempo real de totales mientras se llena el formulario
+
+### 🔧 Mejoras técnicas
+- **Migración segura de base de datos**: patrón `ALTER TABLE ADD COLUMN` — nunca borra datos
+- **6 nuevas tablas**: `employee_clothing`, `employee_loans`, `employee_permissions`, `employee_vacations`, `employee_payments`, `repurchase_entries`
+- **Nuevo servicio**: `employeesService.js`, `repurchaseService.js`
+- **Actualización gestión de usuarios**: nuevo rol `partner` disponible (para futuros usos)
+
+---
+
 ## [2024-12-02] - Ajuste de Layout: Barra de Hora Centrada
 
 ### 🎨 Optimización de Diseño de la Barra de Hora
