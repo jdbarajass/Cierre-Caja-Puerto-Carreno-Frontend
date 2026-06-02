@@ -3,220 +3,83 @@ import logger from '../utils/logger';
 
 const BASE = '/api/employee-records';
 
-async function handleResponse(response) {
-  const ct = response.headers.get('content-type');
-  if (!ct || !ct.includes('application/json')) {
+async function handleResponse(res) {
+  const ct = res.headers.get('content-type');
+  if (!ct || !ct.includes('application/json'))
     throw new Error('Error de comunicación con el servidor');
-  }
-  const data = await response.json();
-  if (!response.ok) {
-    if (response.status === 401) throw new Error('Sesión expirada. Inicie sesión nuevamente.');
-    if (response.status === 403) throw new Error('No tiene permisos para esta acción.');
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('Sesión expirada. Inicie sesión nuevamente.');
+    if (res.status === 403) throw new Error('No tiene permisos para esta acción.');
     throw new Error(data.message || 'Error en la operación');
   }
   return data;
 }
 
-// ─── ROPA ───────────────────────────────────────────────────────────────────
+// Filtro opcional por nombre (texto libre)
+function buildQuery(nombre) {
+  return nombre ? `?nombre_empleada=${encodeURIComponent(nombre)}` : '';
+}
 
-export const getClothing = async (employeeId = null) => {
-  try {
-    const params = employeeId ? `?employee_id=${employeeId}` : '';
-    const res = await authenticatedFetch(`${BASE}/clothing${params}`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getClothing:', e); throw e; }
-};
+export const getClothing = (nombre) =>
+  authenticatedFetch(`${BASE}/clothing${buildQuery(nombre)}`).then(handleResponse).catch(e => { logger.error('getClothing:', e); throw e; });
 
-export const createClothing = async (payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/clothing`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('createClothing:', e); throw e; }
-};
+export const createClothing = (p) =>
+  authenticatedFetch(`${BASE}/clothing`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('createClothing:', e); throw e; });
 
-export const updateClothing = async (id, payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/clothing/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('updateClothing:', e); throw e; }
-};
+export const updateClothing = (id, p) =>
+  authenticatedFetch(`${BASE}/clothing/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('updateClothing:', e); throw e; });
 
-export const deleteClothing = async (id) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/clothing/${id}`, { method: 'DELETE' });
-    return await handleResponse(res);
-  } catch (e) { logger.error('deleteClothing:', e); throw e; }
-};
+export const deleteClothing = (id) =>
+  authenticatedFetch(`${BASE}/clothing/${id}`, { method: 'DELETE' }).then(handleResponse).catch(e => { logger.error('deleteClothing:', e); throw e; });
 
-// ─── PRÉSTAMOS ───────────────────────────────────────────────────────────────
+export const getLoans = (nombre) =>
+  authenticatedFetch(`${BASE}/loans${buildQuery(nombre)}`).then(handleResponse).catch(e => { logger.error('getLoans:', e); throw e; });
 
-export const getLoans = async (employeeId = null) => {
-  try {
-    const params = employeeId ? `?employee_id=${employeeId}` : '';
-    const res = await authenticatedFetch(`${BASE}/loans${params}`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getLoans:', e); throw e; }
-};
+export const createLoan = (p) =>
+  authenticatedFetch(`${BASE}/loans`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('createLoan:', e); throw e; });
 
-export const createLoan = async (payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/loans`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('createLoan:', e); throw e; }
-};
+export const updateLoan = (id, p) =>
+  authenticatedFetch(`${BASE}/loans/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('updateLoan:', e); throw e; });
 
-export const updateLoan = async (id, payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/loans/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('updateLoan:', e); throw e; }
-};
+export const deleteLoan = (id) =>
+  authenticatedFetch(`${BASE}/loans/${id}`, { method: 'DELETE' }).then(handleResponse).catch(e => { logger.error('deleteLoan:', e); throw e; });
 
-export const deleteLoan = async (id) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/loans/${id}`, { method: 'DELETE' });
-    return await handleResponse(res);
-  } catch (e) { logger.error('deleteLoan:', e); throw e; }
-};
+export const getPermissions = (nombre) =>
+  authenticatedFetch(`${BASE}/permissions${buildQuery(nombre)}`).then(handleResponse).catch(e => { logger.error('getPermissions:', e); throw e; });
 
-// ─── PERMISOS / INCAPACIDADES ────────────────────────────────────────────────
+export const createPermission = (p) =>
+  authenticatedFetch(`${BASE}/permissions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('createPermission:', e); throw e; });
 
-export const getPermissions = async (employeeId = null) => {
-  try {
-    const params = employeeId ? `?employee_id=${employeeId}` : '';
-    const res = await authenticatedFetch(`${BASE}/permissions${params}`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getPermissions:', e); throw e; }
-};
+export const updatePermission = (id, p) =>
+  authenticatedFetch(`${BASE}/permissions/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('updatePermission:', e); throw e; });
 
-export const createPermission = async (payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/permissions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('createPermission:', e); throw e; }
-};
+export const deletePermission = (id) =>
+  authenticatedFetch(`${BASE}/permissions/${id}`, { method: 'DELETE' }).then(handleResponse).catch(e => { logger.error('deletePermission:', e); throw e; });
 
-export const updatePermission = async (id, payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/permissions/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('updatePermission:', e); throw e; }
-};
+export const getVacations = (nombre) =>
+  authenticatedFetch(`${BASE}/vacations${buildQuery(nombre)}`).then(handleResponse).catch(e => { logger.error('getVacations:', e); throw e; });
 
-export const deletePermission = async (id) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/permissions/${id}`, { method: 'DELETE' });
-    return await handleResponse(res);
-  } catch (e) { logger.error('deletePermission:', e); throw e; }
-};
+export const createVacation = (p) =>
+  authenticatedFetch(`${BASE}/vacations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('createVacation:', e); throw e; });
 
-// ─── VACACIONES ──────────────────────────────────────────────────────────────
+export const updateVacation = (id, p) =>
+  authenticatedFetch(`${BASE}/vacations/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('updateVacation:', e); throw e; });
 
-export const getVacations = async (employeeId = null) => {
-  try {
-    const params = employeeId ? `?employee_id=${employeeId}` : '';
-    const res = await authenticatedFetch(`${BASE}/vacations${params}`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getVacations:', e); throw e; }
-};
+export const deleteVacation = (id) =>
+  authenticatedFetch(`${BASE}/vacations/${id}`, { method: 'DELETE' }).then(handleResponse).catch(e => { logger.error('deleteVacation:', e); throw e; });
 
-export const createVacation = async (payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/vacations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('createVacation:', e); throw e; }
-};
+export const getPayments = (nombre) =>
+  authenticatedFetch(`${BASE}/payments${buildQuery(nombre)}`).then(handleResponse).catch(e => { logger.error('getPayments:', e); throw e; });
 
-export const updateVacation = async (id, payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/vacations/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('updateVacation:', e); throw e; }
-};
+export const createPayment = (p) =>
+  authenticatedFetch(`${BASE}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('createPayment:', e); throw e; });
 
-export const deleteVacation = async (id) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/vacations/${id}`, { method: 'DELETE' });
-    return await handleResponse(res);
-  } catch (e) { logger.error('deleteVacation:', e); throw e; }
-};
+export const updatePayment = (id, p) =>
+  authenticatedFetch(`${BASE}/payments/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) }).then(handleResponse).catch(e => { logger.error('updatePayment:', e); throw e; });
 
-// ─── PAGOS ───────────────────────────────────────────────────────────────────
+export const deletePayment = (id) =>
+  authenticatedFetch(`${BASE}/payments/${id}`, { method: 'DELETE' }).then(handleResponse).catch(e => { logger.error('deletePayment:', e); throw e; });
 
-export const getPayments = async (employeeId = null) => {
-  try {
-    const params = employeeId ? `?employee_id=${employeeId}` : '';
-    const res = await authenticatedFetch(`${BASE}/payments${params}`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getPayments:', e); throw e; }
-};
-
-export const createPayment = async (payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/payments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('createPayment:', e); throw e; }
-};
-
-export const updatePayment = async (id, payload) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/payments/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await handleResponse(res);
-  } catch (e) { logger.error('updatePayment:', e); throw e; }
-};
-
-export const deletePayment = async (id) => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/payments/${id}`, { method: 'DELETE' });
-    return await handleResponse(res);
-  } catch (e) { logger.error('deletePayment:', e); throw e; }
-};
-
-// ─── RESUMEN (admin) ─────────────────────────────────────────────────────────
-
-export const getEmployeesSummary = async () => {
-  try {
-    const res = await authenticatedFetch(`${BASE}/summary`);
-    return await handleResponse(res);
-  } catch (e) { logger.error('getEmployeesSummary:', e); throw e; }
-};
+export const getEmployeesSummary = () =>
+  authenticatedFetch(`${BASE}/summary`).then(handleResponse).catch(e => { logger.error('getEmployeesSummary:', e); throw e; });

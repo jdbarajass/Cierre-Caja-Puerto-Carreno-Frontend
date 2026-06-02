@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState } from 'react';
 import { isAdmin } from '../../utils/auth';
-import { getUsers } from '../../services/usersService';
-import { Shirt, DollarSign, Clock, Palmtree, CreditCard, Users, ChevronRight } from 'lucide-react';
+import { Shirt, DollarSign, Clock, Sun, CreditCard, ChevronRight, Search, X } from 'lucide-react';
 
 import RopaSection from './RopaSection';
 import PrestamosSection from './PrestamosSection';
@@ -11,78 +9,74 @@ import VacacionesSection from './VacacionesSection';
 import PagosSection from './PagosSection';
 
 const TABS = [
-  { id: 'ropa',       label: 'Ropa',            icon: Shirt,       color: 'pink'   },
-  { id: 'prestamos',  label: 'Préstamos',        icon: DollarSign,  color: 'amber'  },
-  { id: 'permisos',   label: 'Permisos',         icon: Clock,       color: 'orange' },
-  { id: 'vacaciones', label: 'Vacaciones',       icon: Palmtree,    color: 'teal'   },
-  { id: 'pagos',      label: 'Pagos',            icon: CreditCard,  color: 'green'  },
+  { id: 'ropa',       label: 'Ropa',        icon: Shirt,      color: 'pink'   },
+  { id: 'prestamos',  label: 'Préstamos',   icon: DollarSign, color: 'amber'  },
+  { id: 'permisos',   label: 'Permisos',    icon: Clock,      color: 'orange' },
+  { id: 'vacaciones', label: 'Vacaciones',  icon: Sun,        color: 'teal'   },
+  { id: 'pagos',      label: 'Pagos',       icon: CreditCard, color: 'green'  },
 ];
 
 const COLOR_MAP = {
-  pink:   { tab: 'border-pink-500 text-pink-600',   active: 'bg-pink-50 text-pink-700 border-b-2 border-pink-500',   icon: 'text-pink-500',  bg: 'bg-pink-50'  },
-  amber:  { tab: 'border-amber-500 text-amber-600', active: 'bg-amber-50 text-amber-700 border-b-2 border-amber-500', icon: 'text-amber-500', bg: 'bg-amber-50' },
-  orange: { tab: 'border-orange-500 text-orange-600', active: 'bg-orange-50 text-orange-700 border-b-2 border-orange-500', icon: 'text-orange-500', bg: 'bg-orange-50' },
-  teal:   { tab: 'border-teal-500 text-teal-600',   active: 'bg-teal-50 text-teal-700 border-b-2 border-teal-500',   icon: 'text-teal-500',  bg: 'bg-teal-50'  },
-  green:  { tab: 'border-green-500 text-green-600', active: 'bg-green-50 text-green-700 border-b-2 border-green-500', icon: 'text-green-500', bg: 'bg-green-50' },
+  pink:   { active: 'bg-pink-50 text-pink-700 border-b-2 border-pink-500',   icon: 'text-pink-500',   bg: 'bg-pink-50'   },
+  amber:  { active: 'bg-amber-50 text-amber-700 border-b-2 border-amber-500', icon: 'text-amber-500', bg: 'bg-amber-50'  },
+  orange: { active: 'bg-orange-50 text-orange-700 border-b-2 border-orange-500', icon: 'text-orange-500', bg: 'bg-orange-50' },
+  teal:   { active: 'bg-teal-50 text-teal-700 border-b-2 border-teal-500',   icon: 'text-teal-500',   bg: 'bg-teal-50'   },
+  green:  { active: 'bg-green-50 text-green-700 border-b-2 border-green-500', icon: 'text-green-500', bg: 'bg-green-50'  },
 };
 
 const EmployeesLayout = () => {
-  const { user } = useAuth();
   const admin = isAdmin();
   const [activeTab, setActiveTab] = useState('ropa');
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+  const [filterNombre, setFilterNombre] = useState('');
+  const [filterInput, setFilterInput] = useState('');
 
-  useEffect(() => {
-    if (admin) {
-      getUsers()
-        .then(data => {
-          const sales = (data.users || []).filter(u => u.role === 'sales' && u.is_active);
-          setEmployees(sales);
-          if (sales.length > 0) setSelectedEmployeeId(sales[0].id);
-        })
-        .catch(() => {});
-    }
-  }, [admin]);
+  const applyFilter = () => setFilterNombre(filterInput.trim());
+  const clearFilter = () => { setFilterNombre(''); setFilterInput(''); };
 
   const visibleTabs = admin ? TABS : TABS.filter(t => t.id !== 'pagos');
 
-  const sectionProps = {
-    isAdmin: admin,
-    selectedEmployeeId: admin ? selectedEmployeeId : null,
-    currentUserId: user?.id,
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <span>Sistema KOAJ</span>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">Control de Empleadas</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Control de Empleadas</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Registro de ropa, préstamos, permisos, vacaciones y pagos
-          </p>
+      <div>
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <span>Sistema KOAJ</span>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-gray-900 font-medium">Control de Empleadas</span>
         </div>
+        <h1 className="text-2xl font-bold text-gray-900">Control de Empleadas</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Registro de ropa, préstamos, permisos, vacaciones y pagos
+        </p>
+      </div>
 
-        {/* Selector de empleada (solo admin) */}
-        {admin && employees.length > 0 && (
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
-            <Users className="w-4 h-4 text-indigo-500" />
-            <select
-              value={selectedEmployeeId || ''}
-              onChange={e => setSelectedEmployeeId(Number(e.target.value))}
-              className="text-sm font-medium text-gray-700 border-none outline-none bg-transparent pr-4"
-            >
-              {employees.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
-              ))}
-            </select>
-          </div>
+      {/* Buscador / filtro por nombre */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Filtrar por nombre (Mónica, Camila…)"
+            value={filterInput}
+            onChange={e => setFilterInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && applyFilter()}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+        </div>
+        <button onClick={applyFilter}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+          Buscar
+        </button>
+        {filterNombre && (
+          <button onClick={clearFilter}
+            className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+            <X className="w-4 h-4" /> Todos
+          </button>
+        )}
+        {filterNombre && (
+          <span className="text-sm text-indigo-600 font-medium">
+            Mostrando: <strong>{filterNombre}</strong>
+          </span>
         )}
       </div>
 
@@ -94,15 +88,10 @@ const EmployeesLayout = () => {
             const colors = COLOR_MAP[tab.color];
             const active = activeTab === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-colors ${
-                  active
-                    ? colors.active
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
+                  active ? colors.active : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}>
                 <div className={`w-6 h-6 rounded-md flex items-center justify-center ${active ? colors.bg : 'bg-gray-100'}`}>
                   <Icon className={`w-3.5 h-3.5 ${active ? colors.icon : 'text-gray-500'}`} />
                 </div>
@@ -112,13 +101,12 @@ const EmployeesLayout = () => {
           })}
         </div>
 
-        {/* Panel activo */}
         <div className="p-6">
-          {activeTab === 'ropa'       && <RopaSection       {...sectionProps} />}
-          {activeTab === 'prestamos'  && <PrestamosSection  {...sectionProps} />}
-          {activeTab === 'permisos'   && <PermisosSection   {...sectionProps} />}
-          {activeTab === 'vacaciones' && <VacacionesSection {...sectionProps} />}
-          {activeTab === 'pagos'      && admin && <PagosSection {...sectionProps} employees={employees} />}
+          {activeTab === 'ropa'       && <RopaSection       isAdmin={admin} filterNombre={filterNombre} />}
+          {activeTab === 'prestamos'  && <PrestamosSection  isAdmin={admin} filterNombre={filterNombre} />}
+          {activeTab === 'permisos'   && <PermisosSection   isAdmin={admin} filterNombre={filterNombre} />}
+          {activeTab === 'vacaciones' && <VacacionesSection isAdmin={admin} filterNombre={filterNombre} />}
+          {activeTab === 'pagos'      && admin && <PagosSection isAdmin={admin} filterNombre={filterNombre} />}
         </div>
       </div>
     </div>
