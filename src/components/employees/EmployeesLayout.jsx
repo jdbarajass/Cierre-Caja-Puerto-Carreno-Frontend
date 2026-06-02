@@ -56,7 +56,7 @@ const EmployeesLayout = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Filtrar por nombre (Mónica, Camila…)"
+            placeholder="Filtrar por nombre (Mónica, Rita…)"
             value={filterInput}
             onChange={e => setFilterInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applyFilter()}
