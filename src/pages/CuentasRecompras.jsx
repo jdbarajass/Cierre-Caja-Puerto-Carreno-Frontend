@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, Plus, Trash2, Pencil, X, Check, AlertCircle,
-  ChevronRight, TrendingUp, ChevronLeft
+  ChevronRight, TrendingUp, ChevronLeft, ShoppingBag, ArrowDownCircle
 } from 'lucide-react';
 import {
-  getEntries, createEntry, updateEntry, deleteEntry
+  getEntries, createEntry, updateEntry, deleteEntry,
+  getPurchases, createPurchase, updatePurchase, deletePurchase
 } from '../services/repurchaseService';
 
 const fmt = (v) =>
@@ -29,57 +30,69 @@ const PAYMENT_COLS = [
 
 const today = () => new Date().toISOString().split('T')[0];
 
-const EMPTY = {
-  date: today(),
-  descripcion: 'Recompra Jhonatan',
-  valor_no_enviado: '',
-  efectivo: '', datafono: '', qr: '', daviplata: '', nequi: '', bbva: '',
-  sobrante_mes_anterior: '',
-  fecha_compra: '',
-  notes: ''
+const EMPTY_ENTRY = {
+  date: today(), descripcion: 'Recompra Jhonatan',
+  valor_no_enviado: '', efectivo: '', datafono: '', qr: '',
+  daviplata: '', nequi: '', bbva: '', sobrante_mes_anterior: '',
+  fecha_compra: '', notes: ''
 };
 
-// ─── Campo numérico FUERA del componente principal ──────────────────────────
-// IMPORTANTE: definir componentes dentro de otro componente hace que React los
-// destruya y recree en cada render, perdiendo el foco tras cada tecla pulsada.
+const EMPTY_PURCHASE = { date: today(), store: '', amount: '', notes: '' };
+
+// ─── Campo numérico estable (definido FUERA del componente) ──────────────────
 const NumberField = ({ label, fieldKey, value, onChange }) => (
   <div>
     <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
     <input
-      type="number"
-      min="0"
-      step="1"
-      placeholder="0"
+      type="number" min="0" step="1" placeholder="0"
       value={value}
       onChange={e => onChange(fieldKey, e.target.value)}
       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
     />
   </div>
 );
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const CuentasRecompras = () => {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
+  // Entradas (dinero enviado)
   const [entries, setEntries]     = useState([]);
   const [totals,  setTotals]      = useState({});
+  // Compras realizadas
+  const [purchases, setPurchases]       = useState([]);
+  const [totalCompras, setTotalCompras] = useState(0);
+
   const [loading, setLoading]     = useState(false);
-  const [showForm, setShowForm]   = useState(false);
-  const [form, setForm]           = useState(EMPTY);
-  const [editingId, setEditingId] = useState(null);
-  const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState('');
+
+  // Formulario entradas
+  const [showEntryForm, setShowEntryForm]   = useState(false);
+  const [entryForm, setEntryForm]           = useState(EMPTY_ENTRY);
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [savingEntry, setSavingEntry]       = useState(false);
+
+  // Formulario compras
+  const [showPurchaseForm, setShowPurchaseForm]   = useState(false);
+  const [purchaseForm, setPurchaseForm]           = useState(EMPTY_PURCHASE);
+  const [editingPurchaseId, setEditingPurchaseId] = useState(null);
+  const [savingPurchase, setSavingPurchase]       = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getEntries({ year, month });
-      setEntries(data.entries || []);
-      setTotals(data.totals || {});
+      const [entriesData, purchasesData] = await Promise.all([
+        getEntries({ year, month }),
+        getPurchases({ year, month })
+      ]);
+      setEntries(entriesData.entries || []);
+      setTotals(entriesData.totals || {});
+      setPurchases(purchasesData.purchases || []);
+      setTotalCompras(purchasesData.total_compras || 0);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -90,117 +103,115 @@ const CuentasRecompras = () => {
   useEffect(() => { load(); }, [load]);
 
   const prevMonth = () => {
-    if (month === 1) { setMonth(12); setYear(y => y - 1); }
-    else setMonth(m => m - 1);
+    if (month === 1) { setMonth(12); setYear(y => y - 1); } else setMonth(m => m - 1);
   };
   const nextMonth = () => {
-    if (month === 12) { setMonth(1); setYear(y => y + 1); }
-    else setMonth(m => m + 1);
+    if (month === 12) { setMonth(1); setYear(y => y + 1); } else setMonth(m => m + 1);
   };
 
   const toNum = (v) => parseFloat(v) || 0;
 
-  // Handler estable para NumberField (no recrea la función en cada render)
-  const handleFieldChange = useCallback((key, value) => {
-    setForm(f => ({ ...f, [key]: value }));
+  // Handler estable para NumberField
+  const handleEntryFieldChange = useCallback((key, value) => {
+    setEntryForm(f => ({ ...f, [key]: value }));
   }, []);
 
-  // Totales del formulario en tiempo real
-  const formTotalEnviado = () =>
-    PAYMENT_COLS.reduce((s, { key }) => s + toNum(form[key]), 0);
+  // Cálculos del formulario de entrada en tiempo real
+  const formTotalEnviado = () => PAYMENT_COLS.reduce((s, { key }) => s + toNum(entryForm[key]), 0);
+  const formSobrante     = () => toNum(entryForm.sobrante_mes_anterior);
+  const formGrandTotal   = () => formTotalEnviado() + formSobrante();
+  const formFee          = () => Math.round(formGrandTotal() * 4 / 1000);
+  const formNetValue     = () => formGrandTotal() - formFee();
 
-  const formSobrante = () => toNum(form.sobrante_mes_anterior);
+  // Totales del mes
+  const monthTotalRecibido = () => (totals.total_enviado || 0) + (totals.sobrante_acumulado || 0);
+  const monthFee           = () => Math.round(monthTotalRecibido() * 4 / 1000);
+  const monthBalance       = () => monthTotalRecibido() - totalCompras;
 
-  // TOTAL GENERAL = lo enviado por medios de pago + sobrante del mes anterior
-  const formGrandTotal = () => formTotalEnviado() + formSobrante();
-  const formFee        = () => Math.round(formGrandTotal() * 4 / 1000);
-  const formNetValue   = () => formGrandTotal() - formFee();
-
-  // Totales del mes (para el footer de la tabla)
-  const monthTotalEnviado  = () => (totals.total_enviado   || 0);
-  const monthSobrante      = () => (totals.sobrante_acumulado || 0);
-  const monthGrandTotal    = () => monthTotalEnviado() + monthSobrante();
-  const monthFee           = () => Math.round(monthGrandTotal() * 4 / 1000);
-  const monthNetValue      = () => monthGrandTotal() - monthFee();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
+  // ── Entradas: submit ──────────────────────────────────────────────────────
+  const handleEntrySubmit = async (e) => {
+    e.preventDefault(); setSavingEntry(true); setError('');
     try {
       const payload = {
-        date: form.date,
-        descripcion: form.descripcion || 'Recompra Jhonatan',
-        valor_no_enviado:      toNum(form.valor_no_enviado),
-        efectivo:              toNum(form.efectivo),
-        datafono:              toNum(form.datafono),
-        qr:                    toNum(form.qr),
-        daviplata:             toNum(form.daviplata),
-        nequi:                 toNum(form.nequi),
-        bbva:                  toNum(form.bbva),
-        sobrante_mes_anterior: toNum(form.sobrante_mes_anterior),
-        fecha_compra:          form.fecha_compra || null,
-        notes:                 form.notes,
+        date: entryForm.date, descripcion: entryForm.descripcion || 'Recompra Jhonatan',
+        valor_no_enviado:      toNum(entryForm.valor_no_enviado),
+        efectivo:              toNum(entryForm.efectivo),
+        datafono:              toNum(entryForm.datafono),
+        qr:                    toNum(entryForm.qr),
+        daviplata:             toNum(entryForm.daviplata),
+        nequi:                 toNum(entryForm.nequi),
+        bbva:                  toNum(entryForm.bbva),
+        sobrante_mes_anterior: toNum(entryForm.sobrante_mes_anterior),
+        fecha_compra:          entryForm.fecha_compra || null,
+        notes:                 entryForm.notes,
       };
-      if (editingId) {
-        await updateEntry(editingId, payload);
-        setSuccess('Registro actualizado');
-      } else {
-        await createEntry(payload);
-        setSuccess('Registro creado');
-      }
-      setShowForm(false);
-      setEditingId(null);
-      setForm(EMPTY);
+      if (editingEntryId) { await updateEntry(editingEntryId, payload); setSuccess('Entrada actualizada'); }
+      else { await createEntry(payload); setSuccess('Entrada creada'); }
+      setShowEntryForm(false); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY);
       await load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSuccess(''), 3000);
-    }
+    } catch (e) { setError(e.message); }
+    finally { setSavingEntry(false); setTimeout(() => setSuccess(''), 3000); }
   };
 
-  const handleEdit = (row) => {
-    setForm({
-      date:                  row.date,
-      descripcion:           row.descripcion || 'Recompra Jhonatan',
-      valor_no_enviado:      String(row.valor_no_enviado  || ''),
-      efectivo:              String(row.efectivo          || ''),
-      datafono:              String(row.datafono          || ''),
-      qr:                    String(row.qr                || ''),
-      daviplata:             String(row.daviplata         || ''),
-      nequi:                 String(row.nequi             || ''),
-      bbva:                  String(row.bbva              || ''),
+  const handleEditEntry = (row) => {
+    setEntryForm({
+      date: row.date, descripcion: row.descripcion || 'Recompra Jhonatan',
+      valor_no_enviado: String(row.valor_no_enviado || ''),
+      efectivo: String(row.efectivo || ''), datafono: String(row.datafono || ''),
+      qr: String(row.qr || ''), daviplata: String(row.daviplata || ''),
+      nequi: String(row.nequi || ''), bbva: String(row.bbva || ''),
       sobrante_mes_anterior: String(row.sobrante_mes_anterior || ''),
-      fecha_compra:          row.fecha_compra || '',
-      notes:                 row.notes || '',
+      fecha_compra: row.fecha_compra || '', notes: row.notes || '',
     });
-    setEditingId(row.id);
-    setShowForm(true);
+    setEditingEntryId(row.id);
+    setShowEntryForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar este registro?')) return;
-    try { await deleteEntry(id); await load(); }
-    catch (e) { setError(e.message); }
+  const handleDeleteEntry = async (id) => {
+    if (!window.confirm('¿Eliminar esta entrada?')) return;
+    try { await deleteEntry(id); await load(); } catch (e) { setError(e.message); }
   };
 
-  const cancelForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setForm(EMPTY);
-    setError('');
+  // ── Compras: submit ───────────────────────────────────────────────────────
+  const handlePurchaseSubmit = async (e) => {
+    e.preventDefault(); setSavingPurchase(true); setError('');
+    try {
+      const payload = {
+        date:   purchaseForm.date,
+        store:  purchaseForm.store.trim(),
+        amount: parseFloat(purchaseForm.amount),
+        notes:  purchaseForm.notes,
+      };
+      if (editingPurchaseId) { await updatePurchase(editingPurchaseId, payload); setSuccess('Compra actualizada'); }
+      else { await createPurchase(payload); setSuccess('Compra registrada'); }
+      setShowPurchaseForm(false); setEditingPurchaseId(null); setPurchaseForm(EMPTY_PURCHASE);
+      await load();
+    } catch (e) { setError(e.message); }
+    finally { setSavingPurchase(false); setTimeout(() => setSuccess(''), 3000); }
   };
 
-  // Total de una fila = medios de pago + sobrante mes anterior
-  const rowTotal = (row) =>
-    (row.total_enviado || 0) + (row.sobrante_mes_anterior || 0);
+  const handleEditPurchase = (p) => {
+    setPurchaseForm({ date: p.date, store: p.store, amount: String(p.amount), notes: p.notes || '' });
+    setEditingPurchaseId(p.id);
+    setShowPurchaseForm(true);
+  };
+
+  const handleDeletePurchase = async (id) => {
+    if (!window.confirm('¿Eliminar esta compra?')) return;
+    try { await deletePurchase(id); await load(); } catch (e) { setError(e.message); }
+  };
+
+  // total de cada fila de entrada
+  const rowTotal = (row) => (row.total_enviado || 0) + (row.sobrante_mes_anterior || 0);
+
+  // Color del balance
+  const balanceColor = monthBalance() >= 0 ? 'text-emerald-700' : 'text-red-600';
+  const balanceBg    = monthBalance() >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200';
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
@@ -209,9 +220,7 @@ const CuentasRecompras = () => {
             <span className="text-gray-900 font-medium">Cuentas Recompras</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Cuentas Recompras</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Control de dinero enviado al socio para recompra de mercancía
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Control de dinero enviado y compras realizadas</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load}
@@ -219,15 +228,15 @@ const CuentasRecompras = () => {
             <RefreshCw className="w-4 h-4" /> Actualizar
           </button>
           <button
-            onClick={() => { setShowForm(v => !v); setEditingId(null); setForm(EMPTY); }}
+            onClick={() => { setShowEntryForm(v => !v); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY); }}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-            {showForm && !editingId ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showForm && !editingId ? 'Cancelar' : 'Agregar fila'}
+            {showEntryForm && !editingEntryId ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {showEntryForm && !editingEntryId ? 'Cancelar' : 'Agregar envío'}
           </button>
         </div>
       </div>
 
-      {/* Alertas */}
+      {/* ── Alertas ────────────────────────────────────────────────────── */}
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
@@ -239,70 +248,45 @@ const CuentasRecompras = () => {
         </div>
       )}
 
-      {/* Formulario */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white border border-indigo-200 rounded-xl p-6 shadow-sm space-y-5">
+      {/* ── Formulario de envío ─────────────────────────────────────────── */}
+      {showEntryForm && (
+        <form onSubmit={handleEntrySubmit} className="bg-white border border-indigo-200 rounded-xl p-6 shadow-sm space-y-5">
           <h3 className="font-semibold text-gray-900 text-base">
-            {editingId ? 'Editar registro' : 'Nuevo registro'}
+            {editingEntryId ? 'Editar envío' : 'Nuevo envío de dinero'}
           </h3>
-
-          {/* Fila 1: descripción, fecha, fecha compra */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-              <input type="text" placeholder="Recompra Jhonatan" value={form.descripcion}
-                onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+              <input type="text" placeholder="Recompra Jhonatan" value={entryForm.descripcion}
+                onChange={e => setEntryForm(f => ({ ...f, descripcion: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha *</label>
-              <input type="date" required value={form.date}
-                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+              <input type="date" required value={entryForm.date}
+                onChange={e => setEntryForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha compra factura</label>
-              <input type="date" value={form.fecha_compra}
-                onChange={e => setForm(f => ({ ...f, fecha_compra: e.target.value }))}
+              <input type="date" value={entryForm.fecha_compra}
+                onChange={e => setEntryForm(f => ({ ...f, fecha_compra: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
           </div>
-
-          {/* Fila 2: valor no enviado + sobrante */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <NumberField
-              label="Valor aún no enviado"
-              fieldKey="valor_no_enviado"
-              value={form.valor_no_enviado}
-              onChange={handleFieldChange}
-            />
-            <NumberField
-              label="Sobrante mes anterior"
-              fieldKey="sobrante_mes_anterior"
-              value={form.sobrante_mes_anterior}
-              onChange={handleFieldChange}
-            />
+            <NumberField label="Valor aún no enviado" fieldKey="valor_no_enviado" value={entryForm.valor_no_enviado} onChange={handleEntryFieldChange} />
+            <NumberField label="Sobrante mes anterior" fieldKey="sobrante_mes_anterior" value={entryForm.sobrante_mes_anterior} onChange={handleEntryFieldChange} />
           </div>
-
-          {/* Fila 3: medios de pago */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Montos ya enviados al socio por medio de pago
-            </p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Montos enviados por medio de pago</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {PAYMENT_COLS.map(({ key, label }) => (
-                <NumberField
-                  key={key}
-                  label={label}
-                  fieldKey={key}
-                  value={form[key]}
-                  onChange={handleFieldChange}
-                />
+                <NumberField key={key} label={label} fieldKey={key} value={entryForm[key]} onChange={handleEntryFieldChange} />
               ))}
             </div>
           </div>
-
-          {/* Totales calculados en tiempo real */}
+          {/* Resumen en tiempo real */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="px-4 py-3 bg-blue-50 rounded-xl">
               <p className="text-xs text-blue-600 font-medium">Enviado (medios)</p>
@@ -321,21 +305,18 @@ const CuentasRecompras = () => {
               <p className="text-lg font-bold text-green-800">{fmtForce(formNetValue())}</p>
             </div>
           </div>
-
-          {/* Notas */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Observaciones..." value={form.notes}
-              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            <textarea rows={2} placeholder="Observaciones..." value={entryForm.notes}
+              onChange={e => setEntryForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none" />
           </div>
-
           <div className="flex gap-3">
-            <button type="submit" disabled={saving}
+            <button type="submit" disabled={savingEntry}
               className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-              <Check className="w-4 h-4" /> {saving ? 'Guardando...' : 'Guardar registro'}
+              <Check className="w-4 h-4" /> {savingEntry ? 'Guardando...' : 'Guardar'}
             </button>
-            <button type="button" onClick={cancelForm}
+            <button type="button" onClick={() => { setShowEntryForm(false); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY); }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
               <X className="w-4 h-4" /> Cancelar
             </button>
@@ -343,167 +324,249 @@ const CuentasRecompras = () => {
         </form>
       )}
 
-      {/* Navegación mes */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </button>
-        <div className="text-center">
-          <p className="text-lg font-bold text-gray-900">{MONTHS[month - 1]} {year}</p>
-          <p className="text-xs text-gray-500">{entries.length} registro{entries.length !== 1 ? 's' : ''}</p>
+      {/* ── Selector de mes + BALANCE PROMINENTE ───────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Navegación de mes */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div className="text-center">
+            <p className="text-xl font-bold text-gray-900">{MONTHS[month - 1]} {year}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{entries.length} envío{entries.length !== 1 ? 's' : ''} · {purchases.length} compra{purchases.length !== 1 ? 's' : ''}</p>
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+              <span className="text-indigo-600 font-medium">Recibido: {fmtForce(monthTotalRecibido())}</span>
+              <span className="text-red-500 font-medium">Compras: {fmtForce(totalCompras)}</span>
+            </div>
+          </div>
+          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
-        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ChevronRight className="w-5 h-5 text-gray-600" />
-        </button>
+
+        {/* Balance disponible */}
+        <div className={`rounded-xl p-5 border-2 shadow-sm flex items-center gap-5 ${balanceBg}`}>
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${monthBalance() >= 0 ? 'bg-emerald-100' : 'bg-red-100'}`}>
+            <TrendingUp className={`w-7 h-7 ${monthBalance() >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Balance disponible</p>
+            <p className={`text-3xl font-bold leading-tight ${balanceColor}`}>
+              {fmtForce(monthBalance())}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {fmtForce(monthTotalRecibido())} recibido − {fmtForce(totalCompras)} en compras
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Tabla */}
+      {/* ── Tabla de envíos ─────────────────────────────────────────────── */}
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
         </div>
-      ) : entries.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl text-center py-16 text-gray-400">
+      ) : entries.length === 0 && purchases.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-xl text-center py-14 text-gray-400">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-25" />
           <p className="font-medium">No hay registros para {MONTHS[month - 1]} {year}</p>
-          <p className="text-sm mt-1">Haz clic en "Agregar fila" para comenzar</p>
+          <p className="text-sm mt-1">Usa "Agregar envío" para comenzar</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[1200px]">
-              <thead>
-                <tr className="bg-gray-900 text-white text-xs">
-                  <th colSpan={3} className="px-3 py-2 text-center border-r border-gray-700">
-                    RECOMPRA {MONTHS[month - 1].toUpperCase()} {year}
-                  </th>
-                  <th colSpan={6} className="px-3 py-2 text-center border-r border-gray-700 bg-gray-800">
-                    MEDIOS DE PAGO ENVIADOS
-                  </th>
-                  <th className="px-3 py-2 text-center border-r border-gray-700 bg-violet-800 whitespace-nowrap">
-                    SOBRANTE<br/>MES ANT.
-                  </th>
-                  <th className="px-3 py-2 text-center border-r border-gray-700 bg-indigo-800">TOTAL</th>
-                  <th colSpan={3} className="px-3 py-2 text-center bg-orange-700">
-                    FACTURA RECOMPRA ROPA
-                  </th>
-                  <th className="px-2 py-2 bg-gray-900" />
-                </tr>
-                <tr className="bg-gray-700 text-white text-xs uppercase tracking-wide">
-                  <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Descripción</th>
-                  <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Fecha</th>
-                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-yellow-800">
-                    Valor no enviado
-                  </th>
-                  {PAYMENT_COLS.map(({ key, label }) => (
-                    <th key={key} className="text-right px-3 py-2.5 font-semibold whitespace-nowrap">
-                      {label}
-                    </th>
-                  ))}
-                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-violet-700">
-                    Sobrante
-                  </th>
-                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-indigo-700">
-                    TOTAL
-                  </th>
-                  <th className="text-center px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
-                    Fecha compra
-                  </th>
-                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
-                    Comisión<br/>(4×1000)
-                  </th>
-                  <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">
-                    Valor neto
-                  </th>
-                  <th className="px-2 py-2.5 bg-gray-700" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {entries.map((row, idx) => {
-                  const total = rowTotal(row);
-                  const fee   = Math.round(total * 4 / 1000);
-                  const neto  = total - fee;
-                  return (
-                    <tr key={row.id} className={`hover:bg-indigo-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-sky-50'}`}>
-                      <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">
-                        {row.descripcion || 'Recompra Jhonatan'}
-                      </td>
-                      <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">{row.date}</td>
-                      <td className="px-3 py-2.5 text-right text-amber-700 bg-yellow-50 whitespace-nowrap font-medium">
-                        {fmt(row.valor_no_enviado)}
-                      </td>
-                      {PAYMENT_COLS.map(({ key }) => (
-                        <td key={key} className="px-3 py-2.5 text-right text-gray-700 whitespace-nowrap">
-                          {fmt(row[key])}
-                        </td>
+        <>
+          {entries.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                <ArrowDownCircle className="w-4 h-4 text-indigo-500" />
+                <span className="text-sm font-semibold text-gray-700">Dinero enviado al socio</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[1200px]">
+                  <thead>
+                    <tr className="bg-gray-900 text-white text-xs">
+                      <th colSpan={3} className="px-3 py-2 text-center border-r border-gray-700">
+                        RECOMPRA {MONTHS[month - 1].toUpperCase()} {year}
+                      </th>
+                      <th colSpan={6} className="px-3 py-2 text-center border-r border-gray-700 bg-gray-800">
+                        MEDIOS DE PAGO ENVIADOS
+                      </th>
+                      <th className="px-3 py-2 text-center border-r border-gray-700 bg-violet-800 whitespace-nowrap">
+                        SOBRANTE<br/>MES ANT.
+                      </th>
+                      <th className="px-3 py-2 text-center border-r border-gray-700 bg-indigo-800">TOTAL</th>
+                      <th colSpan={3} className="px-3 py-2 text-center bg-orange-700">FACTURA RECOMPRA ROPA</th>
+                      <th className="px-2 py-2 bg-gray-900" />
+                    </tr>
+                    <tr className="bg-gray-700 text-white text-xs uppercase tracking-wide">
+                      <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Descripción</th>
+                      <th className="text-left px-3 py-2.5 font-semibold whitespace-nowrap">Fecha</th>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-yellow-800">No enviado</th>
+                      {PAYMENT_COLS.map(({ key, label }) => (
+                        <th key={key} className="text-right px-3 py-2.5 font-semibold whitespace-nowrap">{label}</th>
                       ))}
-                      {/* Sobrante mes anterior — columna propia */}
-                      <td className="px-3 py-2.5 text-right font-semibold text-violet-700 bg-violet-50 whitespace-nowrap">
-                        {fmt(row.sobrante_mes_anterior)}
-                      </td>
-                      {/* TOTAL = medios de pago + sobrante */}
-                      <td className="px-3 py-2.5 text-right font-bold text-indigo-800 bg-indigo-50 whitespace-nowrap">
-                        {fmtForce(total)}
-                      </td>
-                      <td className="px-3 py-2.5 text-center text-gray-600 text-xs bg-orange-50 whitespace-nowrap">
-                        {row.fecha_compra || '—'}
-                      </td>
-                      <td className="px-3 py-2.5 text-right text-orange-700 bg-orange-50 whitespace-nowrap">
-                        {total > 0 ? fmtForce(fee) : '—'}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">
-                        {total > 0 ? fmtForce(neto) : '—'}
-                      </td>
-                      <td className="px-2 py-2.5">
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <button onClick={() => handleEdit(row)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleDelete(row.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-violet-700">Sobrante</th>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-indigo-700">TOTAL</th>
+                      <th className="text-center px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Fecha compra</th>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Comisión 4‰</th>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Valor neto</th>
+                      <th className="px-2 py-2.5 bg-gray-700" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {entries.map((row, idx) => {
+                      const total = rowTotal(row);
+                      const fee   = Math.round(total * 4 / 1000);
+                      return (
+                        <tr key={row.id} className={`hover:bg-indigo-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-sky-50'}`}>
+                          <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">{row.descripcion || 'Recompra Jhonatan'}</td>
+                          <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">{row.date}</td>
+                          <td className="px-3 py-2.5 text-right text-amber-700 bg-yellow-50 whitespace-nowrap font-medium">{fmt(row.valor_no_enviado)}</td>
+                          {PAYMENT_COLS.map(({ key }) => (
+                            <td key={key} className="px-3 py-2.5 text-right text-gray-700 whitespace-nowrap">{fmt(row[key])}</td>
+                          ))}
+                          <td className="px-3 py-2.5 text-right font-semibold text-violet-700 bg-violet-50 whitespace-nowrap">{fmt(row.sobrante_mes_anterior)}</td>
+                          <td className="px-3 py-2.5 text-right font-bold text-indigo-800 bg-indigo-50 whitespace-nowrap">{fmtForce(total)}</td>
+                          <td className="px-3 py-2.5 text-center text-gray-600 text-xs bg-orange-50 whitespace-nowrap">{row.fecha_compra || '—'}</td>
+                          <td className="px-3 py-2.5 text-right text-orange-700 bg-orange-50 whitespace-nowrap">{total > 0 ? fmtForce(fee) : '—'}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">{total > 0 ? fmtForce(total - fee) : '—'}</td>
+                          <td className="px-2 py-2.5">
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <button onClick={() => handleEditEntry(row)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => handleDeleteEntry(row.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-800 text-white font-bold text-sm">
+                      <td className="px-3 py-3 uppercase tracking-wide" colSpan={2}>TOTAL ENVÍOS</td>
+                      <td className="px-3 py-3 text-right text-yellow-300">$ 0</td>
+                      {PAYMENT_COLS.map(({ key }) => (
+                        <td key={key} className="px-3 py-3 text-right whitespace-nowrap">{totals[key] ? fmtForce(totals[key]) : '—'}</td>
+                      ))}
+                      <td className="px-3 py-3 text-right whitespace-nowrap bg-violet-700">{(totals.sobrante_acumulado || 0) > 0 ? fmtForce(totals.sobrante_acumulado) : '—'}</td>
+                      <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">{fmtForce(monthTotalRecibido())}</td>
+                      <td className="px-3 py-3 text-center bg-orange-700 text-xs">Total Facturas</td>
+                      <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce(monthFee()) : '—'}</td>
+                      <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce(monthTotalRecibido() - monthFee()) : '—'}</td>
+                      <td className="px-2 py-3 bg-gray-800" />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── Sección de compras realizadas ──────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-rose-500" />
+                <span className="text-sm font-semibold text-gray-700">Compras realizadas por el socio</span>
+                {purchases.length > 0 && (
+                  <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">
+                    {fmtForce(totalCompras)}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => { setShowPurchaseForm(v => !v); setEditingPurchaseId(null); setPurchaseForm(EMPTY_PURCHASE); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-medium hover:bg-rose-700 transition-colors">
+                {showPurchaseForm && !editingPurchaseId ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                {showPurchaseForm && !editingPurchaseId ? 'Cancelar' : 'Registrar compra'}
+              </button>
+            </div>
+
+            {/* Formulario de compra */}
+            {showPurchaseForm && (
+              <form onSubmit={handlePurchaseSubmit} className="p-5 border-b border-gray-100 bg-rose-50 space-y-4">
+                <h4 className="font-semibold text-gray-800 text-sm">{editingPurchaseId ? 'Editar compra' : 'Nueva compra'}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
+                    <input type="date" required value={purchaseForm.date}
+                      onChange={e => setPurchaseForm(f => ({ ...f, date: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Tienda / Proveedor *</label>
+                    <input type="text" required placeholder="Nombre de la tienda" value={purchaseForm.store}
+                      onChange={e => setPurchaseForm(f => ({ ...f, store: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Monto *</label>
+                    <input type="number" required min="0" step="1" placeholder="0" value={purchaseForm.amount}
+                      onChange={e => setPurchaseForm(f => ({ ...f, amount: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
+                  <textarea rows={2} placeholder="Qué se compró, observaciones..." value={purchaseForm.notes}
+                    onChange={e => setPurchaseForm(f => ({ ...f, notes: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white resize-none" />
+                </div>
+                <div className="flex gap-3">
+                  <button type="submit" disabled={savingPurchase}
+                    className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700 disabled:opacity-50 transition-colors">
+                    <Check className="w-4 h-4" /> {savingPurchase ? 'Guardando...' : 'Guardar compra'}
+                  </button>
+                  <button type="button"
+                    onClick={() => { setShowPurchaseForm(false); setEditingPurchaseId(null); setPurchaseForm(EMPTY_PURCHASE); }}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                    <X className="w-4 h-4" /> Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Tabla de compras */}
+            {purchases.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">
+                <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-25" />
+                <p className="text-sm">No hay compras registradas este mes</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Fecha</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Tienda / Proveedor</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Monto</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Notas</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {purchases.map(p => (
+                    <tr key={p.id} className="hover:bg-rose-50 transition-colors">
+                      <td className="px-4 py-3 text-gray-700">{p.date}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{p.store}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-rose-700">{fmtForce(p.amount)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{p.notes || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <button onClick={() => handleEditPurchase(p)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => handleDeletePurchase(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-
-              {/* Fila de TOTALES DEL MES */}
-              <tfoot>
-                <tr className="bg-gray-800 text-white font-bold text-sm">
-                  <td className="px-3 py-3 uppercase tracking-wide" colSpan={2}>
-                    TOTAL RECOMPRAS
-                  </td>
-                  <td className="px-3 py-3 text-right text-yellow-300">$ 0</td>
-                  {PAYMENT_COLS.map(({ key }) => (
-                    <td key={key} className="px-3 py-3 text-right whitespace-nowrap">
-                      {totals[key] ? fmtForce(totals[key]) : '—'}
-                    </td>
                   ))}
-                  {/* Sobrante acumulado del mes */}
-                  <td className="px-3 py-3 text-right whitespace-nowrap bg-violet-700">
-                    {monthSobrante() > 0 ? fmtForce(monthSobrante()) : '—'}
-                  </td>
-                  {/* TOTAL = total_enviado + sobrante_acumulado */}
-                  <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">
-                    {fmtForce(monthGrandTotal())}
-                  </td>
-                  <td className="px-3 py-3 text-center bg-orange-700 text-xs">Total Facturas</td>
-                  <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">
-                    {monthGrandTotal() > 0 ? fmtForce(monthFee()) : '—'}
-                  </td>
-                  <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">
-                    {monthGrandTotal() > 0 ? fmtForce(monthNetValue()) : '—'}
-                  </td>
-                  <td className="px-2 py-3 bg-gray-800" />
-                </tr>
-              </tfoot>
-            </table>
+                </tbody>
+                <tfoot>
+                  <tr className="bg-rose-700 text-white font-bold text-sm">
+                    <td className="px-4 py-3 uppercase tracking-wide" colSpan={2}>TOTAL COMPRAS</td>
+                    <td className="px-4 py-3 text-right text-base">{fmtForce(totalCompras)}</td>
+                    <td colSpan={2} className="px-4 py-3" />
+                  </tr>
+                </tfoot>
+              </table>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

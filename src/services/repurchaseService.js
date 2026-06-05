@@ -57,3 +57,41 @@ export const getMonthlySummary = async () => {
     return await handle(await authenticatedFetch(`${BASE}/monthly-summary`));
   } catch (e) { logger.error('getMonthlySummary:', e); throw e; }
 };
+
+// ─── Compras realizadas por el socio ─────────────────────────────────────────
+
+export const getPurchases = async ({ year, month } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (year)  params.set('year',  year);
+    if (month) params.set('month', month);
+    const q = params.toString() ? `?${params}` : '';
+    return await handle(await authenticatedFetch(`${BASE}/purchases${q}`));
+  } catch (e) { logger.error('getPurchases:', e); throw e; }
+};
+
+export const createPurchase = async (payload) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/purchases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }));
+  } catch (e) { logger.error('createPurchase:', e); throw e; }
+};
+
+export const updatePurchase = async (id, payload) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/purchases/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }));
+  } catch (e) { logger.error('updatePurchase:', e); throw e; }
+};
+
+export const deletePurchase = async (id) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/purchases/${id}`, { method: 'DELETE' }));
+  } catch (e) { logger.error('deletePurchase:', e); throw e; }
+};
