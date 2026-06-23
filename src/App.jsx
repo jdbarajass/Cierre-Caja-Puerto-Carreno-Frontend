@@ -24,6 +24,7 @@ const UsersManagement = lazy(() => import('./pages/UsersManagement'));
 const KoajCodes = lazy(() => import('./pages/KoajCodes'));
 const EmployeesLayout = lazy(() => import('./components/employees/EmployeesLayout'));
 const CuentasRecompras = lazy(() => import('./pages/CuentasRecompras'));
+const NotesTasksLayout = lazy(() => import('./pages/NotesTasksLayout'));
 
 // Componente de carga
 const LoadingFallback = () => (
@@ -87,6 +88,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <EmployeesLayout />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Notas y Pendientes (Admin y Sales) */}
+              <Route
+                path="/notas-pendientes"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
+                    <MainLayout>
+                      <NotesTasksLayout />
                     </MainLayout>
                   </ProtectedRoute>
                 }

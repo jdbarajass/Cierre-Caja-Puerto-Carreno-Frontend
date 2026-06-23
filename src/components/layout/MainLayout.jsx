@@ -21,7 +21,9 @@ import {
   Users,
   Tag,
   Shirt,
-  Repeat
+  Repeat,
+  ClipboardList,
+  Briefcase
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -52,8 +54,10 @@ const MainLayout = ({ children }) => {
   // Estados para dropdowns
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [statsDropdownOpen, setStatsDropdownOpen] = useState(false);
+  const [gestionDropdownOpen, setGestionDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
   const statsDropdownRef = useRef(null);
+  const gestionDropdownRef = useRef(null);
 
   // Función para formatear moneda
   const formatCurrency = (value) => {
@@ -83,6 +87,9 @@ const MainLayout = ({ children }) => {
       }
       if (statsDropdownRef.current && !statsDropdownRef.current.contains(event.target)) {
         setStatsDropdownOpen(false);
+      }
+      if (gestionDropdownRef.current && !gestionDropdownRef.current.contains(event.target)) {
+        setGestionDropdownOpen(false);
       }
     };
 
@@ -158,8 +165,39 @@ const MainLayout = ({ children }) => {
     }
   ];
 
+  const gestionSection = [
+    {
+      id: 'recompras',
+      label: 'Cuentas Recompras',
+      description: 'Dinero enviado al socio para recompra',
+      path: '/cuentas-recompras',
+      icon: Repeat,
+      color: 'indigo',
+      roles: ['admin']
+    },
+    {
+      id: 'empleadas',
+      label: 'Control de Empleadas',
+      description: 'Ropa, préstamos, permisos, vacaciones, pagos',
+      path: '/empleadas',
+      icon: Shirt,
+      color: 'pink',
+      roles: ['admin', 'sales']
+    },
+    {
+      id: 'notas-pendientes',
+      label: 'Notas y Pendientes',
+      description: 'Resurtido y tareas operativas',
+      path: '/notas-pendientes',
+      icon: ClipboardList,
+      color: 'emerald',
+      roles: ['admin', 'sales']
+    }
+  ];
+
   const visibleDashboardItems = dashboardSection.filter(item => canAccess(item.roles));
   const visibleStatsItems = statsSection.filter(item => canAccess(item.roles));
+  const visibleGestionItems = gestionSection.filter(item => canAccess(item.roles));
 
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -168,6 +206,7 @@ const MainLayout = ({ children }) => {
   const handleNavigation = (path) => {
     navigate(path);
     setStatsDropdownOpen(false);
+    setGestionDropdownOpen(false);
   };
 
   const handleLogout = async () => {
@@ -301,38 +340,66 @@ const MainLayout = ({ children }) => {
                   </div>
                 )}
 
-                {/* Cuentas Recompras (Solo Admin) */}
-                {canAccess(['admin']) && (
-                  <button
-                    onClick={() => handleNavigation('/cuentas-recompras')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive('/cuentas-recompras')
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive('/cuentas-recompras') ? 'bg-indigo-100' : 'bg-indigo-50'}`}>
-                      <Repeat className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    Recompras
-                  </button>
-                )}
+                {/* Gestión Dropdown: Recompras + Empleadas + Notas y Pendientes */}
+                {visibleGestionItems.length > 0 && (
+                  <div ref={gestionDropdownRef} className="relative">
+                    <button
+                      onClick={() => setGestionDropdownOpen(!gestionDropdownOpen)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gestionDropdownOpen || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
+                          ? 'bg-violet-50 text-violet-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center">
+                        <Briefcase className="w-4 h-4 text-violet-600" />
+                      </div>
+                      Gestión
+                      <ChevronDown className={`w-4 h-4 transition-transform ${gestionDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                {/* Control de Empleadas (Admin y Sales, NO partner) */}
-                {canAccess(['admin', 'sales']) && (
-                <button
-                  onClick={() => handleNavigation('/empleadas')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive('/empleadas')
-                      ? 'bg-pink-50 text-pink-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isActive('/empleadas') ? 'bg-pink-100' : 'bg-pink-50'}`}>
-                    <Shirt className="w-4 h-4 text-pink-600" />
+                    {gestionDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        {visibleGestionItems.map((item) => {
+                          const Icon = item.icon;
+                          const colorConfig = {
+                            indigo: {
+                              icon: 'text-indigo-600',
+                              bg: 'bg-indigo-50',
+                              hover: 'hover:bg-indigo-100'
+                            },
+                            pink: {
+                              icon: 'text-pink-600',
+                              bg: 'bg-pink-50',
+                              hover: 'hover:bg-pink-100'
+                            },
+                            emerald: {
+                              icon: 'text-emerald-600',
+                              bg: 'bg-emerald-50',
+                              hover: 'hover:bg-emerald-100'
+                            }
+                          };
+
+                          const colors = colorConfig[item.color] || colorConfig.indigo;
+
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => handleNavigation(item.path)}
+                              className={`w-full text-left px-3 py-2.5 ${colors.hover} transition-colors flex items-start gap-3`}
+                            >
+                              <div className={`w-8 h-8 ${colors.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                <Icon className={`w-4 h-4 ${colors.icon}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                                <div className="text-xs text-gray-500 leading-tight">{item.description}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  Empleadas
-                </button>
                 )}
 
                 {/* Docs API */}
