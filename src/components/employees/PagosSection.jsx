@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { CreditCard, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getPayments, createPayment, updatePayment, deletePayment } from '../../services/employeesService';
 import EmployeeSummaryCards from './EmployeeSummaryCards';
+import EmployeeSelect from './EmployeeSelect';
 
 const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v || 0);
 const today = () => new Date().toISOString().split('T')[0];
@@ -90,10 +91,9 @@ const PagosSection = ({ isAdmin, filterNombre }) => {
           <h3 className="font-semibold text-gray-800 text-sm">{editingId ? 'Editar pago' : 'Nuevo pago'}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Nombre empleada *</label>
-              <input type="text" required placeholder="Mónica, Camila…" value={form.nombre_empleada}
-                onChange={e => setForm(f => ({ ...f, nombre_empleada: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300" />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Empleada *</label>
+              <EmployeeSelect value={form.nombre_empleada} focusRing="focus:ring-green-300"
+                onChange={e => setForm(f => ({ ...f, nombre_empleada: e.target.value }))} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Tipo *</label>

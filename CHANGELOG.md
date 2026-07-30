@@ -2,6 +2,20 @@
 
 ---
 
+## [2026-07-30] - Selector obligatorio de empleada (evita typos)
+
+### 🐛 Fix: registros que no se agrupaban por variaciones/typos del nombre
+- Se detectó que registros escritos como "monika vargas" (con "k") no se agrupaban con el resto de Mónica y caían en "Otras" — el campo "Nombre empleada" era de texto libre y cualquier variante o error de tipeo generaba un grupo distinto
+- El matcher de agrupamiento (`src/utils/employeeGroups.js`) ahora reconoce variantes como "monika" además de "monica", para que los registros históricos con errores de tipeo se sumen correctamente en la tarjeta de Mónica
+
+### ✨ Selector obligatorio de empleada en todos los formularios
+- El campo "Nombre empleada" (texto libre) fue reemplazado por un **selector obligatorio** (`EmployeeSelect`) con los nombres canónicos **"Mónica Vargas"** y **"Rita Infante"**, aplicado en las 5 secciones: Ropa, Préstamos, Permisos, Vacaciones y Pagos
+- Ya no es posible registrar una empleada escribiendo el nombre a mano, eliminando la causa raíz de las variantes/typos hacia adelante
+- Nuevo archivo: `src/components/employees/EmployeeSelect.jsx`
+- El buscador/filtro superior de "Control de Empleadas" se mantiene como texto libre (sirve para buscar también registros históricos con nombres no canónicos)
+
+---
+
 ## [2026-07-30] - Totales separados por empleada + ESLint
 
 ### ✨ Control de Empleadas: totales separados por empleada

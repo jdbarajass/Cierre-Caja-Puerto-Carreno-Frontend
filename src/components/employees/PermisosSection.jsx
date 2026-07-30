@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getPermissions, createPermission, updatePermission, deletePermission } from '../../services/employeesService';
 import { EMPLOYEE_GROUPS, groupKeyFor } from '../../utils/employeeGroups';
+import EmployeeSelect from './EmployeeSelect';
 
 const today = () => new Date().toISOString().split('T')[0];
 const TYPE_LABELS = {
@@ -123,10 +124,9 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
           <h3 className="font-semibold text-gray-800 text-sm">{editingId ? 'Editar' : 'Nuevo registro'}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Nombre empleada *</label>
-              <input type="text" required placeholder="Mónica, Camila…" value={form.nombre_empleada}
-                onChange={e => setForm(f => ({ ...f, nombre_empleada: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Empleada *</label>
+              <EmployeeSelect value={form.nombre_empleada} focusRing="focus:ring-orange-300"
+                onChange={e => setForm(f => ({ ...f, nombre_empleada: e.target.value }))} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
