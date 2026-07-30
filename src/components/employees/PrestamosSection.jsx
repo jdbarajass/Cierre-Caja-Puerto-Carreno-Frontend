@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DollarSign, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getLoans, createLoan, updateLoan, deleteLoan } from '../../services/employeesService';
+import EmployeeSummaryCards from './EmployeeSummaryCards';
 
 const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v || 0);
 const today = () => new Date().toISOString().split('T')[0];
@@ -66,6 +67,14 @@ const PrestamosSection = ({ isAdmin, filterNombre }) => {
         <div><p className="text-xs text-amber-700 font-medium uppercase">Total prestado</p><p className="text-2xl font-bold text-amber-800">{fmt(total)}</p></div>
         <div className="ml-auto"><p className="text-xs text-amber-600">{items.length} registro{items.length !== 1 ? 's' : ''}</p></div>
       </div>
+
+      <EmployeeSummaryCards
+        items={items}
+        valueFor={item => item.amount || 0}
+        formatValue={fmt}
+        countLabel="préstamo"
+        accentClass="text-amber-700"
+      />
 
       {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><AlertCircle className="w-4 h-4" />{error}</div>}
       {success && <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700"><Check className="w-4 h-4" />{success}</div>}

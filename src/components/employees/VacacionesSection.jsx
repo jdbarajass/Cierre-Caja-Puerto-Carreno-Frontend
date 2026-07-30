@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sun, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getVacations, createVacation, updateVacation, deleteVacation } from '../../services/employeesService';
+import EmployeeSummaryCards from './EmployeeSummaryCards';
 
 const today = () => new Date().toISOString().split('T')[0];
 const EMPTY = { nombre_empleada: '', start_date: today(), end_date: today(), notes: '' };
@@ -64,6 +65,14 @@ const VacacionesSection = ({ isAdmin, filterNombre }) => {
         <div><p className="text-xs text-teal-700 font-medium uppercase">Total días</p><p className="text-2xl font-bold text-teal-800">{totalDays} <span className="text-base font-normal">días</span></p></div>
         <div className="ml-auto"><p className="text-xs text-teal-600">{items.length} período{items.length !== 1 ? 's' : ''}</p></div>
       </div>
+
+      <EmployeeSummaryCards
+        items={items}
+        valueFor={item => item.days || 0}
+        formatValue={v => `${v} días`}
+        countLabel="período"
+        accentClass="text-teal-700"
+      />
 
       {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><AlertCircle className="w-4 h-4" />{error}</div>}
       {success && <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700"><Check className="w-4 h-4" />{success}</div>}

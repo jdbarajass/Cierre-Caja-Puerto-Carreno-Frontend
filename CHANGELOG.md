@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-07-30] - Totales separados por empleada + ESLint
+
+### ✨ Control de Empleadas: totales separados por empleada
+- En **todas las secciones** (Ropa, Préstamos, Permisos, Vacaciones, Pagos) ahora se muestran tarjetas de totales **separadas por empleada** (Mónica y Rita, más "Otras" si aparece algún otro nombre), además del total general ya existente
+- **Permisos**: cada tarjeta desglosa por tipo (Permiso, Incapacidad, Llegada tarde, Salida temprana) sumando **horas**. Un registro sin horas especificadas se cuenta como **jornada completa (9h)**, tanto en el resumen como en la tabla de detalle
+- **Ropa / Préstamos / Pagos**: cada tarjeta suma el valor en pesos (COP) por empleada
+- **Vacaciones**: cada tarjeta suma los días tomados por empleada
+- El agrupamiento por nombre ignora mayúsculas y tildes (ej. "Mónica", "monica", "MONICA" se agrupan igual), evitando que se pierdan registros por variaciones de escritura
+- Nuevos archivos: `src/utils/employeeGroups.js` (agrupamiento reutilizable) y `src/components/employees/EmployeeSummaryCards.jsx` (tarjetas de totales reutilizables)
+
+### 🔧 Herramientas de desarrollo
+- **ESLint** instalado y configurado (`npm run lint`) usando `eslint.config.js` (flat config) ya presente en el proyecto
+- Se fijó `eslint-plugin-react-hooks` en la línea estable v5 (la v7 trae reglas experimentales orientadas al React Compiler que generaban decenas de falsos positivos en código no relacionado)
+- Se agregó override de globals de Node para archivos `*.config.js` (corrige falso positivo de `__dirname` en `vite.config.js`)
+- Quedan ~23 issues de lint preexistentes en archivos no tocados por este cambio (variables no usadas, dependencias de `useEffect`, etc.) — no se modificaron para mantener este cambio acotado
+
+---
+
 ## [2026-06-02] - Módulo Control de Empleadas y Cuentas Recompras
 
 ### ✨ Nuevo Módulo: Control de Empleadas

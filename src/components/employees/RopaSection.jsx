@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Shirt, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getClothing, createClothing, updateClothing, deleteClothing } from '../../services/employeesService';
+import EmployeeSummaryCards from './EmployeeSummaryCards';
 
 const fmt = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v || 0);
@@ -100,6 +101,14 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
           <p className="text-xs text-pink-600">{items.length} prenda{items.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
+
+      <EmployeeSummaryCards
+        items={items}
+        valueFor={item => item.final_value || 0}
+        formatValue={fmt}
+        countLabel="prenda"
+        accentClass="text-pink-700"
+      />
 
       {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><AlertCircle className="w-4 h-4" />{error}</div>}
       {success && <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700"><Check className="w-4 h-4" />{success}</div>}

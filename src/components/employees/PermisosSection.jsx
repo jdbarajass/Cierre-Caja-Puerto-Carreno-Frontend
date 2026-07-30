@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getPermissions, createPermission, updatePermission, deletePermission } from '../../services/employeesService';
+import { EMPLOYEE_GROUPS, groupKeyFor } from '../../utils/employeeGroups';
 
 const today = () => new Date().toISOString().split('T')[0];
 const TYPE_LABELS = {
@@ -10,6 +11,16 @@ const TYPE_LABELS = {
   salida_temprana: { label: 'Salida temprana', color: 'bg-yellow-100 text-yellow-700'},
 };
 const EMPTY = { nombre_empleada: '', date: today(), type: 'permiso', description: '', hours: '' };
+
+// Cuando no se especifican horas se asume día completo (jornada de 9h)
+const WORKDAY_HOURS = 9;
+
+const hoursFor = (item) => (item.hours !== null && item.hours !== undefined && item.hours !== '' ? Number(item.hours) : WORKDAY_HOURS);
+
+const fmtHours = (n) => {
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded.toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
+};
 
 const PermisosSection = ({ isAdmin, filterNombre }) => {
   const [items, setItems] = useState([]);
@@ -29,7 +40,21 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const counts = Object.keys(TYPE_LABELS).reduce((acc, t) => { acc[t] = items.filter(i => i.type === t).length; return acc; }, {});
+  // Resumen de horas/registros por empleada (Mónica y Rita por separado) y por tipo
+  const emptyTypeBucket = () => Object.keys(TYPE_LABELS).reduce((o, t) => { o[t] = { count: 0, hours: 0 }; return o; }, {});
+
+  const summaryByEmployee = items.reduce((acc, item) => {
+    const key = groupKeyFor(item.nombre_empleada);
+    if (!acc[key]) acc[key] = emptyTypeBucket();
+    acc[key][item.type].count += 1;
+    acc[key][item.type].hours += hoursFor(item);
+    return acc;
+  }, { monica: emptyTypeBucket(), rita: emptyTypeBucket() });
+
+  const employeeCards = [
+    ...EMPLOYEE_GROUPS,
+    ...(summaryByEmployee.otras ? [{ key: 'otras', label: 'Otras' }] : []),
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setSaving(true); setError('');
@@ -66,13 +91,28 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Object.entries(TYPE_LABELS).map(([type, cfg]) => (
-          <div key={type} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-gray-800">{counts[type]}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{cfg.label}</p>
-          </div>
-        ))}
+      <div className="space-y-3">
+        {employeeCards.map(({ key, label }) => {
+          const data = summaryByEmployee[key] || emptyTypeBucket();
+          const totalHours = fmtHours(Object.values(data).reduce((s, d) => s + d.hours, 0));
+          return (
+            <div key={key} className="bg-white border border-gray-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
+                <span className="text-xs text-gray-500">Total permisos: <strong className="text-gray-700">{totalHours}h</strong></span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Object.entries(TYPE_LABELS).map(([type, cfg]) => (
+                  <div key={type} className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+                    <p className="text-xl font-bold text-gray-800">{fmtHours(data[type].hours)}h</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{cfg.label}</p>
+                    <p className="text-[10px] text-gray-400">{data[type].count} registro{data[type].count === 1 ? '' : 's'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><AlertCircle className="w-4 h-4" />{error}</div>}
@@ -148,7 +188,9 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
                     <td className="px-4 py-3 font-medium text-indigo-700">{item.nombre_empleada}</td>
                     <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span></td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{item.description || '—'}</td>
-                    <td className="px-4 py-3 text-center text-gray-700">{item.hours ? `${item.hours}h` : '—'}</td>
+                    <td className="px-4 py-3 text-center text-gray-700">
+                      {item.hours ? `${item.hours}h` : <span title="Día completo, contado como 9h">{WORKDAY_HOURS}h <span className="text-gray-400 text-xs">(día completo)</span></span>}
+                    </td>
                     {isAdmin && <td className="px-4 py-3"><div className="flex items-center gap-2 justify-end">
                       <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                       <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
