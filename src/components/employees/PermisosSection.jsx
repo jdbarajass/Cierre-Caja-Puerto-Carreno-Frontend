@@ -11,16 +11,39 @@ const TYPE_LABELS = {
   llegada_tarde:   { label: 'Llegada tarde',   color: 'bg-orange-100 text-orange-700'},
   salida_temprana: { label: 'Salida temprana', color: 'bg-yellow-100 text-yellow-700'},
 };
-const EMPTY = { nombre_empleada: '', date: today(), type: 'permiso', description: '', hours: '' };
+const EMPTY = { nombre_empleada: '', date: today(), type: 'permiso', description: '', hoursPart: '', minutesPart: '' };
 
 // Cuando no se especifican horas se asume día completo (jornada de 9h)
 const WORKDAY_HOURS = 9;
+const MINUTE_OPTIONS = [0, 15, 30, 45];
 
 const hoursFor = (item) => (item.hours !== null && item.hours !== undefined && item.hours !== '' ? Number(item.hours) : WORKDAY_HOURS);
 
-const fmtHours = (n) => {
-  const rounded = Math.round(n * 100) / 100;
-  return Number.isInteger(rounded) ? String(rounded) : String(rounded.toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
+// Combina los inputs separados de horas/minutos del formulario en un decimal (o null si ambos vienen vacíos)
+const decimalHoursFromForm = (f) => {
+  const h = f.hoursPart === '' ? 0 : parseInt(f.hoursPart, 10) || 0;
+  const m = f.minutesPart === '' ? 0 : parseInt(f.minutesPart, 10) || 0;
+  const total = h + m / 60;
+  return total > 0 ? total : null;
+};
+
+// Inverso: separa un decimal guardado en horas/minutos para precargar el formulario al editar
+const splitHoursForForm = (decimalHours) => {
+  if (!decimalHours) return { hoursPart: '', minutesPart: '' };
+  const totalMinutes = Math.round(Number(decimalHours) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return { hoursPart: h ? String(h) : '', minutesPart: m ? String(m) : '' };
+};
+
+// Formato legible "1h 30min" / "45min" / "2h" para mostrar horas guardadas
+const fmtHM = (decimalHours) => {
+  const totalMinutes = Math.round(Number(decimalHours) * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h && m) return `${h}h ${m}min`;
+  if (m) return `${m}min`;
+  return `${h}h`;
 };
 
 const PermisosSection = ({ isAdmin, filterNombre }) => {
@@ -60,7 +83,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setSaving(true); setError('');
     try {
-      const payload = { nombre_empleada: form.nombre_empleada.trim(), date: form.date, type: form.type, description: form.description, hours: form.hours ? parseFloat(form.hours) : null };
+      const payload = { nombre_empleada: form.nombre_empleada.trim(), date: form.date, type: form.type, description: form.description, hours: decimalHoursFromForm(form) };
       if (editingId) { await updatePermission(editingId, payload); setSuccess('Actualizado'); }
       else { await createPermission(payload); setSuccess('Registrado'); }
       setShowForm(false); setEditingId(null); setForm(EMPTY); await load();
@@ -68,7 +91,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
   };
 
   const handleEdit = (item) => {
-    setForm({ nombre_empleada: item.nombre_empleada, date: item.date, type: item.type, description: item.description || '', hours: item.hours ? String(item.hours) : '' });
+    setForm({ nombre_empleada: item.nombre_empleada, date: item.date, type: item.type, description: item.description || '', ...splitHoursForForm(item.hours) });
     setEditingId(item.id); setShowForm(true);
   };
 
@@ -95,17 +118,17 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
       <div className="space-y-3">
         {employeeCards.map(({ key, label }) => {
           const data = summaryByEmployee[key] || emptyTypeBucket();
-          const totalHours = fmtHours(Object.values(data).reduce((s, d) => s + d.hours, 0));
+          const totalHours = fmtHM(Object.values(data).reduce((s, d) => s + d.hours, 0));
           return (
             <div key={key} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-800">{label}</h3>
-                <span className="text-xs text-gray-500">Total permisos: <strong className="text-gray-700">{totalHours}h</strong></span>
+                <span className="text-xs text-gray-500">Total permisos: <strong className="text-gray-700">{totalHours}</strong></span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(TYPE_LABELS).map(([type, cfg]) => (
                   <div key={type} className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
-                    <p className="text-xl font-bold text-gray-800">{fmtHours(data[type].hours)}h</p>
+                    <p className="text-xl font-bold text-gray-800">{fmtHM(data[type].hours)}</p>
                     <p className="text-[11px] text-gray-500 mt-0.5">{cfg.label}</p>
                     <p className="text-[10px] text-gray-400">{data[type].count} registro{data[type].count === 1 ? '' : 's'}</p>
                   </div>
@@ -142,10 +165,18 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Horas (opcional)</label>
-              <input type="number" min="0.5" max="24" step="0.5" placeholder="Ej: 2" value={form.hours}
-                onChange={e => setForm(f => ({ ...f, hours: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+              <label className="block text-xs font-medium text-gray-700 mb-1">Tiempo (opcional)</label>
+              <div className="flex gap-2">
+                <input type="number" min="0" max="23" placeholder="Horas" value={form.hoursPart}
+                  onChange={e => setForm(f => ({ ...f, hoursPart: e.target.value }))}
+                  className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
+                <select value={form.minutesPart} onChange={e => setForm(f => ({ ...f, minutesPart: e.target.value }))}
+                  className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white">
+                  <option value="">Min</option>
+                  {MINUTE_OPTIONS.map(m => <option key={m} value={m}>{m} min</option>)}
+                </select>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">Vacío = día completo ({WORKDAY_HOURS}h)</p>
             </div>
           </div>
           <div>
@@ -189,7 +220,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
                     <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span></td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{item.description || '—'}</td>
                     <td className="px-4 py-3 text-center text-gray-700">
-                      {item.hours ? `${item.hours}h` : <span title="Día completo, contado como 9h">{WORKDAY_HOURS}h <span className="text-gray-400 text-xs">(día completo)</span></span>}
+                      {item.hours ? fmtHM(item.hours) : <span title="Día completo, contado como 9h">{WORKDAY_HOURS}h <span className="text-gray-400 text-xs">(día completo)</span></span>}
                     </td>
                     {isAdmin && <td className="px-4 py-3"><div className="flex items-center gap-2 justify-end">
                       <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
