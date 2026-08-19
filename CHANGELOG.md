@@ -2,6 +2,19 @@
 
 ---
 
+## [2026-08-19] - Filtro rápido por empleada + horas/minutos en Permisos
+
+### ✨ Filtro rápido por empleada
+- Se agregan botones "Todas / Mónica Vargas / Rita Infante" junto al buscador de Control de Empleadas — un clic filtra la sección activa sin escribir el nombre a mano
+- Aplica a las 5 secciones (Ropa, Préstamos, Permisos, Vacaciones, Pagos) porque comparten el mismo estado de filtro en `EmployeesLayout.jsx`
+- El buscador de texto libre se mantiene como alternativa (útil para casos no cubiertos por los botones)
+
+### 🐛 Fix: campo "Horas" de Permisos generaba confusión (30 se leía como 30 horas)
+- Se reemplaza el input único de horas (decimal) por dos campos: **Horas** (entero) y **Minutos** (15/30/45), que se combinan en el decimal que ya espera el backend
+- Las horas guardadas ahora se muestran como "1h 30min" en vez de "1.5h", tanto en la tabla como en las tarjetas de resumen por empleada
+
+---
+
 ## [2026-07-30] - Selector obligatorio de empleada (evita typos)
 
 ### 🐛 Fix: registros que no se agrupaban por variaciones/typos del nombre
