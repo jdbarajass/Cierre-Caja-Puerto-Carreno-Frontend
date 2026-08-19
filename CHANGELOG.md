@@ -2,6 +2,39 @@
 
 ---
 
+## [2026-08-19] - Cold-start visible, borrador local del cierre, PWA básica y accesibilidad
+
+### 🐢 Indicador de cold-start en el login
+- `AuthContext.jsx` (`login()`): el callback `onRetryUpdate` ahora se dispara desde el **primer** intento de login (antes solo avisaba a partir del segundo reintento), mostrando "Conectando con el servidor..." de inmediato
+- Si el primer intento tarda más de 7s, el mensaje escala a "El servidor está iniciando (puede tardar hasta 45s la primera vez del día)..." — cubre el cold-start del backend en el plan gratuito de Render sin cancelar la petición en curso
+- `Login.jsx`: se agregó una barra de progreso visual bajo el mensaje de reintento (`retryInfo.attempt / retryInfo.maxAttempts`)
+
+### 💾 Borrador local del cierre en curso (nuevo: `src/utils/cashClosingDraft.js`)
+- Si se pierde la conexión o se recarga la página a mitad del conteo de monedas/billetes, los valores ya ingresados (monedas, billetes, métodos de pago, ajustes, base de caja) se autoguardan en `localStorage`, **por fecha de cierre**, con debounce de 800ms
+- Al completar la preconsulta de una fecha con borrador guardado, se restaura automáticamente y se muestra un aviso "Borrador recuperado" (descartable)
+- El borrador se limpia solo cuando el cierre se envía y procesa con éxito; nunca se guardan datos de Alegra (preconsulta), solo lo que el usuario escribió
+- Poda automática: máximo 5 borradores guardados a la vez (se eliminan los más antiguos)
+- Verificado con pruebas unitarias manuales (guardar/cargar/limpiar por fecha, no persistir formularios vacíos, poda de borradores viejos) — 7/7 pasaron
+
+### 📱 PWA básica (nuevo: `public/manifest.webmanifest`, `public/sw.js`)
+- App instalable (manifest con ícono `public/icon-koaj.svg`, tema azul `#2563eb`)
+- Service worker mínimo: cachea solo el app-shell del propio origen (HTML + JS/CSS con hash) para que la app siga cargando sin conexión; **nunca** intercepta peticiones a `/api/`, `/auth/` ni al backend en Render (evita interferir con el auto-discovery/reintentos de `src/services/api.js` o con cookies de sesión)
+- Registrado en `src/main.jsx` solo en build de producción (`import.meta.env.PROD`)
+
+### 🖱️ Modal de error en vez de `alert()`
+- `Dashboard.jsx`: los 3 `alert()` nativos (error al generar PDF/PNG/JPEG) se reemplazaron por un modal consistente con el resto de la UI (estado `errorModalMessage`)
+
+### ♿ Accesibilidad mínima en el formulario de cierre
+- `Dashboard.jsx`: se agregaron `htmlFor`/`id` (o `aria-label` cuando no hay `<label>` visible) a todos los inputs del cierre — monedas, billetes, métodos de pago (Nequi, Daviplata, QR, Addi, Débito, Crédito), gastos operativos, préstamos, desfases, base de caja y fecha del cierre
+
+### ✅ Verificación realizada
+- `npm run build` exitoso
+- `npm run lint`: sin errores nuevos en archivos tocados (`Dashboard.jsx`, `Login.jsx`, `AuthContext.jsx`, `main.jsx`) ni en el archivo nuevo `cashClosingDraft.js`; quedan ~22 errores/4 warnings preexistentes en archivos no tocados por este cambio
+- `vite preview` sirvió correctamente `index.html`, `manifest.webmanifest`, `sw.js`, `icon-koaj.svg` y una ruta SPA (`/dashboard`) — todos con 200
+- `node --check public/sw.js` y `JSON.parse` de `manifest.webmanifest` sin errores
+
+---
+
 ## [2026-08-19] - Filtro rápido por empleada + horas/minutos en Permisos
 
 ### ✨ Filtro rápido por empleada

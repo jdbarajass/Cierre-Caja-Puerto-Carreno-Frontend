@@ -98,16 +98,33 @@ export const AuthProvider = ({ children }) => {
     const RETRY_DELAYS = [3000, 5000, 8000]; // Delays en ms entre reintentos
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        // Notificar el intento actual
-        if (onRetryUpdate && attempt > 1) {
-          onRetryUpdate({
-            attempt,
-            maxAttempts: MAX_RETRIES,
-            message: `Reintentando conexión... (${attempt}/${MAX_RETRIES})`
-          });
-        }
+      // Notificar el intento actual (incluido el primero, para no dejar la
+      // pantalla "congelada" mientras Render sale de cold-start la primera vez)
+      if (onRetryUpdate) {
+        onRetryUpdate({
+          attempt,
+          maxAttempts: MAX_RETRIES,
+          message: attempt === 1
+            ? 'Conectando con el servidor...'
+            : `Reintentando conexión... (${attempt}/${MAX_RETRIES})`,
+          isWaiting: attempt > 1
+        });
+      }
 
+      // Si el primer intento tarda, es probable que el servidor esté en
+      // cold-start (plan gratuito de Render). Avisar sin cancelar la petición.
+      const coldStartTimer = attempt === 1 && onRetryUpdate
+        ? setTimeout(() => {
+            onRetryUpdate({
+              attempt,
+              maxAttempts: MAX_RETRIES,
+              message: 'El servidor está iniciando (puede tardar hasta 45s la primera vez del día)...',
+              isWaiting: true
+            });
+          }, 7000)
+        : null;
+
+      try {
         logger.info(`Intento de login ${attempt}/${MAX_RETRIES} para:`, email);
 
         // Llamar al backend para autenticación real con JWT
@@ -115,6 +132,8 @@ export const AuthProvider = ({ children }) => {
           method: 'POST',
           body: JSON.stringify({ email, password }),
         });
+
+        clearTimeout(coldStartTimer);
 
         const data = await response.json();
 
@@ -170,6 +189,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
 
       } catch (error) {
+        clearTimeout(coldStartTimer);
         logger.error(`Error en intento ${attempt}/${MAX_RETRIES}:`, error.message);
 
         // Si es el último intento, retornar error

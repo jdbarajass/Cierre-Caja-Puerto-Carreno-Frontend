@@ -9,6 +9,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
+import { saveDraft, loadDraft, clearDraft } from '../utils/cashClosingDraft';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -31,6 +32,8 @@ const Dashboard = () => {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
   const [isVoidedModalOpen, setIsVoidedModalOpen] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState(null);
+  const [draftRestoredNotice, setDraftRestoredNotice] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('jpeg');
   const [desfaseSugerido, setDesfaseSugerido] = useState(null);
   const [showDesfaseSection, setShowDesfaseSection] = useState(false);
@@ -71,6 +74,18 @@ const Dashboard = () => {
     tarjeta_debito: '',
     tarjeta_credito: ''
   });
+
+  // Autoguardado del borrador local: si se pierde la conexión o se recarga
+  // la página a mitad del conteo, el trabajo ya ingresado no se pierde.
+  useEffect(() => {
+    if (!preconsultaRealizada) return;
+
+    const timeoutId = setTimeout(() => {
+      saveDraft(closingDate, { coins, bills, excedentes, adjustments, metodosPago, baseCaja });
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [preconsultaRealizada, closingDate, coins, bills, excedentes, adjustments, metodosPago, baseCaja]);
 
   const tiposExcedente = [
     { value: 'efectivo', label: 'Excedente Efectivo' },
@@ -199,6 +214,19 @@ const Dashboard = () => {
         setPreconsultaData(data);
         setPreconsultaRealizada(true);
         setErrorPreconsulta(null);
+
+        // Restaurar borrador local si existe (ej. tras perder la conexión
+        // o recargar la página a mitad del conteo de billetes)
+        const draft = loadDraft(closingDate);
+        if (draft) {
+          if (draft.coins) setCoins(draft.coins);
+          if (draft.bills) setBills(draft.bills);
+          if (draft.excedentes) setExcedentes(draft.excedentes);
+          if (draft.adjustments) setAdjustments(draft.adjustments);
+          if (draft.metodosPago) setMetodosPago(draft.metodosPago);
+          if (draft.baseCaja) setBaseCaja(draft.baseCaja);
+          setDraftRestoredNotice(true);
+        }
       } else {
         setErrorPreconsulta(data.error || 'Error al realizar la preconsulta');
         setPreconsultaRealizada(false);
@@ -216,6 +244,7 @@ const Dashboard = () => {
     setPreconsultaData(null);
     setPreconsultaRealizada(false);
     setErrorPreconsulta(null);
+    setDraftRestoredNotice(false);
   };
 
   const handleSubmit = async () => {
@@ -311,6 +340,9 @@ const Dashboard = () => {
       }
 
       const data = await submitCashClosing(payload);
+
+      // El cierre se envió y procesó correctamente: ya no hace falta el borrador local
+      clearDraft(closingDate);
 
       if (data.cash_count && data.cash_count.base) {
         const baseData = data.cash_count.base;
@@ -469,7 +501,7 @@ const Dashboard = () => {
       pdf.save(fileName);
     } catch (error) {
       console.error('Error generando PDF:', error);
-      alert('Error al generar el PDF. Por favor, intenta nuevamente.');
+      setErrorModalMessage('Error al generar el PDF. Por favor, intenta nuevamente.');
     } finally {
       setGeneratingPDF(false);
     }
@@ -515,7 +547,7 @@ const Dashboard = () => {
       }, 'image/png', 0.95); // PNG con calidad 95%
     } catch (error) {
       console.error('Error generando imagen:', error);
-      alert('Error al generar la imagen. Por favor, intenta nuevamente.');
+      setErrorModalMessage('Error al generar la imagen. Por favor, intenta nuevamente.');
       setGeneratingImage(false);
     }
   };
@@ -560,7 +592,7 @@ const Dashboard = () => {
       }, 'image/jpeg', 0.95); // JPEG con calidad 95%
     } catch (error) {
       console.error('Error generando imagen JPEG:', error);
-      alert('Error al generar la imagen JPEG. Por favor, intenta nuevamente.');
+      setErrorModalMessage('Error al generar la imagen JPEG. Por favor, intenta nuevamente.');
       setGeneratingImage(false);
     }
   };
@@ -595,6 +627,27 @@ const Dashboard = () => {
             <button
               onClick={() => setValidationWarning(null)}
               className="text-yellow-600 hover:text-yellow-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notificación de Borrador Recuperado */}
+      {draftRestoredNotice && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
+          <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-blue-900">Borrador recuperado</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Se restauraron los valores que habías ingresado antes de perder la conexión o recargar la página.
+              </p>
+            </div>
+            <button
+              onClick={() => setDraftRestoredNotice(false)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -640,6 +693,7 @@ const Dashboard = () => {
                 }
               }}
               max={getColombiaTodayString()}
+              aria-label="Fecha del cierre de caja"
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
               required
             />
@@ -793,16 +847,18 @@ const Dashboard = () => {
               <div className="space-y-2 sm:space-y-3">
                 {Object.keys(coins).map((denom) => (
                   <div key={denom} className="flex items-center gap-2 sm:gap-3">
-                    <label className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor={`coin-${denom}`} className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
                       ${parseInt(denom).toLocaleString()}
                     </label>
                     <input
+                      id={`coin-${denom}`}
                       type="text"
                       inputMode="numeric"
                       value={coins[denom]}
                       onChange={(e) => setCoins({ ...coins, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
                       maxLength="9"
+                      aria-label={`Cantidad de monedas de $${parseInt(denom).toLocaleString()}`}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
                     />
@@ -828,16 +884,18 @@ const Dashboard = () => {
               <div className="space-y-2 sm:space-y-3">
                 {Object.keys(bills).map((denom) => (
                   <div key={denom} className="flex items-center gap-2 sm:gap-3">
-                    <label className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
+                    <label htmlFor={`bill-${denom}`} className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
                       ${parseInt(denom).toLocaleString()}
                     </label>
                     <input
+                      id={`bill-${denom}`}
                       type="text"
                       inputMode="numeric"
                       value={bills[denom]}
                       onChange={(e) => setBills({ ...bills, [denom]: handleNumericInput(e.target.value) })}
                       onFocus={(e) => e.target.select()}
                       maxLength="9"
+                      aria-label={`Cantidad de billetes de $${parseInt(denom).toLocaleString()}`}
                       className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="0"
                     />
@@ -871,8 +929,9 @@ const Dashboard = () => {
                   <h3 className="text-sm font-semibold text-purple-900 mb-3">Transferencias (QR)</h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
+                      <label htmlFor="pago-nequi" className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
                       <input
+                        id="pago-nequi"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.nequi_luz_helena)}
@@ -884,8 +943,9 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
+                      <label htmlFor="pago-daviplata" className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
                       <input
+                        id="pago-daviplata"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.daviplata_jose)}
@@ -897,8 +957,9 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
+                      <label htmlFor="pago-qr" className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
                       <input
+                        id="pago-qr"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.qr_julieth)}
@@ -925,8 +986,9 @@ const Dashboard = () => {
                   <h3 className="text-sm font-semibold text-orange-900 mb-3">Datafono</h3>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
+                      <label htmlFor="pago-addi" className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
                       <input
+                        id="pago-addi"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.addi_datafono)}
@@ -938,8 +1000,9 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
+                      <label htmlFor="pago-debito" className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
                       <input
+                        id="pago-debito"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.tarjeta_debito)}
@@ -951,8 +1014,9 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
+                      <label htmlFor="pago-credito" className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
                       <input
+                        id="pago-credito"
                         type="text"
                         inputMode="numeric"
                         value={formatNumberWithThousands(metodosPago.tarjeta_credito)}
@@ -1008,6 +1072,7 @@ const Dashboard = () => {
                           <select
                             value={excedente.tipo}
                             onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
+                            aria-label="Tipo de excedente"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                           >
                             {tiposExcedente.map(tipo => (
@@ -1020,6 +1085,7 @@ const Dashboard = () => {
                             <select
                               value={excedente.subtipo}
                               onChange={(e) => actualizarSubtipoExcedente(excedente.id, e.target.value)}
+                              aria-label="Subtipo de transferencia del excedente"
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                             >
                               {subtiposTransferencia.map(sub => (
@@ -1036,6 +1102,7 @@ const Dashboard = () => {
                             onChange={(e) => actualizarValorExcedente(excedente.id, e.target.value)}
                             onFocus={(e) => e.target.select()}
                             maxLength="9"
+                            aria-label="Valor del excedente"
                             className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                             placeholder="$0"
                           />
@@ -1066,10 +1133,11 @@ const Dashboard = () => {
 
               <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="gastos-operativos" className="block text-sm font-medium text-gray-700 mb-2">
                     Gastos Operativos
                   </label>
                   <input
+                    id="gastos-operativos"
                     type="text"
                     inputMode="numeric"
                     value={formatNumberWithThousands(adjustments.gastos_operativos)}
@@ -1085,16 +1153,18 @@ const Dashboard = () => {
                       type="text"
                       value={adjustments.gastos_operativos_nota}
                       onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos_nota: e.target.value })}
+                      aria-label="Nota explicativa de gastos operativos"
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                       placeholder="Nota: ej. Compra de papelería..."
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="prestamos" className="block text-sm font-medium text-gray-700 mb-2">
                     Préstamos
                   </label>
                   <input
+                    id="prestamos"
                     type="text"
                     inputMode="numeric"
                     value={formatNumberWithThousands(adjustments.prestamos)}
@@ -1110,6 +1180,7 @@ const Dashboard = () => {
                       type="text"
                       value={adjustments.prestamos_nota}
                       onChange={(e) => setAdjustments({ ...adjustments, prestamos_nota: e.target.value })}
+                      aria-label="Nota explicativa de préstamos"
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                       placeholder="Nota: ej. Préstamo a María..."
                     />
@@ -1166,10 +1237,11 @@ const Dashboard = () => {
                     <div className="space-y-3">
                       {/* Tipo de Desfase */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-tipo" className="block text-xs font-medium text-gray-600 mb-1">
                           Tipo de Desfase
                         </label>
                         <select
+                          id="desfase-tipo"
                           value={adjustments.desfase_tipo}
                           onChange={(e) => setAdjustments({ ...adjustments, desfase_tipo: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
@@ -1183,10 +1255,11 @@ const Dashboard = () => {
 
                       {/* Valor del Desfase */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-valor" className="block text-xs font-medium text-gray-600 mb-1">
                           Valor del Desfase (COP)
                         </label>
                         <input
+                          id="desfase-valor"
                           type="text"
                           inputMode="numeric"
                           value={formatNumberWithThousands(adjustments.desfase_valor)}
@@ -1201,7 +1274,7 @@ const Dashboard = () => {
 
                       {/* Nota Explicativa */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-nota" className="block text-xs font-medium text-gray-600 mb-1">
                           Nota Explicativa (Responsable/Causa) *
                         </label>
                         <div className="relative">
@@ -1257,10 +1330,11 @@ const Dashboard = () => {
 
             {/* Campo compacto de Base de Caja */}
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
-              <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap font-medium">Base Caja:</label>
+              <label htmlFor="base-caja" className="text-xs sm:text-sm text-gray-600 whitespace-nowrap font-medium">Base Caja:</label>
               <div className="relative">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
                 <input
+                  id="base-caja"
                   type="text"
                   inputMode="numeric"
                   value={baseCaja.toLocaleString('es-CO')}
@@ -1316,6 +1390,27 @@ const Dashboard = () => {
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all"
                 >
                   Continuar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Error (descarga de PDF/imagen) */}
+        {errorModalMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                  <AlertCircle className="w-10 h-10 text-red-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Ocurrió un error</h3>
+                <p className="text-gray-600 mb-6">{errorModalMessage}</p>
+                <button
+                  onClick={() => setErrorModalMessage(null)}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all"
+                >
+                  Cerrar
                 </button>
               </div>
             </div>
