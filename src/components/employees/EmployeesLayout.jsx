@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { isAdmin } from '../../utils/auth';
 import { Shirt, DollarSign, Clock, Sun, CreditCard, ChevronRight, Search, X } from 'lucide-react';
+import { EMPLOYEE_GROUPS } from '../../utils/employeeGroups';
 
 import RopaSection from './RopaSection';
 import PrestamosSection from './PrestamosSection';
@@ -32,6 +33,7 @@ const EmployeesLayout = () => {
 
   const applyFilter = () => setFilterNombre(filterInput.trim());
   const clearFilter = () => { setFilterNombre(''); setFilterInput(''); };
+  const quickFilter = (name) => { setFilterNombre(name); setFilterInput(name); };
 
   const visibleTabs = admin ? TABS : TABS.filter(t => t.id !== 'pagos');
 
@@ -51,33 +53,47 @@ const EmployeesLayout = () => {
       </div>
 
       {/* Buscador / filtro por nombre */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Filtrar por nombre (Mónica, Rita…)"
-            value={filterInput}
-            onChange={e => setFilterInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && applyFilter()}
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-          />
-        </div>
-        <button onClick={applyFilter}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-          Buscar
-        </button>
-        {filterNombre && (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-gray-500">Filtro rápido:</span>
           <button onClick={clearFilter}
-            className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-            <X className="w-4 h-4" /> Todos
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              !filterNombre ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}>
+            Todas
           </button>
-        )}
-        {filterNombre && (
-          <span className="text-sm text-indigo-600 font-medium">
-            Mostrando: <strong>{filterNombre}</strong>
-          </span>
-        )}
+          {EMPLOYEE_GROUPS.map(g => (
+            <button key={g.key} onClick={() => quickFilter(g.name)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filterNombre === g.name ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}>
+              {g.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="O escribe un nombre…"
+              value={filterInput}
+              onChange={e => setFilterInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && applyFilter()}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+          </div>
+          <button onClick={applyFilter}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            Buscar
+          </button>
+          {filterNombre && (
+            <span className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
+              Mostrando: <strong>{filterNombre}</strong>
+              <button onClick={clearFilter} className="ml-1 text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
