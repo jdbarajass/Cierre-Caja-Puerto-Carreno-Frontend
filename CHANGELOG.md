@@ -2,6 +2,18 @@
 
 ---
 
+## [2026-08-21] - Re-verificación del cambio del 2026-08-19 (sin cambios de código)
+
+### ✅ Re-confirmado, todo sigue pasando
+- `npm run build`: exitoso y **100% determinístico** — el rebuild no generó ningún diff contra el `dist/` ya commiteado el 2026-08-19
+- `npm run lint`: mismos ~22 errores/4 warnings preexistentes de siempre, ninguno nuevo en archivos tocados por el cambio anterior
+- Pruebas manuales de `cashClosingDraft.js` (guardar/cargar/limpiar por fecha, no persistir vacío, poda de borradores): 7/7 pasaron de nuevo
+
+### ⚠️ Nota (relacionada al backend, no al frontend)
+- Se detectó que Render no había desplegado el backend con los cambios del 2026-08-19 (ver [CHANGELOG del backend](../Cierre-Caja-Puerto-Carreno-Backend/CHANGELOG.md)). No se pudo verificar de la misma forma si Vercel sí desplegó este frontend porque la URL de producción de Vercel no está documentada en este repo — pendiente confirmar.
+
+---
+
 ## [2026-08-19] - Cold-start visible, borrador local del cierre, PWA básica y accesibilidad
 
 ### 🐢 Indicador de cold-start en el login
