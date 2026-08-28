@@ -24,6 +24,7 @@ const UsersManagement = lazy(() => import('./pages/UsersManagement'));
 const KoajCodes = lazy(() => import('./pages/KoajCodes'));
 const EmployeesLayout = lazy(() => import('./components/employees/EmployeesLayout'));
 const CuentasRecompras = lazy(() => import('./pages/CuentasRecompras'));
+const CuentasLayout = lazy(() => import('./pages/CuentasLayout'));
 const NotesTasksLayout = lazy(() => import('./pages/NotesTasksLayout'));
 
 // Componente de carga
@@ -64,6 +65,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <MonthlySales />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Cuentas (Solo Admin) */}
+              <Route
+                path="/cuentas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <CuentasLayout />
                     </MainLayout>
                   </ProtectedRoute>
                 }

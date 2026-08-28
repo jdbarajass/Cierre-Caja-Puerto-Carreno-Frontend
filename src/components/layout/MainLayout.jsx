@@ -23,7 +23,8 @@ import {
   Shirt,
   Repeat,
   ClipboardList,
-  Briefcase
+  Briefcase,
+  Wallet
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -166,6 +167,15 @@ const MainLayout = ({ children }) => {
   ];
 
   const gestionSection = [
+    {
+      id: 'cuentas',
+      label: 'Cuentas',
+      description: 'Saldo por medio de pago, ajustes y transferencias',
+      path: '/cuentas',
+      icon: Wallet,
+      color: 'teal',
+      roles: ['admin']
+    },
     {
       id: 'recompras',
       label: 'Cuentas Recompras',
@@ -345,7 +355,7 @@ const MainLayout = ({ children }) => {
                   <div ref={gestionDropdownRef} className="relative">
                     <button
                       onClick={() => setGestionDropdownOpen(!gestionDropdownOpen)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gestionDropdownOpen || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
+                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gestionDropdownOpen || isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
                           ? 'bg-violet-50 text-violet-700'
                           : 'text-gray-700 hover:bg-gray-100'
                         }`}
@@ -362,6 +372,11 @@ const MainLayout = ({ children }) => {
                         {visibleGestionItems.map((item) => {
                           const Icon = item.icon;
                           const colorConfig = {
+                            teal: {
+                              icon: 'text-teal-600',
+                              bg: 'bg-teal-50',
+                              hover: 'hover:bg-teal-100'
+                            },
                             indigo: {
                               icon: 'text-indigo-600',
                               bg: 'bg-indigo-50',
