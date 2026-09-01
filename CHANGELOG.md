@@ -2,6 +2,19 @@
 
 ---
 
+## [2026-09-01] - Comisión editable por envío; quitar "Valor aún no enviado"
+
+### 💰 `src/pages/CuentasRecompras.jsx`
+- La caja "Comisión 4‰" del formulario de envío ahora es un input editable: por defecto muestra el 4‰ calculado automáticamente sobre lo enviado, pero se puede sobrescribir a mano (queda marcado "(editada)" con un enlace "Volver a automático" para deshacerlo)
+- En la tabla y en el total del mes, la comisión y el "valor neto" ahora vienen resueltos del backend (`row.fee_4mil` / `row.valor_sobrante`, respetando overrides) en vez de recalcularse en el frontend — una fila con comisión editada muestra un ícono ✎ junto al valor
+- Se quitó el campo **"Valor aún no enviado"** del formulario y la columna "No enviado" de la tabla (era puramente informativo, no afectaba ningún cálculo — el backend no se tocó para este campo, solo se dejó de enviar/mostrar)
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos
+- Probado end-to-end contra un backend local: envío de $1.000.000 en efectivo mostró $4.000 de comisión automática; al sobrescribirla a $10.000 y guardar, la tabla y el total del mes reflejaron $10.000 de comisión y $990.000 de valor neto correctamente, con el ícono de "editada a mano"
+
+---
+
 ## [2026-09-01] - Conectar Cuentas Recompras con Resumen: los envíos descuentan saldo real
 
 ### 🔗 `src/pages/CuentasLayout.jsx` / `src/pages/CuentasRecompras.jsx`
