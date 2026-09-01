@@ -2,6 +2,18 @@
 
 ---
 
+## [2026-09-01] - Separador de miles EN VIVO en Cuentas Recompras
+
+### 🔢 `src/pages/CuentasRecompras.jsx`
+- Nuevo componente `LiveMoneyInput`: a diferencia del `CurrencyInput` de `CuentasLayout.jsx` (que formatea solo al salir del campo), este formatea **mientras se escribe**, recalculando la posición del cursor en cada tecla para que no salte al insertar/borrar dígitos en medio del número
+- Aplicado en 3 lugares (a pedido del usuario, con capturas de pantalla señalando cada uno): los campos de "Montos enviados por medio de pago" y "Sobrante mes anterior" del formulario de envío (`NumberField`, usado tanto en "Nuevo envío" como en "Editar envío"), la caja de **Comisión** editable, y el campo **Monto** del formulario "Registrar compra"
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos
+- Probado en navegador: escribir "1234567" en Efectivo se ve formateando en cada tecla (1 → 12 → 123 → 1.234 → ... → 1.234.567); insertar un dígito en medio del número no rompe el cursor; la Comisión editable y el Monto de compra también formatean en vivo
+
+---
+
 ## [2026-09-01] - Separador de miles en los campos "Monto" de Cuentas (Resumen)
 
 ### 🔢 `src/pages/CuentasLayout.jsx`
