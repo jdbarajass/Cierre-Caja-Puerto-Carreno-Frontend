@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, Plus, Trash2, Pencil, X, Check, AlertCircle,
-  ChevronRight, TrendingUp, ChevronLeft, ShoppingBag, ArrowDownCircle
+  ChevronRight, TrendingUp, ChevronLeft, ShoppingBag, ArrowDownCircle, Fuel
 } from 'lucide-react';
 import {
   getEntries, createEntry, updateEntry, deleteEntry,
@@ -37,7 +37,17 @@ const EMPTY_ENTRY = {
   fecha_compra: '', notes: ''
 };
 
-const EMPTY_PURCHASE = { date: today(), store: '', amount: '', notes: '' };
+const EMPTY_PURCHASE = { date: today(), store: '', amount: '', category: 'ropa', notes: '' };
+
+const PURCHASE_CATEGORIES = [
+  { value: 'ropa', label: 'Compra de ropa', hint: 'Se soporta con factura' },
+  { value: 'operacional', label: 'Gasto operacional', hint: 'Gasolina, bolsas, cajas, etc.' },
+];
+
+const CATEGORY_BADGE = {
+  ropa:        { label: 'Ropa',        className: 'bg-indigo-100 text-indigo-700' },
+  operacional: { label: 'Operacional', className: 'bg-amber-100 text-amber-700' },
+};
 
 // ─── Campo numérico estable (definido FUERA del componente) ──────────────────
 const NumberField = ({ label, fieldKey, value, onChange }) => (
@@ -64,6 +74,8 @@ const CuentasRecompras = () => {
   // Compras realizadas
   const [purchases, setPurchases]       = useState([]);
   const [totalCompras, setTotalCompras] = useState(0);
+  const [totalRopa, setTotalRopa]               = useState(0);
+  const [totalOperacional, setTotalOperacional] = useState(0);
 
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
@@ -93,6 +105,8 @@ const CuentasRecompras = () => {
       setTotals(entriesData.totals || {});
       setPurchases(purchasesData.purchases || []);
       setTotalCompras(purchasesData.total_compras || 0);
+      setTotalRopa(purchasesData.total_ropa || 0);
+      setTotalOperacional(purchasesData.total_operacional || 0);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -178,10 +192,11 @@ const CuentasRecompras = () => {
     e.preventDefault(); setSavingPurchase(true); setError('');
     try {
       const payload = {
-        date:   purchaseForm.date,
-        store:  purchaseForm.store.trim(),
-        amount: parseFloat(purchaseForm.amount),
-        notes:  purchaseForm.notes,
+        date:     purchaseForm.date,
+        store:    purchaseForm.store.trim(),
+        amount:   parseFloat(purchaseForm.amount),
+        category: purchaseForm.category,
+        notes:    purchaseForm.notes,
       };
       if (editingPurchaseId) { await updatePurchase(editingPurchaseId, payload); setSuccess('Compra actualizada'); }
       else { await createPurchase(payload); setSuccess('Compra registrada'); }
@@ -192,7 +207,10 @@ const CuentasRecompras = () => {
   };
 
   const handleEditPurchase = (p) => {
-    setPurchaseForm({ date: p.date, store: p.store, amount: String(p.amount), notes: p.notes || '' });
+    setPurchaseForm({
+      date: p.date, store: p.store, amount: String(p.amount),
+      category: p.category || 'ropa', notes: p.notes || '',
+    });
     setEditingPurchaseId(p.id);
     setShowPurchaseForm(true);
   };
@@ -466,9 +484,17 @@ const CuentasRecompras = () => {
                 <ShoppingBag className="w-4 h-4 text-rose-500" />
                 <span className="text-sm font-semibold text-gray-700">Compras realizadas por el socio</span>
                 {purchases.length > 0 && (
-                  <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">
-                    {fmtForce(totalCompras)}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-full">
+                      Total: {fmtForce(totalCompras)}
+                    </span>
+                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                      Ropa: {fmtForce(totalRopa)}
+                    </span>
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                      Operacional: {fmtForce(totalOperacional)}
+                    </span>
+                  </div>
                 )}
               </div>
               <button
@@ -504,6 +530,30 @@ const CuentasRecompras = () => {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Categoría *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PURCHASE_CATEGORIES.map(({ value, label, hint }) => (
+                      <button
+                        key={value} type="button"
+                        onClick={() => setPurchaseForm(f => ({ ...f, category: value }))}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-colors ${
+                          purchaseForm.category === value
+                            ? 'border-rose-400 bg-rose-100'
+                            : 'border-gray-300 bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        {value === 'ropa'
+                          ? <ShoppingBag className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                          : <Fuel className="w-4 h-4 text-amber-600 flex-shrink-0" />}
+                        <span>
+                          <span className="block text-sm font-medium text-gray-800">{label}</span>
+                          <span className="block text-xs text-gray-500">{hint}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
                   <textarea rows={2} placeholder="Qué se compró, observaciones..." value={purchaseForm.notes}
                     onChange={e => setPurchaseForm(f => ({ ...f, notes: e.target.value }))}
@@ -535,16 +585,22 @@ const CuentasRecompras = () => {
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Fecha</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Tienda / Proveedor</th>
+                    <th className="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Categoría</th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Monto</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Notas</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {purchases.map(p => (
+                  {purchases.map(p => {
+                    const badge = CATEGORY_BADGE[p.category] || CATEGORY_BADGE.ropa;
+                    return (
                     <tr key={p.id} className="hover:bg-rose-50 transition-colors">
                       <td className="px-4 py-3 text-gray-700">{p.date}</td>
                       <td className="px-4 py-3 font-medium text-gray-900">{p.store}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>{badge.label}</span>
+                      </td>
                       <td className="px-4 py-3 text-right font-semibold text-rose-700">{fmtForce(p.amount)}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{p.notes || '—'}</td>
                       <td className="px-4 py-3">
@@ -554,11 +610,12 @@ const CuentasRecompras = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
                 <tfoot>
                   <tr className="bg-rose-700 text-white font-bold text-sm">
-                    <td className="px-4 py-3 uppercase tracking-wide" colSpan={2}>TOTAL COMPRAS</td>
+                    <td className="px-4 py-3 uppercase tracking-wide" colSpan={3}>TOTAL COMPRAS</td>
                     <td className="px-4 py-3 text-right text-base">{fmtForce(totalCompras)}</td>
                     <td colSpan={2} className="px-4 py-3" />
                   </tr>

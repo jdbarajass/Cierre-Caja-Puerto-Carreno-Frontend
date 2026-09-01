@@ -2,6 +2,23 @@
 
 ---
 
+## [2026-09-01] - Categorizar compras de Cuentas Recompras (ropa vs. gasto operacional)
+
+### 🏷️ `src/pages/CuentasRecompras.jsx`
+- El formulario "Registrar compra" ahora incluye un selector de categoría: **"Compra de ropa"** (se soporta con factura) o **"Gasto operacional"** (gasolina, bolsas, cajas, etc.) — por defecto "Compra de ropa" para no cambiar el comportamiento de compras ya existentes
+- La tabla de compras muestra una columna **Categoría** con un badge (índigo para ropa, ámbar para operacional)
+- El encabezado de la sección "Compras realizadas por el socio" ahora muestra 3 badges: Total, Ropa y Operacional (subtotales), además del total combinado que ya existía
+- El cálculo de "Balance disponible" (`recibido − compras`) no cambió — sigue restando el total combinado, sin importar la categoría
+
+### ⚙️ Backend (`Cierre-Caja-Puerto-Carreno-Backend`)
+- Ver [CHANGELOG del backend](../Cierre-Caja-Puerto-Carreno-Backend/CHANGELOG.md) — nueva columna `category` en `repurchase_purchases`, migración segura, y `total_ropa`/`total_operacional` en la respuesta de `GET /api/repurchase/purchases`
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos
+- Probado end-to-end contra un backend local (sin tocar producción): se registró un envío de $4.000.000 (efectivo + datáfono + QR, como en el ejemplo real del usuario) y 2 compras (una "Gasolinera Terpel" $50.000 operacional, otra "Distribuidora Ropa XYZ" $2.000.000 ropa) — los badges, subtotales (Ropa: $2.000.000, Operacional: $50.000) y el balance disponible ($1.950.000 = $4.000.000 − $2.050.000) se calcularon y mostraron correctamente
+
+---
+
 ## [2026-09-01] - Unificar "Cuentas Recompras" dentro de "Cuentas"; ocultar pestaña "Movimientos"
 
 ### 🔀 `src/pages/CuentasLayout.jsx`
