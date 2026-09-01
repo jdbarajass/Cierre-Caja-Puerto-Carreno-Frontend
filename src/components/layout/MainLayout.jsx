@@ -21,7 +21,6 @@ import {
   Users,
   Tag,
   Shirt,
-  Repeat,
   ClipboardList,
   Briefcase,
   Wallet
@@ -170,19 +169,10 @@ const MainLayout = ({ children }) => {
     {
       id: 'cuentas',
       label: 'Cuentas',
-      description: 'Saldo por medio de pago, ajustes y transferencias',
+      description: 'Saldo por medio de pago, ajustes, transferencias y recompras',
       path: '/cuentas',
       icon: Wallet,
       color: 'teal',
-      roles: ['admin']
-    },
-    {
-      id: 'recompras',
-      label: 'Cuentas Recompras',
-      description: 'Dinero enviado al socio para recompra',
-      path: '/cuentas-recompras',
-      icon: Repeat,
-      color: 'indigo',
       roles: ['admin']
     },
     {

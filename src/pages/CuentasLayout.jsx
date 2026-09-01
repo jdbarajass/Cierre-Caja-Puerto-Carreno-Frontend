@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Wallet, History, Plus, Minus, RefreshCw,
-  AlertTriangle, CheckCircle2, ArrowLeftRight
+  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily
 } from '../services/accountsService';
 import { getColombiaTodayString, formatColombiaDateTime } from '../utils/dateUtils';
+import CuentasRecompras from './CuentasRecompras';
 
 const fmt = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v || 0);
@@ -27,9 +28,12 @@ const MOVEMENT_TYPE_LABELS = {
   cash_closing: 'Cierre de caja',
 };
 
+// La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
+// El código y el estado siguen intactos: para reactivarla basta con volver a
+// agregar { id: 'movimientos', label: 'Movimientos', icon: History } aquí.
 const TABS = [
   { id: 'resumen', label: 'Resumen', icon: Wallet },
-  { id: 'movimientos', label: 'Movimientos', icon: History },
+  { id: 'recompras', label: 'Cuentas Recompras', icon: Repeat },
 ];
 
 const CuentasLayout = () => {
@@ -339,6 +343,8 @@ const CuentasLayout = () => {
           </div>
         </div>
       )}
+
+      {tab === 'recompras' && <CuentasRecompras />}
 
       {tab === 'movimientos' && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

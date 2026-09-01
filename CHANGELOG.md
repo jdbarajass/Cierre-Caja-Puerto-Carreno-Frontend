@@ -2,6 +2,25 @@
 
 ---
 
+## [2026-09-01] - Unificar "Cuentas Recompras" dentro de "Cuentas"; ocultar pestaña "Movimientos"
+
+### 🔀 `src/pages/CuentasLayout.jsx`
+- Se agregó una tercera pestaña **"Cuentas Recompras"** junto a "Resumen", que renderiza el componente `CuentasRecompras` (antes solo accesible como página independiente en `/cuentas-recompras`)
+- La pestaña **"Movimientos"** se ocultó del selector de pestañas a pedido del usuario — su estado, lógica de carga (`loadMovements`) y el bloque JSX quedaron intactos y comentados para reactivarla fácilmente si se necesita en el futuro
+
+### 🧭 `src/components/layout/MainLayout.jsx`
+- Se eliminó del menú lateral (sección Gestión) la entrada duplicada "Cuentas Recompras", ya que ahora se accede desde dentro de "Cuentas"
+- Se quitó el import del ícono `Repeat` (quedó sin uso tras el cambio anterior)
+- La ruta `/cuentas-recompras` se dejó activa en `App.jsx` (sin cambios) por compatibilidad con enlaces existentes, aunque ya no aparece en el menú
+
+### ✅ Verificación
+- `npm run build`: exitoso, sin errores
+- `npm run lint`: mismos ~22 errores/4 warnings preexistentes de siempre (ninguno en los archivos tocados)
+- Prueba funcional con Playwright contra el backend real (Render) autenticado como admin: se confirmó que el selector de pestañas muestra solo "Resumen" y "Cuentas Recompras" (sin "Movimientos"), y que la pestaña "Cuentas Recompras" carga sus datos reales (balance disponible, envíos/compras del mes) correctamente integrada dentro de la página de Cuentas
+- La pestaña "Resumen" no logró confirmarse con saldo cargado durante la prueba (se quedó en "Cargando...") por lentitud del cold-start del backend gratuito de Render en ese endpoint — no se tocó código de carga de cuentas (`accountsService.js`, `api.js`), por lo que no es una regresión de este cambio
+
+---
+
 ## [2026-08-21] - Re-verificación del cambio del 2026-08-19 (sin cambios de código)
 
 ### ✅ Re-confirmado, todo sigue pasando
