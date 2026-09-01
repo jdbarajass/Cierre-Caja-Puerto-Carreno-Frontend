@@ -2,6 +2,18 @@
 
 ---
 
+## [2026-09-01] - Separador de miles en los campos "Monto" de Cuentas (Resumen)
+
+### 🔢 `src/pages/CuentasLayout.jsx`
+- Nuevo componente `CurrencyInput`: muestra el número plano mientras el campo tiene el foco (para no interferir al escribir) y lo formatea con puntos de miles (`Intl`/`toLocaleString('es-CO')`) al salir del campo — mismo patrón ya usado en el input "Base Caja" de `Dashboard.jsx`
+- Aplicado a los campos "Monto" de **"Ajuste manual de saldo"** y **"Transferir entre cuentas"** (antes eran `<input type="number">` planos, sin separador)
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos
+- Probado en navegador contra un backend local: al escribir "400000" y salir del campo, se ve "400.000"; el valor enviado al guardar sigue siendo el número correcto (400000)
+
+---
+
 ## [2026-09-01] - Comisión editable por envío; quitar "Valor aún no enviado"
 
 ### 💰 `src/pages/CuentasRecompras.jsx`

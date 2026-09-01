@@ -30,6 +30,24 @@ const MOVEMENT_TYPE_LABELS = {
   repurchase_send: 'Envío a socio (recompra)',
 };
 
+// Input de monto con separador de miles: muestra el número plano mientras se
+// escribe (foco activo) y formateado con puntos al perder el foco - mismo
+// patrón ya usado en el campo "Base Caja" de Dashboard.jsx.
+const CurrencyInput = ({ value, onChange, placeholder }) => {
+  const [focused, setFocused] = useState(false);
+  const display = focused ? value : (value ? Number(value).toLocaleString('es-CO') : '');
+  return (
+    <input
+      type="text" inputMode="numeric" placeholder={placeholder}
+      value={display}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={e => onChange(e.target.value.replace(/[^0-9]/g, ''))}
+      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+    />
+  );
+};
+
 // La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
 // El código y el estado siguen intactos: para reactivarla basta con volver a
 // agregar { id: 'movimientos', label: 'Movimientos', icon: History } aquí.
@@ -272,11 +290,10 @@ const CuentasLayout = () => {
                   </button>
                 </div>
 
-                <input
-                  type="number" min="0" step="1" placeholder="Monto"
+                <CurrencyInput
+                  placeholder="Monto"
                   value={adjustForm.amount}
-                  onChange={e => setAdjustForm(f => ({ ...f, amount: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  onChange={v => setAdjustForm(f => ({ ...f, amount: v }))}
                 />
                 <input
                   type="text" placeholder="Nota (opcional)"
@@ -320,11 +337,10 @@ const CuentasLayout = () => {
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
 
-                <input
-                  type="number" min="0" step="1" placeholder="Monto"
+                <CurrencyInput
+                  placeholder="Monto"
                   value={transferForm.amount}
-                  onChange={e => setTransferForm(f => ({ ...f, amount: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  onChange={v => setTransferForm(f => ({ ...f, amount: v }))}
                 />
                 <input
                   type="text" placeholder="Nota (opcional)"
