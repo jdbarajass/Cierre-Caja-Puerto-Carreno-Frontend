@@ -19,6 +19,7 @@ const COLOR_CLASSES = {
   orange: { dot: 'bg-orange-500', bg: 'bg-orange-50', text: 'text-orange-700' },
   blue:   { dot: 'bg-blue-500',   bg: 'bg-blue-50',   text: 'text-blue-700' },
   teal:   { dot: 'bg-teal-500',   bg: 'bg-teal-50',   text: 'text-teal-700' },
+  indigo: { dot: 'bg-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700' },
 };
 
 const MOVEMENT_TYPE_LABELS = {
@@ -26,6 +27,7 @@ const MOVEMENT_TYPE_LABELS = {
   transfer_out: 'Transferencia (salida)',
   transfer_in: 'Transferencia (entrada)',
   cash_closing: 'Cierre de caja',
+  repurchase_send: 'Envío a socio (recompra)',
 };
 
 // La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
@@ -344,7 +346,7 @@ const CuentasLayout = () => {
         </div>
       )}
 
-      {tab === 'recompras' && <CuentasRecompras />}
+      {tab === 'recompras' && <CuentasRecompras onEntriesChanged={loadAccounts} />}
 
       {tab === 'movimientos' && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

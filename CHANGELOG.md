@@ -2,6 +2,21 @@
 
 ---
 
+## [2026-09-01] - Conectar Cuentas Recompras con Resumen: los envíos descuentan saldo real
+
+### 🔗 `src/pages/CuentasLayout.jsx` / `src/pages/CuentasRecompras.jsx`
+- `CuentasRecompras` recibe un nuevo prop opcional `onEntriesChanged`; `CuentasLayout` se lo pasa como `loadAccounts` para que, al crear/editar/eliminar un envío (que ahora puede afectar cuentas de Resumen en el backend), la pestaña Resumen se refresque automáticamente sin tener que recargar la página
+- Nuevo color `indigo` en `COLOR_CLASSES` (para la cuenta BBVA) y nueva etiqueta `repurchase_send: 'Envío a socio (recompra)'` en `MOVEMENT_TYPE_LABELS`
+
+### ⚙️ Backend (`Cierre-Caja-Puerto-Carreno-Backend`)
+- Ver [CHANGELOG del backend](../Cierre-Caja-Puerto-Carreno-Backend/CHANGELOG.md) — cada envío ahora descuenta automáticamente la cuenta correspondiente en Resumen según el medio de pago usado (efectivo, datáfono, QR, Nequi, Daviplata, BBVA); editar/eliminar revierte correctamente. Se agregó una cuenta BBVA nueva (no existía). No aplica a envíos ya registrados antes de este cambio.
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos
+- Probado end-to-end contra un backend local: con ADDI+DATÁFONO en $8.000.000, se registró un envío con datáfono=$2.000.000 y el "Saldo total" y la tarjeta de esa cuenta en Resumen bajaron a $6.000.000 sin recargar la página. Editar el envío a $5.000.000 dejó el saldo en $3.000.000 (revirtiendo primero el descuento anterior), y eliminarlo repuso el saldo a $8.000.000
+
+---
+
 ## [2026-09-01] - Categorizar compras de Cuentas Recompras (ropa vs. gasto operacional)
 
 ### 🏷️ `src/pages/CuentasRecompras.jsx`

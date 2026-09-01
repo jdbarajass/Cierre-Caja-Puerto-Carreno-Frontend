@@ -63,7 +63,7 @@ const NumberField = ({ label, fieldKey, value, onChange }) => (
 );
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CuentasRecompras = () => {
+const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   const now = new Date();
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -163,6 +163,7 @@ const CuentasRecompras = () => {
       else { await createEntry(payload); setSuccess('Entrada creada'); }
       setShowEntryForm(false); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY);
       await load();
+      onEntriesChanged?.(); // el envío ya descontó su cuenta en Resumen — refrescarla
     } catch (e) { setError(e.message); }
     finally { setSavingEntry(false); setTimeout(() => setSuccess(''), 3000); }
   };
@@ -184,7 +185,11 @@ const CuentasRecompras = () => {
 
   const handleDeleteEntry = async (id) => {
     if (!window.confirm('¿Eliminar esta entrada?')) return;
-    try { await deleteEntry(id); await load(); } catch (e) { setError(e.message); }
+    try {
+      await deleteEntry(id);
+      await load();
+      onEntriesChanged?.(); // si el envío estaba conectado a una cuenta, eliminarlo le repone el saldo
+    } catch (e) { setError(e.message); }
   };
 
   // ── Compras: submit ───────────────────────────────────────────────────────
