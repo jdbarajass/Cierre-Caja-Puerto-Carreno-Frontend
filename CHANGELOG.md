@@ -2,6 +2,32 @@
 
 ---
 
+## [2026-09-02] - Fix: fechas de facturas corridas un día; peticiones redundantes en cada navegación
+
+Encontrados durante una revisión integral de la sección Estadísticas (login real contra producción + inspección de código), con capturas de red antes/después.
+
+### 🐛 `src/components/direct/DirectSalesDocuments.jsx` — fechas de facturas un día atrás
+- Cada factura en "Documentos de Venta" mostraba la fecha del día anterior con una hora idéntica y falsa ("07:00 p. m." en absolutamente todas). Causa: Alegra devuelve `date` como `"2026-09-02"` (solo fecha, sin hora); `new Date("2026-09-02")` lo interpreta como medianoche UTC, y al mostrarlo en Colombia (UTC-5) cae en el día anterior a las 7pm. Afecta a cualquier usuario con el navegador en horario de Colombia, es decir, a todos los usuarios reales del sistema.
+- Fix: usar el campo `datetime` que Alegra sí entrega con la hora local real (ej. `"2026-09-02 15:30:23"`), que JS interpreta correctamente como hora local (no UTC). Verificado: antes "1 de sept, 07:00 p. m." en todas las filas → ahora "2 de sept" con la hora real de cada venta (`03:30 p. m.`, `02:28 p. m.`, etc.)
+
+### 🐛 `src/components/common/VoidedInvoicesAlert.jsx` — mismo bug, en el detalle de facturas anuladas
+- La fecha mostrada al expandir el detalle de una factura anulada tenía el mismo problema (este endpoint no expone `datetime`, solo `date`). Fix: parsear los componentes de la fecha manualmente (año/mes/día) en vez de dejar que `new Date()` la interprete como UTC.
+
+### 🐛 `src/components/direct/DirectSalesTotals.jsx` — "hora de mayor venta" siempre incorrecta
+- El cálculo de ventas-por-hora usaba `doc.date` antes que `doc.datetime` (`new Date(doc.date || doc.datetime)`), así que el 100% de las ventas se agrupaban en la hora 19:00 sin importar la hora real de compra — la métrica de "hora pico" en esta vista nunca fue confiable. Fix: invertir la prioridad (`doc.datetime || doc.date`).
+
+### ⚡ `src/hooks/useSalesComparison.js` + `src/components/layout/MainLayout.jsx` — peticiones redundantes en cada navegación
+- `MainLayout` envuelve **todas** las rutas de la app, y como cada ruta declara su propio `<MainLayout>` (no hay layout anidado persistente), React lo remonta por completo en cada navegación. `useSalesComparison()` se ejecutaba sin condición en cada montaje, disparando ~9 peticiones a Alegra (ventas del día/mes, comparación año anterior, inventario, cuentas por cobrar) — aunque esas métricas solo se renderizan en `/dashboard` (el resto de páginas nunca las muestra).
+- Confirmado en vivo: navegar a "Documentos de Venta" disparaba las mismas ~9 peticiones que ya se habían hecho al entrar por `/dashboard`, en cada visita.
+- Fix: `useSalesComparison` ahora acepta un parámetro `enabled` (default `true`, no rompe el otro consumidor del hook en `SalesComparisonYoY.jsx`); `MainLayout` lo pasa como `location.pathname === '/dashboard'`. Verificado: peticiones de métricas en `/dashboard` siguen disparándose normalmente; en `/estadisticas-avanzadas/documentos` pasaron de ~9 a 0.
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos en los 4 archivos tocados
+- Los 3 fixes de fecha/hora probados en vivo contra el backend real de Render (login con credenciales de producción), comparando capturas antes/después
+- Fix de peticiones redundantes probado en vivo contando peticiones de red en `/dashboard` vs. una página de Estadísticas antes y después del cambio
+
+---
+
 ## [2026-09-02] - Menú hamburguesa para navegación en móvil/tablet
 
 ### 📱 `src/components/layout/MainLayout.jsx`

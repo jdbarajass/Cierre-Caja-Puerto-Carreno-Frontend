@@ -12,8 +12,12 @@ import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
  *
  * Optimizado para reducir peticiones concurrentes y duplicadas
  * Usa endpoints rápidos de Alegra (/api/sales/quick-summary y /api/inventory/quick-total)
+ *
+ * @param {boolean} enabled - Si es false, no se realiza ninguna petición (útil para
+ * evitar llamadas innecesarias a Alegra cuando los datos no se van a mostrar, ej.
+ * en rutas donde el layout que consume este hook no renderiza las métricas)
  */
-export const useSalesComparison = () => {
+export const useSalesComparison = (enabled = true) => {
   const [comparison, setComparison] = useState({
     // Estadísticas actuales
     dailySales: null,
@@ -312,6 +316,10 @@ export const useSalesComparison = () => {
   };
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     // Cargar datos inicialmente
     fetchComparison();
 
@@ -321,7 +329,7 @@ export const useSalesComparison = () => {
     }, 13 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [enabled]);
 
   return comparison;
 };

@@ -243,9 +243,13 @@ const DirectSalesTotals = () => {
     }
 
     documents.forEach(doc => {
-      if (doc.date || doc.datetime) {
+      if (doc.datetime || doc.date) {
         try {
-          const fecha = new Date(doc.date || doc.datetime);
+          // Preferir `datetime` (hora local real de Colombia, ej. "2026-09-02 15:30:23").
+          // `date` es solo "YYYY-MM-DD" sin hora: new Date() lo interpreta como medianoche
+          // UTC, que en Colombia (UTC-5) cae siempre a las 19:00 del dia anterior, haciendo
+          // que TODAS las ventas se agrupen incorrectamente en la hora 19 si se usa primero.
+          const fecha = new Date(doc.datetime || doc.date);
           const hora = fecha.getHours();
           if (hora >= 0 && hora < 24) {
             ventasPorHora[hora].total += doc.total || 0;

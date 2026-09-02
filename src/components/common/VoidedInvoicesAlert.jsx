@@ -83,7 +83,14 @@ const VoidedInvoicesAlert = ({ voidedInvoices, onViewDetails }) => {
                   <div>
                     <span className="text-gray-600">Fecha:</span>
                     <span className="ml-2 text-gray-900">
-                      {new Date(invoice.date).toLocaleDateString('es-CO')}
+                      {invoice.date ? (() => {
+                        // invoice.date viene de Alegra como "YYYY-MM-DD" (solo fecha, sin hora).
+                        // new Date("YYYY-MM-DD") la interpreta como medianoche UTC, lo que
+                        // corre la fecha un dia hacia atras al mostrarla en Colombia (UTC-5).
+                        // Se parsean los componentes manualmente para evitar ese desfase.
+                        const [y, m, d] = invoice.date.split('-').map(Number);
+                        return new Date(y, m - 1, d).toLocaleDateString('es-CO');
+                      })() : '-'}
                     </span>
                   </div>
                   <div>

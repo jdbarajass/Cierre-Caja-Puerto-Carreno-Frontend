@@ -37,6 +37,10 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
+  // Las métricas de este hook solo se muestran en /dashboard (ver "SECCIÓN DE MÉTRICAS"
+  // más abajo) — se desactiva en cualquier otra ruta para no disparar ~9 peticiones a
+  // Alegra en cada navegación (Estadísticas, Cuentas, etc.) cuando nunca se van a mostrar
+  const isDashboardRoute = location.pathname === '/dashboard';
   // Hook consolidado que incluye estadísticas actuales Y comparaciones
   const {
     dailySales,
@@ -51,7 +55,7 @@ const MainLayout = ({ children }) => {
     previousDay,
     fullMonthLastYear, // Mes completo del año anterior (para meta mensual)
     loading: salesLoading
-  } = useSalesComparison();
+  } = useSalesComparison(isDashboardRoute);
 
   // Estados para dropdowns
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);

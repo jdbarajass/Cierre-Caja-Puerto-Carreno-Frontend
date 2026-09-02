@@ -64,6 +64,9 @@ const DirectSalesDocuments = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
+    // Alegra devuelve `datetime` como "YYYY-MM-DD HH:MM:SS" en hora local de Colombia
+    // (a diferencia de `date`, que es solo la fecha "YYYY-MM-DD" y JS interpreta como
+    // medianoche UTC, corriendo la fecha un dia hacia atras al mostrarla en Colombia UTC-5)
     const date = new Date(dateStr);
     return date.toLocaleDateString('es-CO', {
       year: 'numeric',
@@ -235,7 +238,7 @@ const DirectSalesDocuments = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(doc.date)}
+                      {formatDate(doc.datetime || doc.date)}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
