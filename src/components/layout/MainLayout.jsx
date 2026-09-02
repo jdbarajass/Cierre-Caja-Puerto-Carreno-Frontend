@@ -23,7 +23,9 @@ import {
   Shirt,
   ClipboardList,
   Briefcase,
-  Wallet
+  Wallet,
+  Menu,
+  X
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -55,6 +57,9 @@ const MainLayout = ({ children }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [statsDropdownOpen, setStatsDropdownOpen] = useState(false);
   const [gestionDropdownOpen, setGestionDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
+  const [mobileGestionOpen, setMobileGestionOpen] = useState(false);
   const userDropdownRef = useRef(null);
   const statsDropdownRef = useRef(null);
   const gestionDropdownRef = useRef(null);
@@ -207,7 +212,17 @@ const MainLayout = ({ children }) => {
     navigate(path);
     setStatsDropdownOpen(false);
     setGestionDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setMobileStatsOpen(false);
+    setMobileGestionOpen(false);
   };
+
+  // Cerrar el menú móvil al cambiar de ruta (ej. tras un logout o navegación externa)
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMobileStatsOpen(false);
+    setMobileGestionOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -429,6 +444,16 @@ const MainLayout = ({ children }) => {
                 <span className="font-medium">{currentTime}</span>
               </div>
 
+              {/* Botón menú móvil (hamburguesa) - reemplaza la nav horizontal por debajo de lg */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+
               {/* Usuario Dropdown */}
               <div ref={userDropdownRef} className="relative">
                 <button
@@ -488,6 +513,124 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
         </div>
+
+        {/* MENÚ MÓVIL - reemplaza la nav horizontal (hidden lg:flex) por debajo de lg */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200 bg-white shadow-sm max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="px-4 py-3 space-y-1">
+              {/* Cierre de Caja / Ventas Mensuales */}
+              {visibleDashboardItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${active
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {item.label}
+                  </button>
+                );
+              })}
+
+              {/* Estadísticas (acordeón) */}
+              {canAccess(['admin']) && visibleStatsItems.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setMobileStatsOpen(!mobileStatsOpen)}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${mobileStatsOpen || location.pathname.includes('/estadisticas')
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                      Estadísticas
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileStatsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileStatsOpen && (
+                    <div className="mt-1 ml-4 pl-3 border-l-2 border-indigo-100 space-y-1">
+                      {visibleStatsItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.path);
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => handleNavigation(item.path)}
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-3 ${active ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            <Icon className="w-4 h-4 flex-shrink-0" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Gestión (acordeón) */}
+              {visibleGestionItems.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setMobileGestionOpen(!mobileGestionOpen)}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${mobileGestionOpen || isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
+                        ? 'bg-violet-50 text-violet-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Briefcase className="w-4 h-4 flex-shrink-0" />
+                      Gestión
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileGestionOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileGestionOpen && (
+                    <div className="mt-1 ml-4 pl-3 border-l-2 border-violet-100 space-y-1">
+                      {visibleGestionItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.path);
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => handleNavigation(item.path)}
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-3 ${active ? 'bg-violet-50 text-violet-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            <Icon className="w-4 h-4 flex-shrink-0" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Docs API */}
+              <a
+                href={getApiDocsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                Docs
+              </a>
+
+              {/* Reloj (oculto en el header por debajo de md) */}
+              <div className="flex md:hidden items-center gap-3 px-3 py-2.5 text-sm text-gray-500 border-t border-gray-100 mt-1 pt-3">
+                <Clock className="w-4 h-4 flex-shrink-0" />
+                <span className="font-medium">{currentTime}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* SECCIÓN DE MÉTRICAS - Solo visible en Dashboard */}

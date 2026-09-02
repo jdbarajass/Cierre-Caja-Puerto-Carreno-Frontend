@@ -2,6 +2,20 @@
 
 ---
 
+## [2026-09-02] - Menú hamburguesa para navegación en móvil/tablet
+
+### 📱 `src/components/layout/MainLayout.jsx`
+- La barra de navegación horizontal ("Cierre de Caja", "Ventas Mensuales", "Estadísticas", "Gestión", "Docs") tenía la clase `hidden lg:flex` — por debajo de 1024px desaparecía por completo y no había ningún reemplazo, dejando el sistema inaccesible desde el celular salvo por el menú de usuario (avatar)
+- Se agregó un botón de menú hamburguesa (ícono `Menu`/`X` de lucide-react), visible solo con `lg:hidden`, que despliega un panel debajo del header con las mismas opciones que la nav de escritorio: Cierre de Caja / Ventas Mensuales, Estadísticas (acordeón, solo admin), Gestión (acordeón: Cuentas, Control de Empleadas, Notas y Pendientes), Docs (enlace externo a Swagger), y el reloj (que también estaba oculto en móvil)
+- El menú respeta los mismos roles/permisos que la nav de escritorio (`canAccess`, `visibleDashboardItems`/`visibleStatsItems`/`visibleGestionItems`) y se cierra automáticamente al navegar a cualquier opción o al cambiar de ruta
+- La navegación de escritorio (≥1024px) no se modificó
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos (los 22 errores preexistentes de lint son de otros archivos, no relacionados a este cambio)
+- No se pudo hacer una prueba end-to-end con Playwright en este entorno (el permiso para crear un usuario admin temporal de prueba fue bloqueado por el clasificador de seguridad de la sesión) — verificado por build/lint y revisión manual del JSX, sin confirmación visual en navegador real dentro de esta sesión
+
+---
+
 ## [2026-09-01] - Separador de miles EN VIVO en Cuentas Recompras
 
 ### 🔢 `src/pages/CuentasRecompras.jsx`
