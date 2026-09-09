@@ -34,7 +34,7 @@ const EMPTY_ENTRY = {
   date: today(), descripcion: 'Recompra Jhonatan',
   efectivo: '', datafono: '', qr: '',
   daviplata: '', nequi: '', bbva: '', sobrante_mes_anterior: '',
-  fecha_compra: '', notes: '', feeOverride: ''
+  fecha_compra: '', notes: '', feeOverride: null
 };
 
 const EMPTY_PURCHASE = { date: today(), store: '', amount: '', category: 'ropa', notes: '' };
@@ -177,12 +177,15 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   // Cálculos del formulario de entrada en tiempo real
   const formTotalEnviado = () => PAYMENT_COLS.reduce((s, { key }) => s + toNum(entryForm[key]), 0);
   const formSobrante     = () => toNum(entryForm.sobrante_mes_anterior);
-  const formGrandTotal   = () => formTotalEnviado() + formSobrante();
   // Comisión automática: 4‰ sobre lo enviado (igual que el backend). Si el
   // usuario escribió un valor en feeOverride, ese manda.
   const formFeeAuto       = () => Math.round(formTotalEnviado() * 4 / 1000);
-  const formFee            = () => entryForm.feeOverride !== '' ? toNum(entryForm.feeOverride) : formFeeAuto();
-  const formNetValue      = () => formGrandTotal() - formFee();
+  const formFee            = () => entryForm.feeOverride !== null ? toNum(entryForm.feeOverride) : formFeeAuto();
+  // La comisión la asume la tienda, no el socio: a Jhonatan le llega el
+  // total enviado completo (formTotalEnviado(), sin descontarle nada). Lo
+  // que realmente sale de las cuentas de la tienda es ese total MÁS la
+  // comisión - ver total_a_descontar en el backend (app/models/repurchase.py).
+  const formTotalADescontar = () => formTotalEnviado() + formFee();
 
   // Totales del mes (fee_4mil ya viene sumado por el backend respetando
   // las comisiones sobrescritas a mano en cada envío - no se recalcula aquí)
@@ -205,7 +208,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
         sobrante_mes_anterior: toNum(entryForm.sobrante_mes_anterior),
         fecha_compra:          entryForm.fecha_compra || null,
         notes:                 entryForm.notes,
-        fee_override:          entryForm.feeOverride !== '' ? toNum(entryForm.feeOverride) : null,
+        fee_override:          entryForm.feeOverride !== null ? toNum(entryForm.feeOverride) : null,
       };
       if (editingEntryId) { await updateEntry(editingEntryId, payload); setSuccess('Entrada actualizada'); }
       else { await createEntry(payload); setSuccess('Entrada creada'); }
@@ -224,7 +227,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
       nequi: String(row.nequi || ''), bbva: String(row.bbva || ''),
       sobrante_mes_anterior: String(row.sobrante_mes_anterior || ''),
       fecha_compra: row.fecha_compra || '', notes: row.notes || '',
-      feeOverride: row.fee_override != null ? String(row.fee_override) : '',
+      feeOverride: row.fee_override != null ? String(row.fee_override) : null,
     });
     setEditingEntryId(row.id);
     setShowEntryForm(true);
@@ -366,6 +369,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
             <div className="px-4 py-3 bg-blue-50 rounded-xl">
               <p className="text-xs text-blue-600 font-medium">Enviado (medios)</p>
               <p className="text-lg font-bold text-blue-800">{fmtForce(formTotalEnviado())}</p>
+              <p className="text-[11px] text-blue-500 mt-0.5">Esto es lo que le llega a Jhonatan</p>
             </div>
             <div className="px-4 py-3 bg-violet-50 rounded-xl">
               <p className="text-xs text-violet-600 font-medium">+ Sobrante ant.</p>
@@ -373,27 +377,28 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
             </div>
             <div className="px-4 py-3 bg-orange-50 rounded-xl">
               <label className="text-xs text-orange-600 font-medium block mb-1">
-                Comisión {entryForm.feeOverride === '' ? '4‰ (automática)' : '(editada)'}
+                Comisión {entryForm.feeOverride === null ? '4‰ (automática)' : '(editada)'}
               </label>
               <div className="flex items-center gap-1">
                 <span className="text-lg font-bold text-orange-800">$</span>
                 <LiveMoneyInput
-                  value={entryForm.feeOverride !== '' ? entryForm.feeOverride : String(formFeeAuto())}
+                  value={entryForm.feeOverride !== null ? entryForm.feeOverride : String(formFeeAuto())}
                   onChange={v => setEntryForm(f => ({ ...f, feeOverride: v }))}
                   className="w-full bg-transparent text-lg font-bold text-orange-800 focus:outline-none"
                 />
               </div>
-              {entryForm.feeOverride !== '' && (
+              {entryForm.feeOverride !== null && (
                 <button type="button"
-                  onClick={() => setEntryForm(f => ({ ...f, feeOverride: '' }))}
+                  onClick={() => setEntryForm(f => ({ ...f, feeOverride: null }))}
                   className="text-[11px] text-orange-600 underline hover:text-orange-800">
                   Volver a automático
                 </button>
               )}
             </div>
             <div className="px-4 py-3 bg-green-50 rounded-xl border-2 border-green-200">
-              <p className="text-xs text-green-600 font-medium">Valor neto</p>
-              <p className="text-lg font-bold text-green-800">{fmtForce(formNetValue())}</p>
+              <p className="text-xs text-green-600 font-medium">Total a descontar de cuentas</p>
+              <p className="text-lg font-bold text-green-800">{fmtForce(formTotalADescontar())}</p>
+              <p className="text-[11px] text-green-600 mt-0.5">Enviado + comisión (la asume la tienda)</p>
             </div>
           </div>
           <div>
@@ -498,14 +503,14 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                       <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-indigo-700">TOTAL</th>
                       <th className="text-center px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Fecha compra</th>
                       <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Comisión 4‰</th>
-                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700">Valor neto</th>
+                      <th className="text-right px-3 py-2.5 font-semibold whitespace-nowrap bg-orange-700" title="Enviado + comisión - lo que realmente sale de las cuentas">Total descontado</th>
                       <th className="px-2 py-2.5 bg-gray-700" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {entries.map((row, idx) => {
                       const total = rowTotal(row);
-                      // fee_4mil/valor_sobrante ya vienen resueltos del backend
+                      // fee_4mil/total_a_descontar ya vienen resueltos del backend
                       // (respetan fee_override si el envío lo tiene sobrescrito)
                       const fee   = row.fee_4mil;
                       return (
@@ -521,7 +526,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                           <td className="px-3 py-2.5 text-right text-orange-700 bg-orange-50 whitespace-nowrap">
                             {row.total_enviado > 0 ? fmtForce(fee) : '—'}{row.fee_override != null && <span title="Comisión editada a mano" className="ml-1 text-orange-400">✎</span>}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">{row.total_enviado > 0 ? fmtForce(row.valor_sobrante) : '—'}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">{row.total_enviado > 0 ? fmtForce(row.total_a_descontar) : '—'}</td>
                           <td className="px-2 py-2.5">
                             <div className="flex items-center gap-1.5 justify-end">
                               <button onClick={() => handleEditEntry(row)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
@@ -542,7 +547,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                       <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">{fmtForce(monthTotalRecibido())}</td>
                       <td className="px-3 py-3 text-center bg-orange-700 text-xs">Total Facturas</td>
                       <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce(monthFee()) : '—'}</td>
-                      <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce(monthTotalRecibido() - monthFee()) : '—'}</td>
+                      <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce((totals.total_enviado || 0) + monthFee()) : '—'}</td>
                       <td className="px-2 py-3 bg-gray-800" />
                     </tr>
                   </tfoot>

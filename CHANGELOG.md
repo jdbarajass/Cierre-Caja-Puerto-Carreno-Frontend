@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-09-09] - Cuentas Recompras: fix del campo de comisión y rediseño de las cajas de resumen
+
+El usuario reportó dos problemas al enviar dinero a Jhonatan (Gestión → Cuentas → Cuentas Recompras): (1) era difícil poner un cero o borrar la comisión editable, y (2) el "Valor neto" mostrado no correspondía a lo que realmente pasa con el dinero (ver CHANGELOG del backend, misma fecha, para el fix de fondo de la comisión).
+
+### 🐛 `src/pages/CuentasRecompras.jsx` — campo de comisión no se dejaba borrar
+- **Causa:** el campo usaba el string vacío (`''`) tanto para "el usuario nunca tocó este campo, mostrar el 4‰ automático" como para el estado transitorio de "el usuario está borrando el número" - al borrar el último dígito con Backspace, el campo volvía a saltar al valor automático en vez de quedar vacío para poder escribir uno nuevo.
+- **Fix:** se separó el sentinel a `null` (nunca tocado → automático) de `''` (el usuario lo vació y está escribiendo algo nuevo, incluido un cero). Verificado con Playwright simulando Backspace tecla por tecla: el campo ahora sí queda vacío y acepta escribir "0" u otro valor sin saltar de vuelta al automático.
+
+### 💰 `src/pages/CuentasRecompras.jsx` — rediseño de las cajas de resumen del envío
+- "Enviado (medios)" ahora aclara "Esto es lo que le llega a Jhonatan" (no se le descuenta la comisión).
+- La caja "Valor neto" (enviado − comisión) se reemplazó por **"Total a descontar de cuentas"** (enviado + comisión) - la comisión la asume la tienda, se descuenta de la cuenta de origen, no del socio. Mismo cambio en la columna de la tabla de envíos ("Valor neto" → "Total descontado") y en el total del pie de página.
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos.
+- Probado con Playwright contra un backend local (nunca producción): el envío real reportado por el usuario ($189.800 por QR, comisión automática $759) mostró correctamente "Total a descontar de cuentas: $190.559"; tras guardarlo, Resumen mostró QR en **-$190.559** y "Balance disponible (Jhonatan)" en **$189.800** - coincide exactamente con lo esperado.
+
+**Deploy:** requiere que el backend (mismo día, ver su CHANGELOG) esté desplegado en Render (Manual Deploy) para que la comisión se descuente correctamente de las cuentas. Frontend en Vercel con auto-deploy.
+
 ## [2026-09-08] - Aviso de cierre de caja pendiente; estado de sincronización y alertas en Cuentas
 
 El usuario reportó que al hacer clic en "Sincronizar ahora" (Gestión → Cuentas) aparecía "No hay cierre de caja registrado para hoy", y preguntó qué pasaba si el cierre de un día no se hacía y se hacía atrasado al día siguiente. Investigado a fondo (ver CHANGELOG del backend, misma fecha): ni el botón ni el cron de las 9pm sincronizaban nada que no fuera la fecha de hoy, así que un cierre atrasado nunca se acreditaba. Esta entrada agrega el aviso recordatorio y corrige ese flujo del lado del frontend.
