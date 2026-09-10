@@ -21,6 +21,7 @@ const COLOR_CLASSES = {
   blue:   { dot: 'bg-blue-500',   bg: 'bg-blue-50',   text: 'text-blue-700' },
   teal:   { dot: 'bg-teal-500',   bg: 'bg-teal-50',   text: 'text-teal-700' },
   indigo: { dot: 'bg-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700' },
+  emerald: { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
 };
 
 const MOVEMENT_TYPE_LABELS = {

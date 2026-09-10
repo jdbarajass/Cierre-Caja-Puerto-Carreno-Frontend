@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-09-10] - Nueva cuenta AHORRO en Resumen
+
+### 🎨 `src/pages/CuentasLayout.jsx`
+- Nuevo color `emerald` en `COLOR_CLASSES` para la tarjeta de la cuenta AHORRO (ver CHANGELOG del backend, misma fecha, donde se agregó la cuenta). Sin este color caería al `blue` por defecto, visualmente igual a ADDI + DATÁFONO.
+- No se necesitó ningún otro cambio: la tarjeta, "Ajuste manual de saldo" y "Transferir entre cuentas" ya listan las cuentas dinámicamente desde `GET /api/accounts`, así que AHORRO aparece sola en los 3 lugares en cuanto existe en el backend.
+
+**Deploy:** requiere que el backend (mismo día) esté desplegado en Render. Frontend en Vercel con auto-deploy.
+
 ## [2026-09-09] - Cuentas Recompras: fix del campo de comisión y rediseño de las cajas de resumen
 
 El usuario reportó dos problemas al enviar dinero a Jhonatan (Gestión → Cuentas → Cuentas Recompras): (1) era difícil poner un cero o borrar la comisión editable, y (2) el "Valor neto" mostrado no correspondía a lo que realmente pasa con el dinero (ver CHANGELOG del backend, misma fecha, para el fix de fondo de la comisión).
