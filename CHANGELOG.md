@@ -2,6 +2,18 @@
 
 ---
 
+## [2026-09-10] (continuación) - "Total" renombrado a "Total Recompras", aclarado que no incluye Ahorro
+
+### 💰 `src/pages/CuentasLayout.jsx`
+- La última tarjeta del resumen (Gestión → Cuentas) pasó de decir **"Total"** a **"Total Recompras"**, con la aclaración "(sin Ahorro)" en su descripción — el número en sí ya viene sin el ahorro desde el backend (ver su CHANGELOG, misma fecha).
+- "Saldo total (real)" ahora aclara en su descripción "Cuentas de la tienda para recompras (sin Ahorro)", para que quede claro que ese número no incluye lo que hay guardado en Ahorro.
+
+### ✅ Verificación
+- `npm run build` sin errores nuevos.
+- Verificado visualmente con Playwright contra un backend local: con QR en $1.000.000 y AHORRO en $4.360.000, tanto "Saldo total (real)" como "Total Recompras" muestran $1.000.000 - el ahorro no se mezcla, pero sigue visible en su propia tarjeta más abajo.
+
+**Deploy:** requiere que el backend (mismo día) esté desplegado en Render. Frontend en Vercel con auto-deploy.
+
 ## [2026-09-10] - Nueva cuenta AHORRO en Resumen
 
 ### 🎨 `src/pages/CuentasLayout.jsx`

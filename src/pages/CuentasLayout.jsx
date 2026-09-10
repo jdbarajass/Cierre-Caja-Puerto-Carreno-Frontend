@@ -300,7 +300,7 @@ const CuentasLayout = () => {
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Saldo total (real)</p>
                 <p className="text-3xl font-bold text-gray-900">{loading ? 'Cargando...' : fmt(totalBalance)}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Cuentas de la tienda</p>
+                <p className="text-xs text-gray-400 mt-0.5">Cuentas de la tienda para recompras (sin Ahorro)</p>
               </div>
 
               <span className="hidden sm:block text-2xl text-gray-300 font-light">+</span>
@@ -318,11 +318,11 @@ const CuentasLayout = () => {
               <span className="hidden sm:block text-2xl text-gray-300 font-light">=</span>
 
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Recompras</p>
                 <p className="text-3xl font-bold text-emerald-700">
                   {(loading || loadingRepurchase) ? 'Cargando...' : fmt(totalBalance + repurchaseBalance.balance)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">Tienda + Jhonatan</p>
+                <p className="text-xs text-gray-400 mt-0.5">Tienda + Jhonatan (sin Ahorro)</p>
               </div>
             </div>
 
