@@ -2,6 +2,23 @@
 
 ---
 
+## [2026-09-14] (continuación) - Fix: no se podía escribir el año completo en "Contempla saldo hasta"
+
+El usuario reportó, con captura de pantalla, que al escribir la fecha en el campo nuevo (ver entrada anterior, mismo día) el año se quedaba en solo 2 dígitos (ej. "16/09/0002" en vez de "16/09/2026") — no lo dejaba terminar de escribir.
+
+### 🐛 La causa
+- `<input type="date">` dispara un evento `change` en cada tecla del año, aunque esté incompleto (Chromium lo completa con ceros a la izquierda: "2" → año `0002`, "20" → `0020`, etc.). El campo estaba conectado directo a `value={a.contemplated_until || ''}` y guardaba en el backend en cada una de esas teclas — la respuesta del servidor volvía a renderizar el input con ese valor a medio escribir, reiniciando el campo y dejando al usuario sin poder seguir escribiendo el resto del año.
+
+### 🔧 `src/pages/CuentasLayout.jsx`
+- Nuevo componente `DateNoteInput` con estado local propio (`draft`), desacoplado del valor del backend mientras el usuario escribe. Solo se sincroniza con el valor externo cuando el campo no está "sucio", y solo guarda (`onSave`) al perder el foco (`onBlur`) — nunca en cada tecla. Reemplaza el `<input type="date">` inline que se había agregado en la entrada anterior.
+
+### ✅ Verificación
+- Se reprodujo el mecanismo exacto del bug simulando a nivel de DOM los eventos `input` que dispara el navegador al escribir el año dígito por dígito (`0002-09-16` → `0020-09-16` → `0202-09-16` → `2026-09-16`), confirmando con Playwright que: (1) no se dispara ningún `PATCH` al backend mientras se escribe, (2) el campo conserva el valor completo sin reiniciarse, (3) al perder el foco se dispara exactamente 1 `PATCH` con la fecha final correcta, y (4) recargar la página confirma que quedó persistida en el backend.
+- La automatización de teclado nativa contra los segmentos internos del widget resultó poco confiable en Chromium headless (limitación conocida de la herramienta, no del código) — se optó por simular los eventos DOM reales que el navegador dispara, que es lo que efectivamente consume el código de React.
+- `npm run build` y `npm run lint` sin errores nuevos.
+
+**Deploy:** solo frontend, sin cambios de backend — auto-deploy en Vercel, no requiere Manual Deploy en Render.
+
 ## [2026-09-14] - Fecha "Contempla saldo hasta" editable en la tarjeta ADDI + DATÁFONO
 
 El usuario pidió poder anotar, directamente en la tarjeta "ADDI + DATÁFONO (Tarjetas)" de Gestión → Cuentas → Resumen, hasta qué fecha contempla que ese saldo debería estar consignado (Addi paga días después de la transacción, y él lo sabe manualmente) — para poder corroborar visualmente si ya le toca revisar que Addi hubiera pagado.

@@ -51,6 +51,40 @@ const CurrencyInput = ({ value, onChange, placeholder }) => {
   );
 };
 
+// Input de fecha con estado local propio, desacoplado del valor del backend
+// mientras se escribe: si guardara en cada tecla (como un input controlado
+// normal), Chrome dispara "change" apenas el año tiene 1-2 dígitos (ej. año
+// "02"), y al re-renderizar con ese valor recién guardado se reinicia el
+// campo - haciendo imposible escribir un año de 4 dígitos completo. Aquí solo
+// se guarda al perder el foco (onBlur), y solo se sincroniza con el valor
+// externo cuando el campo no está "sucio" (dirty), para no pisar lo que el
+// usuario está escribiendo si el resto de la pantalla se refresca.
+const DateNoteInput = ({ id, value, onSave, disabled }) => {
+  const [draft, setDraft] = useState(value || '');
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) setDraft(value || '');
+  }, [value, dirty]);
+
+  return (
+    <input
+      id={id}
+      type="date"
+      value={draft}
+      onChange={e => { setDraft(e.target.value); setDirty(true); }}
+      onBlur={() => {
+        if (dirty) {
+          onSave(draft);
+          setDirty(false);
+        }
+      }}
+      disabled={disabled}
+      className="text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
+    />
+  );
+};
+
 // La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
 // El código y el estado siguen intactos: para reactivarla basta con volver a
 // agregar { id: 'movimientos', label: 'Movimientos', icon: History } aquí.
@@ -399,13 +433,11 @@ const CuentasLayout = () => {
                       <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-400 whitespace-nowrap">
                         Contempla saldo hasta:
                       </label>
-                      <input
+                      <DateNoteInput
                         id={`contemplated-${a.id}`}
-                        type="date"
-                        value={a.contemplated_until || ''}
-                        onChange={e => handleContemplatedUntilChange(a.id, e.target.value)}
+                        value={a.contemplated_until}
+                        onSave={dateStr => handleContemplatedUntilChange(a.id, dateStr)}
                         disabled={savingContemplatedId === a.id}
-                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
                       />
                     </div>
                   )}
