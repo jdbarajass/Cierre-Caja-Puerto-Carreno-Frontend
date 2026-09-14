@@ -4,7 +4,8 @@ import {
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat
 } from 'lucide-react';
 import {
-  getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus
+  getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
+  updateContemplatedUntil
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
@@ -84,6 +85,11 @@ const CuentasLayout = () => {
   const [savingTransfer, setSavingTransfer] = useState(false);
 
   const [syncing, setSyncing] = useState(false);
+
+  // Id de la cuenta cuya fecha "contempla saldo hasta" se está guardando en
+  // este momento (ej. ADDI + DATÁFONO) - deshabilita ese input puntual mientras
+  // responde el backend, sin bloquear el resto de la pantalla.
+  const [savingContemplatedId, setSavingContemplatedId] = useState(null);
 
   // Estado de la última sincronización (fecha/hora, diferencia con Alegra,
   // cuántos cierres siguen sin sincronizar, y si el cron automático de las
@@ -216,6 +222,19 @@ const CuentasLayout = () => {
       setError(e2.message);
     } finally {
       setSavingTransfer(false);
+    }
+  };
+
+  const handleContemplatedUntilChange = async (accountId, dateStr) => {
+    clearMessages();
+    setSavingContemplatedId(accountId);
+    try {
+      const data = await updateContemplatedUntil(accountId, dateStr);
+      setAccounts(prev => prev.map(a => (a.id === accountId ? data.account : a)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSavingContemplatedId(null);
     }
   };
 
@@ -374,6 +393,21 @@ const CuentasLayout = () => {
                   <p className="text-2xl font-bold text-gray-900">{fmt(a.balance)}</p>
                   {a.payment_key === 'cash' && (
                     <p className="text-xs text-gray-400 mt-1">Está en el local, aún no se ha enviado</p>
+                  )}
+                  {a.payment_key === 'addi_datafono' && (
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-400 whitespace-nowrap">
+                        Contempla saldo hasta:
+                      </label>
+                      <input
+                        id={`contemplated-${a.id}`}
+                        type="date"
+                        value={a.contemplated_until || ''}
+                        onChange={e => handleContemplatedUntilChange(a.id, e.target.value)}
+                        disabled={savingContemplatedId === a.id}
+                        className="text-xs border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
+                      />
+                    </div>
                   )}
                 </div>
               );

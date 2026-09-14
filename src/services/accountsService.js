@@ -71,3 +71,13 @@ export const getSyncStatus = async () => {
     return await handle(await authenticatedFetch(`${BASE}/sync-status`));
   } catch (e) { logger.error('getSyncStatus:', e); throw e; }
 };
+
+export const updateContemplatedUntil = async (accountId, dateStr) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/${accountId}/contemplated-until`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contemplated_until: dateStr || null })
+    }));
+  } catch (e) { logger.error('updateContemplatedUntil:', e); throw e; }
+};

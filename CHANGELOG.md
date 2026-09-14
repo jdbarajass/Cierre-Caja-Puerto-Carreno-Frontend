@@ -2,6 +2,22 @@
 
 ---
 
+## [2026-09-14] - Fecha "Contempla saldo hasta" editable en la tarjeta ADDI + DATÁFONO
+
+El usuario pidió poder anotar, directamente en la tarjeta "ADDI + DATÁFONO (Tarjetas)" de Gestión → Cuentas → Resumen, hasta qué fecha contempla que ese saldo debería estar consignado (Addi paga días después de la transacción, y él lo sabe manualmente) — para poder corroborar visualmente si ya le toca revisar que Addi hubiera pagado.
+
+### 📅 `src/pages/CuentasLayout.jsx`
+- La tarjeta con `payment_key === 'addi_datafono'` (mismo patrón condicional que ya existía para el texto de EFECTIVO) ahora muestra un `<input type="date">` inline bajo el saldo, con la etiqueta "Contempla saldo hasta:". Guarda automáticamente al cambiar (sin botón "Guardar" aparte), actualizando el estado local con la respuesta del backend.
+
+### 🔌 `src/services/accountsService.js`
+- Nueva función `updateContemplatedUntil(accountId, dateStr)` — `PATCH /api/accounts/<id>/contemplated-until` (ver CHANGELOG del backend, misma fecha).
+
+### ✅ Verificación
+- `npm run build` y `npm run lint` sin errores nuevos.
+- Probado con Playwright contra un backend local (nunca producción): login real, se fijó la fecha "2026-09-20" en el campo de la tarjeta, captura de pantalla confirmando la posición y el formato visual, y recarga de página confirmando que el valor persiste (viene del backend, no de estado local del navegador).
+
+**Deploy:** requiere que el backend (mismo día, ver su CHANGELOG) esté desplegado en Render (Manual Deploy) para que el endpoint nuevo exista. Frontend en Vercel con auto-deploy.
+
 ## [2026-09-10] (continuación) - "Total" renombrado a "Total Recompras", aclarado que no incluye Ahorro
 
 ### 💰 `src/pages/CuentasLayout.jsx`
