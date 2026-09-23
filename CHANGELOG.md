@@ -2,6 +2,23 @@
 
 ---
 
+## [2026-09-23] - Tooling: skills de diseño/UX y MCP para Claude Code
+
+El usuario pidió instalar en este proyecto el mismo stack de skills y MCP de diseño que usa en su otro proyecto (PlataformaVentasInventariosCierres), versionado aquí para que un `git pull` en otro PC los traiga.
+
+### 🔧 Archivos nuevos
+- `.claude/skills/` — 6 skills: `design-taste-frontend`, `emil-design-eng`, `frontend-design`, `impeccable`, `ui-ux-pro-max`, `web-design-guidelines` (instaladas con `npx skills@latest add ... -a claude-code -y`).
+- `skills-lock.json` — fuente y hash de cada skill.
+- `.mcp.json` — servidores MCP `playwright` y `21st` (la key de 21st se lee de la variable de entorno `API_KEY_21ST`, no está en el repo).
+- `CLAUDE.md` — pasos de configuración por máquina y checklist de verificación después del `git pull`.
+- `.gitignore` — `.claude` pasa de ignorarse completa a versionar solo `.claude/skills/` (lo local, como `settings.local.json`, sigue ignorado); se ignoran `__pycache__/` y `*.pyc`.
+
+### ✅ Verificación
+- Las 6 skills se detectan en la sesión; `mcp__21st__get_usage` responde (tier free); `impeccable doctor --json` termina bien; `ui-ux-pro-max` `search.py` devuelve resultados; `raw.githubusercontent.com` es accesible.
+- Playwright MCP dio `CONNECT_TIMEOUT` en su primer arranque (npx descargando el paquete); ya quedó en la caché de npx.
+
+**Deploy:** no afecta la app (ni build ni runtime) — no requiere deploy.
+
 ## [2026-09-14] (continuación) - Fix: no se podía escribir el año completo en "Contempla saldo hasta"
 
 El usuario reportó, con captura de pantalla, que al escribir la fecha en el campo nuevo (ver entrada anterior, mismo día) el año se quedaba en solo 2 dígitos (ej. "16/09/0002" en vez de "16/09/2026") — no lo dejaba terminar de escribir.

@@ -22,4 +22,11 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
-.claude
+
+# Claude Code: se versionan solo las skills compartidas; lo local (settings.local.json, etc.) no
+.claude/*
+!.claude/skills/
+
+# Python cache (scripts de skills)
+__pycache__/
+*.pyc
