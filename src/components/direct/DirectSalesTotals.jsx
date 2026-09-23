@@ -5,6 +5,7 @@ import { getSalesComparisonYoY } from '../../services/api';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { fetchWithRetry } from '../../utils/retryHelper';
+import { useSceneSeries } from '../../experience/store';
 
 const DirectSalesTotals = () => {
   useDocumentTitle('Totales de Ventas - Estadísticas Avanzadas');
@@ -365,6 +366,9 @@ const DirectSalesTotals = () => {
     }
   };
 
+  // Escena WebGL (solo lectura): la serie que este módulo ya muestra
+  useSceneSeries('Ventas por medio de pago', activeTab === 'monthly' ? monthlyData?.metodosPago : null, (m) => m.total, (m) => m.metodo, 'money');
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -376,7 +380,7 @@ const DirectSalesTotals = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-yellow-600 rounded-xl shadow-lg p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <TrendingUp className="w-8 h-8" />
           <h1 className="text-2xl font-bold">Ventas Totales y Métricas Mensuales</h1>
@@ -414,7 +418,7 @@ const DirectSalesTotals = () => {
         {goalsLoading && !goalsData && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-            <span className="ml-2 text-gray-600">Cargando metas...</span>
+            <span className="ml-2 text-gray-600">Cargando metas…</span>
           </div>
         )}
 
@@ -424,8 +428,8 @@ const DirectSalesTotals = () => {
             {/* Meta Diaria */}
             <div className={`p-5 rounded-xl border-2 ${
               goalsData.goals.daily.is_achieved
-                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300'
-                : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300'
+                ? 'bg-emerald-50 border-emerald-300'
+                : 'bg-amber-50 border-amber-300'
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -468,7 +472,7 @@ const DirectSalesTotals = () => {
                   </div>
                   <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${
+                      className={`h-full rounded-full transition-[width] duration-500 ${
                         goalsData.goals.daily.is_achieved ? 'bg-emerald-500' : 'bg-amber-500'
                       }`}
                       style={{ width: `${Math.min(100, goalsData.goals.daily.progress_percentage)}%` }}
@@ -488,8 +492,8 @@ const DirectSalesTotals = () => {
             {/* Meta Mensual */}
             <div className={`p-5 rounded-xl border-2 ${
               goalsData.goals.monthly.is_achieved
-                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300'
-                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
+                ? 'bg-emerald-50 border-emerald-300'
+                : 'bg-blue-50 border-blue-300'
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -532,7 +536,7 @@ const DirectSalesTotals = () => {
                   </div>
                   <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${
+                      className={`h-full rounded-full transition-[width] duration-500 ${
                         goalsData.goals.monthly.is_achieved ? 'bg-emerald-500' : 'bg-blue-500'
                       }`}
                       style={{ width: `${Math.min(100, goalsData.goals.monthly.progress_percentage)}%` }}
@@ -643,7 +647,7 @@ const DirectSalesTotals = () => {
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Desde
                   </label>
-                  <input
+                  <input aria-label="Desde"
                     type="date"
                     value={quickFromDate}
                     onChange={(e) => setQuickFromDate(e.target.value)}
@@ -658,7 +662,7 @@ const DirectSalesTotals = () => {
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Hasta
                   </label>
-                  <input
+                  <input aria-label="Hasta"
                     type="date"
                     value={quickToDate}
                     onChange={(e) => setQuickToDate(e.target.value)}
@@ -696,7 +700,7 @@ const DirectSalesTotals = () => {
             {quickLoading && (
               <div className="bg-white rounded-lg p-12 text-center">
                 <Loader2 className="w-12 h-12 text-yellow-600 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Consultando totales de ventas...</p>
+                <p className="text-gray-600">Consultando totales de ventas…</p>
               </div>
             )}
 
@@ -746,7 +750,7 @@ const DirectSalesTotals = () => {
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Desde
                   </label>
-                  <input
+                  <input aria-label="Desde"
                     type="date"
                     value={monthlyFromDate}
                     onChange={(e) => setMonthlyFromDate(e.target.value)}
@@ -761,7 +765,7 @@ const DirectSalesTotals = () => {
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Hasta
                   </label>
-                  <input
+                  <input aria-label="Hasta"
                     type="date"
                     value={monthlyToDate}
                     onChange={(e) => setMonthlyToDate(e.target.value)}
@@ -799,7 +803,7 @@ const DirectSalesTotals = () => {
             {monthlyLoading && (
               <div className="bg-white rounded-lg p-12 text-center">
                 <Loader2 className="w-12 h-12 text-orange-600 animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Analizando ventas y métricas...</p>
+                <p className="text-gray-600">Analizando ventas y métricas…</p>
               </div>
             )}
 

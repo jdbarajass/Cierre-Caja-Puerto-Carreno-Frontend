@@ -52,12 +52,12 @@ class ErrorBoundary extends React.Component {
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <div className="min-h-[100dvh] bg-paper flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-3xl ring-1 ring-gray-900/[0.06] shadow-xl p-7 sm:p-8">
             <div className="flex flex-col items-center text-center">
               {/* Ícono de error */}
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertCircle className="w-10 h-10 text-red-600" />
+              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-5">
+                <AlertCircle className="w-7 h-7 text-red-600" strokeWidth={1.75} />
               </div>
 
               {/* Título */}
@@ -92,7 +92,7 @@ class ErrorBoundary extends React.Component {
               {/* Botón de reintentar */}
               <button
                 onClick={this.handleReset}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                className="flex items-center gap-2 px-6 h-12 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors"
               >
                 <RefreshCw className="w-5 h-5" />
                 Reintentar

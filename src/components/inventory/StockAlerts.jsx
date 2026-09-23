@@ -81,7 +81,7 @@ const StockAlerts = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando alertas de stock...</p>
+          <p className="mt-4 text-gray-600 font-medium">Cargando alertas de stock…</p>
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ const StockAlerts = () => {
         </div>
         <button
           onClick={fetchData}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -121,7 +121,7 @@ const StockAlerts = () => {
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar
@@ -158,6 +158,7 @@ const StockAlerts = () => {
           <div>
             <p className="text-sm text-blue-600 font-medium mb-2">Umbral de Stock Bajo</p>
             <input
+              aria-label="Umbral de stock bajo"
               type="number"
               min="1"
               max="20"
@@ -179,7 +180,7 @@ const StockAlerts = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Departamento</label>
-            <select
+            <select aria-label="Departamento"
               value={filterDepartment}
               onChange={(e) => setFilterDepartment(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -193,7 +194,7 @@ const StockAlerts = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-            <select
+            <select aria-label="Categoría"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -211,7 +212,7 @@ const StockAlerts = () => {
                 setFilterDepartment('');
                 setFilterCategory('');
               }}
-              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
             >
               Limpiar Filtros
             </button>

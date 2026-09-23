@@ -14,7 +14,7 @@ const SalesComparisonYoY = () => {
 
   if (error) {
     return (
-      <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-4 border-2 border-red-200">
+      <div className="bg-red-50 rounded-xl p-4 border-2 border-red-200">
         <div className="flex items-center gap-2 text-red-600">
           <AlertCircle className="w-5 h-5" />
           <span className="text-sm font-medium">Error al cargar comparación</span>
@@ -36,7 +36,7 @@ const SalesComparisonYoY = () => {
           {/* Mensaje de carga */}
           <div className="flex items-center justify-center gap-2 py-6 text-blue-600">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs font-medium">Cargando...</span>
+            <span className="text-xs font-medium">Cargando…</span>
           </div>
         </div>
       );
@@ -85,7 +85,7 @@ const SalesComparisonYoY = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border-2 border-amber-200">
+    <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200">
       <h3 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
         <span className="w-1 h-4 bg-amber-600 rounded"></span>
         Comparación con Año Anterior

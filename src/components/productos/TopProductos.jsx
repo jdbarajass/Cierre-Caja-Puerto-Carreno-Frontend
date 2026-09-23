@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, Loader2, AlertCircle, Calendar, RefreshCw, ArrowLeftRight, Search } from 'lucide-react';
 import { getTopProductos } from '../../services/productosService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
+import { useSceneSeries } from '../../experience/store';
 
 const TopProductos = () => {
   const [productos, setProductos] = useState([]);
@@ -36,6 +37,9 @@ const TopProductos = () => {
     }
   };
 
+  // Escena WebGL (solo lectura): la serie que este módulo ya muestra
+  useSceneSeries('Participación por producto', productos, (p) => p.porcentaje_participacion, (p) => (unified ? p.nombre_base : p.nombre), 'percent');
+
   if (error) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -47,7 +51,7 @@ const TopProductos = () => {
           <p className="text-gray-600 text-center">{error}</p>
           <button
             onClick={fetchTopProductos}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+            className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Reintentar
@@ -68,7 +72,7 @@ const TopProductos = () => {
               <Calendar className="w-4 h-4 text-purple-600" />
               Fecha Inicio
             </label>
-            <input
+            <input aria-label="Fecha Inicio"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -83,7 +87,7 @@ const TopProductos = () => {
               <Calendar className="w-4 h-4 text-purple-600" />
               Fecha Fin
             </label>
-            <input
+            <input aria-label="Fecha Fin"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -102,7 +106,7 @@ const TopProductos = () => {
               <TrendingUp className="w-4 h-4 text-orange-600" />
               Cantidad a Mostrar
             </label>
-            <select
+            <select aria-label="Cantidad a Mostrar"
               value={limit}
               onChange={(e) => setLimit(parseInt(e.target.value))}
               disabled={loading}
@@ -124,7 +128,7 @@ const TopProductos = () => {
             <button
               onClick={() => setUnified(!unified)}
               disabled={loading}
-              className={`w-full px-4 py-2 rounded-lg font-semibold transition-all ${
+              className={`w-full px-4 py-2 rounded-lg font-semibold transition ${
                 unified
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -143,10 +147,10 @@ const TopProductos = () => {
             <button
               onClick={fetchTopProductos}
               disabled={loading}
-              className={`w-full px-4 py-2 rounded-lg font-semibold transition-all shadow-md ${
+              className={`w-full px-4 py-2 rounded-lg font-semibold transition shadow-md ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                  : 'bg-gray-900 hover:bg-gray-800 text-white'
               }`}
             >
               {loading ? (
@@ -179,7 +183,7 @@ const TopProductos = () => {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600 font-semibold">Cargando top productos...</p>
+            <p className="text-gray-600 font-semibold">Cargando top productos…</p>
           </div>
         </div>
       )}
@@ -198,7 +202,7 @@ const TopProductos = () => {
       {/* Tabla de Productos */}
       {!loading && productos.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="px-6 py-4 bg-gray-900">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <TrendingUp className="w-6 h-6" />
             Top {limit} Productos Más Vendidos

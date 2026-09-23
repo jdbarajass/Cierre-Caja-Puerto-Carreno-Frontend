@@ -271,7 +271,7 @@ const UnifiedInventoryAnalysis = () => {
   return (
     <div className="space-y-6">
       {/* Header Principal */}
-      <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-teal-600 rounded-xl shadow-lg p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <Package className="w-10 h-10" />
           <div>
@@ -307,7 +307,7 @@ const UnifiedInventoryAnalysis = () => {
                 <Calendar className="w-4 h-4 inline mr-1" />
                 Fecha del Inventario
               </label>
-              <input
+              <input aria-label="Fecha del Inventario"
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
@@ -322,7 +322,7 @@ const UnifiedInventoryAnalysis = () => {
             <button
               onClick={handleFetchFromAPI}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               <Database className="w-5 h-5" />
               Consultar Inventario
@@ -349,7 +349,7 @@ const UnifiedInventoryAnalysis = () => {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               <Upload className="w-5 h-5" />
               Cargar Archivo
@@ -368,11 +368,11 @@ const UnifiedInventoryAnalysis = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="bg-gradient-to-r from-blue-50 to-teal-50 border-2 border-blue-300 rounded-xl p-8">
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-8">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-16 h-16 text-blue-600 animate-spin" />
             <div className="text-center">
-              <p className="font-bold text-xl text-blue-900 mb-2">Procesando...</p>
+              <p className="font-bold text-xl text-blue-900 mb-2">Procesando…</p>
               <p className="text-blue-700 mb-4">{loadingMessage}</p>
               {dataSource === null && selectedDate && (
                 <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 max-w-md mx-auto">
@@ -464,8 +464,8 @@ const UnifiedInventoryAnalysis = () => {
 
           {/* Resumen Rápido */}
           {inventoryData.resumen && (
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-md p-6 border border-purple-200">
-              <h3 className="text-xl font-bold text-purple-900 mb-4">📊 Resumen del Inventario</h3>
+            <div className="bg-purple-50 rounded-xl shadow-md p-6 border border-purple-200">
+              <h3 className="text-xl font-bold text-purple-900 mb-4">Resumen del Inventario</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white rounded-lg p-4 border border-purple-200">
                   <p className="text-sm text-gray-600 mb-1">Total Items</p>
@@ -507,7 +507,7 @@ const UnifiedInventoryAnalysis = () => {
                   <button
                     key={view.id}
                     onClick={() => setActiveView(view.id)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg transition-all border-2 ${
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg transition border-2 ${
                       isActive
                         ? 'bg-teal-600 text-white border-teal-600 shadow-lg transform scale-105'
                         : 'bg-gray-50 text-gray-700 hover:bg-teal-50 hover:text-teal-700 border-gray-200'

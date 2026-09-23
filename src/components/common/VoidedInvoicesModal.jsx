@@ -1,4 +1,5 @@
 import React from 'react';
+import useDialog from '../../hooks/useDialog';
 import { X, AlertTriangle, FileX } from 'lucide-react';
 
 /**
@@ -12,6 +13,8 @@ import { X, AlertTriangle, FileX } from 'lucide-react';
  * @param {Array} props.voidedInvoices.voided_summary - Array con detalles de cada factura
  */
 const VoidedInvoicesModal = ({ isOpen, onClose, voidedInvoices }) => {
+  const dialogRef = useDialog(Boolean(isOpen && voidedInvoices), onClose);
+
   if (!isOpen || !voidedInvoices) {
     return null;
   }
@@ -43,28 +46,28 @@ const VoidedInvoicesModal = ({ isOpen, onClose, voidedInvoices }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop"
         onClick={onClose}
       ></div>
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="flex min-h-full items-end sm:items-center justify-center sm:p-4">
+        <div className="relative bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92dvh] overflow-hidden animate-sheet" role="dialog" aria-modal="true" aria-labelledby="dlg-anuladas" ref={dialogRef}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+          <div className="bg-yellow-600 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 rounded-lg p-2">
                   <FileX className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Facturas Anuladas</h2>
+                  <h2 id="dlg-anuladas" className="text-xl font-bold text-white">Facturas Anuladas</h2>
                   <p className="text-sm text-white/90">
                     {count} factura(s) excluida(s) automáticamente
                   </p>
                 </div>
               </div>
-              <button
+              <button aria-label="Cerrar"
                 onClick={onClose}
                 className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
               >

@@ -308,7 +308,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
           </button>
           <button
             onClick={() => { setShowEntryForm(v => !v); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
             {showEntryForm && !editingEntryId ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {showEntryForm && !editingEntryId ? 'Cancelar' : 'Agregar envío'}
           </button>
@@ -336,19 +336,19 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
-              <input type="text" placeholder="Recompra Jhonatan" value={entryForm.descripcion}
+              <input aria-label="Descripción" type="text" placeholder="Recompra Jhonatan" value={entryForm.descripcion}
                 onChange={e => setEntryForm(f => ({ ...f, descripcion: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha *</label>
-              <input type="date" required value={entryForm.date}
+              <input aria-label="Fecha" type="date" required value={entryForm.date}
                 onChange={e => setEntryForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha compra factura</label>
-              <input type="date" value={entryForm.fecha_compra}
+              <input aria-label="Fecha compra factura" type="date" value={entryForm.fecha_compra}
                 onChange={e => setEntryForm(f => ({ ...f, fecha_compra: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
@@ -403,13 +403,13 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Observaciones..." value={entryForm.notes}
+            <textarea aria-label="Notas" rows={2} placeholder="Observaciones…" value={entryForm.notes}
               onChange={e => setEntryForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none" />
           </div>
           <div className="flex gap-3">
             <button type="submit" disabled={savingEntry}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors">
               <Check className="w-4 h-4" /> {savingEntry ? 'Guardando...' : 'Guardar'}
             </button>
             <button type="button" onClick={() => { setShowEntryForm(false); setEditingEntryId(null); setEntryForm(EMPTY_ENTRY); }}
@@ -424,7 +424,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Navegación de mes */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={prevMonth} aria-label="Mes anterior" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           <div className="text-center">
@@ -432,10 +432,10 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
             <p className="text-xs text-gray-500 mt-0.5">{entries.length} envío{entries.length !== 1 ? 's' : ''} · {purchases.length} compra{purchases.length !== 1 ? 's' : ''}</p>
             <div className="flex items-center justify-center gap-4 mt-2 text-xs">
               <span className="text-indigo-600 font-medium">Recibido: {fmtForce(monthTotalRecibido())}</span>
-              <span className="text-red-500 font-medium">Compras: {fmtForce(totalCompras)}</span>
+              <span className="text-red-600 font-medium">Compras: {fmtForce(totalCompras)}</span>
             </div>
           </div>
-          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={nextMonth} aria-label="Mes siguiente" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -463,7 +463,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
           <div className="w-8 h-8 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
         </div>
       ) : entries.length === 0 && purchases.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl text-center py-14 text-gray-400">
+        <div className="bg-white border border-gray-200 rounded-xl text-center py-14 text-gray-500">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-25" />
           <p className="font-medium">No hay registros para {MONTHS[month - 1]} {year}</p>
           <p className="text-sm mt-1">Usa "Agregar envío" para comenzar</p>
@@ -529,8 +529,8 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                           <td className="px-3 py-2.5 text-right font-semibold text-green-700 bg-orange-50 whitespace-nowrap">{row.total_enviado > 0 ? fmtForce(row.total_a_descontar) : '—'}</td>
                           <td className="px-2 py-2.5">
                             <div className="flex items-center gap-1.5 justify-end">
-                              <button onClick={() => handleEditEntry(row)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => handleDeleteEntry(row.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                              <button aria-label="Editar" onClick={() => handleEditEntry(row)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button aria-label="Eliminar" onClick={() => handleDeleteEntry(row.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </td>
                         </tr>
@@ -591,13 +591,13 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
-                    <input type="date" required value={purchaseForm.date}
+                    <input aria-label="Fecha" type="date" required value={purchaseForm.date}
                       onChange={e => setPurchaseForm(f => ({ ...f, date: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Tienda / Proveedor *</label>
-                    <input type="text" required placeholder="Nombre de la tienda" value={purchaseForm.store}
+                    <input aria-label="Tienda / Proveedor" type="text" required placeholder="Nombre de la tienda" value={purchaseForm.store}
                       onChange={e => setPurchaseForm(f => ({ ...f, store: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white" />
                   </div>
@@ -637,7 +637,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
-                  <textarea rows={2} placeholder="Qué se compró, observaciones..." value={purchaseForm.notes}
+                  <textarea aria-label="Notas" rows={2} placeholder="Qué se compró, observaciones…" value={purchaseForm.notes}
                     onChange={e => setPurchaseForm(f => ({ ...f, notes: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white resize-none" />
                 </div>
@@ -657,7 +657,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
 
             {/* Tabla de compras */}
             {purchases.length === 0 ? (
-              <div className="text-center py-10 text-gray-400">
+              <div className="text-center py-10 text-gray-500">
                 <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-25" />
                 <p className="text-sm">No hay compras registradas este mes</p>
               </div>
@@ -687,8 +687,8 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                       <td className="px-4 py-3 text-gray-500 text-xs">{p.notes || '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
-                          <button onClick={() => handleEditPurchase(p)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => handleDeletePurchase(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button aria-label="Editar" onClick={() => handleEditPurchase(p)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button aria-label="Eliminar" onClick={() => handleDeletePurchase(p.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </td>
                     </tr>

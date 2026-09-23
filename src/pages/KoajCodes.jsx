@@ -23,7 +23,9 @@ import {
   deleteKoajCode
 } from '../services/koajCodesService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useDialog from '../hooks/useDialog';
 import { isAdmin } from '../utils/auth';
+import { usePublishSceneData } from '../experience/store';
 
 const KoajCodes = () => {
   useDocumentTitle('Codigos KOAJ');
@@ -162,6 +164,7 @@ const KoajCodes = () => {
     setSelectedCode(null);
     setFormError('');
   };
+  const dialogRef = useDialog(showModal, closeModal);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -235,6 +238,15 @@ const KoajCodes = () => {
     }
   };
 
+  // --- Escena WebGL (solo lectura): el término buscado o la cantidad de códigos ---
+  const [stageText, setStageText] = useState('');
+  useEffect(() => {
+    // Espera corta: la forma cambia cuando se deja de escribir, no en cada tecla
+    const t = setTimeout(() => setStageText(searchTerm.trim().toUpperCase().slice(0, 14)), 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+  usePublishSceneData('stageText', loading ? null : (stageText || `${codes.length} CÓDIGOS`));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -261,7 +273,7 @@ const KoajCodes = () => {
           {userIsAdmin && (
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Nuevo Codigo
@@ -269,6 +281,9 @@ const KoajCodes = () => {
           )}
         </div>
       </div>
+
+      {/* Escenario de la escena WebGL: las partículas escriben lo que se busca */}
+      <div data-scene-anchor="page-stage" className="page-stage h-24 sm:h-32" aria-hidden="true" />
 
       {/* Mensajes */}
       {error && (
@@ -288,7 +303,7 @@ const KoajCodes = () => {
       {loading ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-3 text-gray-600">Cargando informacion...</p>
+          <p className="mt-3 text-gray-600">Cargando informacion…</p>
         </div>
       ) : (
         <>
@@ -312,9 +327,9 @@ const KoajCodes = () => {
                 </div>
               </div>
               {showGuide ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
+                <ChevronUp className="w-5 h-5 text-gray-500" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
+                <ChevronDown className="w-5 h-5 text-gray-500" />
               )}
             </button>
 
@@ -325,7 +340,7 @@ const KoajCodes = () => {
                   <h3 className="text-sm font-semibold text-gray-700 mb-3">
                     Estructura del codigo:
                   </h3>
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
                     <code className="text-lg font-mono font-bold text-blue-800">
                       {guide.structure}
                     </code>
@@ -409,7 +424,7 @@ const KoajCodes = () => {
                           {guide.size_codes.map((item, index) => (
                             <div key={index} className="bg-white rounded-lg p-2 text-center border border-gray-200">
                               <span className="font-mono font-bold text-gray-900 text-sm">{item.code}</span>
-                              <span className="text-gray-400 mx-1">=</span>
+                              <span className="text-gray-500 mx-1">=</span>
                               <span className="text-xs text-gray-600">{item.size}</span>
                             </div>
                           ))}
@@ -444,10 +459,10 @@ const KoajCodes = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 {/* Búsqueda */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input
                     type="text"
-                    placeholder="Buscar por codigo o categoria..."
+                    aria-label="Buscar por código o categoría" placeholder="Buscar por codigo o categoria…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
@@ -457,6 +472,7 @@ const KoajCodes = () => {
                 {/* Filtro por género */}
                 <div className="sm:w-48">
                   <select
+                    aria-label="Filtrar por género"
                     value={filterGender}
                     onChange={(e) => setFilterGender(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
@@ -479,7 +495,7 @@ const KoajCodes = () => {
             {/* Tabla */}
             {filteredCodes.length === 0 ? (
               <div className="p-12 text-center">
-                <Tag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <Tag className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-600">No se encontraron codigos con los filtros aplicados</p>
               </div>
             ) : (
@@ -531,14 +547,14 @@ const KoajCodes = () => {
                         {userIsAdmin && (
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end gap-2">
-                              <button
+                              <button aria-label="Editar"
                                 onClick={() => openEditModal(code)}
                                 className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Editar"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button
+                              <button aria-label="Eliminar"
                                 onClick={() => handleDelete(code)}
                                 className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Eliminar"
@@ -561,23 +577,23 @@ const KoajCodes = () => {
       {/* Modal CRUD */}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+          <div className="flex items-end sm:items-center justify-center min-h-full sm:p-4">
             {/* Overlay */}
             <div
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop"
               onClick={closeModal}
             ></div>
 
             {/* Modal content */}
-            <div className="relative bg-white rounded-xl shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+            <div className="relative w-full bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl sm:max-w-lg animate-sheet pb-safe max-h-[92dvh] overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="dlg-codigo" ref={dialogRef}>
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 id="dlg-codigo" className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <Tag className="w-5 h-5 text-blue-600" />
                   {modalMode === 'create' ? 'Crear Nuevo Codigo' : 'Editar Codigo'}
                 </h3>
-                <button
+                <button aria-label="Cerrar"
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-500 hover:text-gray-600 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -641,7 +657,7 @@ const KoajCodes = () => {
                       onChange={handleInputChange}
                       rows={2}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-                      placeholder="Descripcion adicional del codigo..."
+                      placeholder="Descripcion adicional del codigo…"
                     />
                   </div>
 
@@ -677,7 +693,7 @@ const KoajCodes = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
                     disabled={formLoading}
                   >
                     {formLoading && (

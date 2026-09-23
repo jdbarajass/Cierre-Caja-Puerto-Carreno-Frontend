@@ -827,6 +827,16 @@ Estos servicios detectan automáticamente proyectos de Vite:
 - ✅ No necesitas generar `dist/` manualmente
 - ✅ CDN global para mejor rendimiento
 
+#### Notas de despliegue: rediseño visual + capa WebGL (2026-09-23)
+
+- **Solo frontend.** El backend (Render) no cambia; no hay variables de entorno nuevas (`VITE_API_URL` sigue igual).
+- **Dependencias nuevas** ya en `package.json`: `three`, `@react-three/fiber`, `@fontsource-variable/geist`, `@fontsource-variable/schibsted-grotesk`. Vercel las instala solo con `npm install`.
+- **`vercel.json`:** `/assets/*` con caché de un año (los archivos llevan hash en el nombre) y `sw.js` sin caché, para que cada despliegue llegue de inmediato.
+- **Service worker `v2`:** al abrir la app tras el despliegue, borra el caché anterior (ícono, estilos) y toma la versión nueva. Si un equipo se ve viejo, basta recargar una vez.
+- **Escena 3D:** se descarga después de cargar la página (≈238 kB gzip, luego queda en caché). Sin WebGL o con ahorro de datos, la app funciona igual sin escena; con "reducir movimiento" la escena queda quieta (solo se redibuja cuando cambian los datos).
+- **Calidad de la escena por equipo:** abrir una vez `https://<dominio>/login?quality=low` (o `medium` / `high`) y ese navegador lo recuerda; `?quality=auto` vuelve a la detección automática. Útil para un PC lento en la tienda.
+- **Verificar después de desplegar:** login, un cierre completo con descarga del reporte (JPEG/PDF) y una pantalla de estadísticas.
+
 ---
 
 ## 🔌 API Backend

@@ -101,7 +101,7 @@ const FileUploadInventory = () => {
           <button
             onClick={handleViewCurrentInventory}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             <Database className="w-5 h-5" />
             Ver Inventario Actual
@@ -110,7 +110,7 @@ const FileUploadInventory = () => {
           <button
             onClick={handleUploadClick}
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             <Upload className="w-5 h-5" />
             Cargar Archivo de Inventario
@@ -139,7 +139,7 @@ const FileUploadInventory = () => {
           <div className="flex items-center gap-3">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <div>
-              <p className="font-semibold text-blue-900">Procesando...</p>
+              <p className="font-semibold text-blue-900">Procesando…</p>
               <p className="text-sm text-blue-700">
                 {fileName ? 'Analizando archivo de inventario' : 'Consultando inventario desde Alegra'}
               </p>
@@ -187,8 +187,8 @@ const FileUploadInventory = () => {
                 <Package className="w-5 h-5" />
                 <p className="font-semibold">
                   {analysisData.tipo_archivo === 'inventario_alegra'
-                    ? '📦 Archivo de inventario detectado - Incluye cantidades en stock'
-                    : '📋 Archivo de exportación detectado - Catálogo de productos'
+                    ? 'Archivo de inventario detectado - Incluye cantidades en stock'
+                    : 'Archivo de exportación detectado - Catálogo de productos'
                   }
                 </p>
               </div>
@@ -212,7 +212,7 @@ const FileUploadInventory = () => {
                   <button
                     key={view.id}
                     onClick={() => setActiveView(view.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 border border-gray-200'
@@ -257,7 +257,7 @@ const FileUploadInventory = () => {
     if (!analysisData.items_completos || analysisData.items_completos.length === 0) {
       return (
         <div className="text-center py-12 text-gray-500">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-500" />
           <p className="text-lg font-semibold">No hay datos de inventario completo disponibles</p>
           <p className="text-sm mt-2">El archivo no contiene items completos o el formato no es compatible</p>
         </div>
@@ -289,8 +289,8 @@ const FileUploadInventory = () => {
     return (
       <div className="space-y-6">
         {/* Header con resumen total */}
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-xl shadow-md p-6 border border-indigo-200">
-          <h3 className="text-2xl font-bold text-indigo-900 mb-4">📋 Inventario Completo - Todos los Items</h3>
+        <div className="bg-indigo-50 rounded-xl shadow-md p-6 border border-indigo-200">
+          <h3 className="text-2xl font-bold text-indigo-900 mb-4">Inventario Completo - Todos los Items</h3>
           <p className="text-indigo-700 mb-6">Listado completo de todos los artículos en inventario con detalles individuales</p>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -326,10 +326,10 @@ const FileUploadInventory = () => {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Búsqueda */}
             <div className="relative flex-1 w-full md:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
                 type="text"
-                placeholder="Buscar por item o categoría..."
+                aria-label="Buscar por item o categoría" placeholder="Buscar por item o categoría…"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -342,7 +342,7 @@ const FileUploadInventory = () => {
             {/* Selector de items por página */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600 whitespace-nowrap">Items por página:</label>
-              <select
+              <select aria-label="Items por página"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -369,7 +369,7 @@ const FileUploadInventory = () => {
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+              <thead className="bg-gray-900 text-white">
                 <tr>
                   <th className="text-left p-4 font-semibold">#</th>
                   <th className="text-left p-4 font-semibold">Item</th>
@@ -420,10 +420,10 @@ const FileUploadInventory = () => {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
                   currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -437,11 +437,11 @@ const FileUploadInventory = () => {
                   <>
                     <button
                       onClick={() => setCurrentPage(1)}
-                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition-all"
+                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition"
                     >
                       1
                     </button>
-                    {currentPage > 4 && <span className="text-gray-400">...</span>}
+                    {currentPage > 4 && <span className="text-gray-500">...</span>}
                   </>
                 )}
 
@@ -453,7 +453,7 @@ const FileUploadInventory = () => {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        className={`w-10 h-10 rounded-lg font-semibold transition ${
                           currentPage === pageNum
                             ? 'bg-indigo-600 text-white'
                             : 'bg-gray-100 hover:bg-indigo-100 text-gray-700'
@@ -469,10 +469,10 @@ const FileUploadInventory = () => {
                 {/* Última página */}
                 {currentPage < totalPages - 2 && (
                   <>
-                    {currentPage < totalPages - 3 && <span className="text-gray-400">...</span>}
+                    {currentPage < totalPages - 3 && <span className="text-gray-500">...</span>}
                     <button
                       onClick={() => setCurrentPage(totalPages)}
-                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition-all"
+                      className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-indigo-100 text-gray-700 font-semibold transition"
                     >
                       {totalPages}
                     </button>
@@ -484,10 +484,10 @@ const FileUploadInventory = () => {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
                   currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
                 Siguiente
@@ -516,7 +516,7 @@ const FileUploadInventory = () => {
           <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Resumen General</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow p-4 border border-blue-200">
+              <div className="bg-blue-50 rounded-lg shadow p-4 border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-700 font-medium">Total Items</p>
@@ -532,7 +532,7 @@ const FileUploadInventory = () => {
 
               {/* Total Unidades - Solo para archivos de inventario */}
               {isInventoryReport && analysisData.resumen_general?.total_unidades !== undefined && (
-                <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg shadow p-4 border border-cyan-200">
+                <div className="bg-cyan-50 rounded-lg shadow p-4 border border-cyan-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-cyan-700 font-medium">Total Unidades</p>
@@ -547,7 +547,7 @@ const FileUploadInventory = () => {
                 </div>
               )}
 
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow p-4 border border-green-200">
+              <div className="bg-green-50 rounded-lg shadow p-4 border border-green-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-green-700 font-medium">Valor Inventario</p>
@@ -567,7 +567,7 @@ const FileUploadInventory = () => {
 
               {/* Items Activos - Solo para archivos de inventario */}
               {isInventoryReport && analysisData.resumen_general?.items_activos !== undefined && (
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg shadow p-4 border border-emerald-200">
+                <div className="bg-emerald-50 rounded-lg shadow p-4 border border-emerald-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-emerald-700 font-medium">Productos Activos</p>
@@ -584,7 +584,7 @@ const FileUploadInventory = () => {
 
               {/* Items Inactivos - Solo para archivos de inventario */}
               {isInventoryReport && analysisData.resumen_general?.items_inactivos !== undefined && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow p-4 border border-gray-200">
+                <div className="bg-gray-50 rounded-lg shadow p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-700 font-medium">Productos Inactivos</p>
@@ -601,7 +601,7 @@ const FileUploadInventory = () => {
 
               {/* Margen Total - Solo para archivos de exportación */}
               {isProductExport && analysisData.resumen_general?.margen_total !== undefined && (
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow p-4 border border-purple-200">
+                <div className="bg-purple-50 rounded-lg shadow p-4 border border-purple-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-purple-700 font-medium">Margen Total</p>
@@ -618,7 +618,7 @@ const FileUploadInventory = () => {
 
               {/* Margen % - Solo para archivos de exportación */}
               {isProductExport && analysisData.resumen_general?.margen_porcentaje !== undefined && (
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-4 border border-orange-200">
+                <div className="bg-orange-50 rounded-lg shadow p-4 border border-orange-200">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-orange-700 font-medium">Margen %</p>
@@ -633,7 +633,7 @@ const FileUploadInventory = () => {
                 </div>
               )}
 
-              <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg shadow p-4 border border-indigo-200">
+              <div className="bg-indigo-50 rounded-lg shadow p-4 border border-indigo-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-indigo-700 font-medium">Total Categorías</p>
@@ -647,7 +647,7 @@ const FileUploadInventory = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg shadow p-4 border border-pink-200">
+              <div className="bg-pink-50 rounded-lg shadow p-4 border border-pink-200">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-pink-700 font-medium">Valor Costo</p>
@@ -683,7 +683,7 @@ const FileUploadInventory = () => {
                   </div>
                   <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all"
+                      className="h-full bg-gray-900 rounded-full transition-[width]"
                       style={{
                         width: `${(dept.valor / analysisData.departamentos_ordenados[0].valor) * 100}%`
                       }}
@@ -797,7 +797,7 @@ const FileUploadInventory = () => {
                   </div>
                   <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full transition-all"
+                      className="h-full bg-teal-600 rounded-full transition-[width]"
                       style={{
                         width: `${(dept.valor / analysisData.departamentos_ordenados[0].valor) * 100}%`
                       }}
@@ -866,7 +866,7 @@ const FileUploadInventory = () => {
                   </div>
                   <div className="w-full h-8 bg-gray-200 rounded-lg overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-end px-3 transition-all"
+                      className="h-full bg-gray-900 flex items-center justify-end px-3 transition-[width]"
                       style={{ width: `${Math.max(percentage, 5)}%` }}
                     >
                       <span className="text-white text-xs font-semibold">
@@ -896,7 +896,7 @@ const FileUploadInventory = () => {
     return (
       <div className="space-y-6">
         {/* Resumen */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-100 rounded-xl shadow-md p-6 border border-indigo-200">
+        <div className="bg-indigo-50 rounded-xl shadow-md p-6 border border-indigo-200">
           <h4 className="text-sm font-semibold text-indigo-900 mb-4">Resumen de Categorías</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>

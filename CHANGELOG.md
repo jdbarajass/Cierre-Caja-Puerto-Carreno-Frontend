@@ -2,6 +2,298 @@
 
 ---
 
+## [2026-09-23] RESUMEN - Transformación visual "Arqueo" + experiencia WebGL (un solo commit)
+
+Resumen de todo lo que entra en este commit. El detalle por etapa está en las entradas de abajo (desde "Rediseño visual y de UX Arqueo" hasta la Fase 15) y el plan completo, con decisiones y mediciones, en `PLAN_EXPERIENCIA_WEBGL.md`.
+
+**Para deshacerlo todo:** `git revert <hash de este commit>` (o volver al commit anterior). Todo el trabajo está en este único commit.
+
+### Qué cambió
+- **Identidad visual nueva ("Arqueo")** en todas las pantallas: paleta grafito + tinta, tipografías Geist y Schibsted Grotesk (auto-hospedadas), radios, sombras y movimiento consistentes. Contraste WCAG AA en toda la app.
+- **Capa 3D (WebGL)** detrás de la app, solo de presentación: KOAJ en partículas en el login, el efectivo apilándose mientras se cuenta en el cierre, metas del día/mes como recipientes, estadísticas convertidas en partículas con los datos reales, corrientes de saldo en Cuentas, transiciones entre páginas. Calidad adaptativa, pausa en segundo plano, versión quieta con "reducir movimiento" y la app funciona igual sin WebGL.
+- **Cierre de caja** reorganizado en 4 pasos con cinta de total fija, modales con teclado (Escape, foco atrapado y devuelto).
+- **Móvil** diseñado a propósito (320-430 px, áreas táctiles de 44 px, teclado y áreas seguras).
+- **Accesibilidad:** nombres en todos los campos y botones, foco visible, un título principal por página; 15/15 rutas sin problemas en la auditoría automática.
+- **Rendimiento:** la escena carga después de la página; sin fugas de memoria; teclear en el conteo no se vuelve lento.
+- **Despliegue:** `vercel.json` con caché de assets y service worker `v2` (limpia el caché del diseño anterior). Notas en `README.md`.
+
+### Cambios de lógica (solo dos, ambos autorizados por el usuario)
+1. **Login con contraseña incorrecta** (`src/services/api.js`): un 401 en el propio login ya no recarga la página; se muestra "Credenciales incorrectas" y el contador de intentos funciona. En el resto de la app, un 401 sigue cerrando la sesión como antes.
+2. **Base de caja exacta** (`src/components/Dashboard.jsx`): el backend envía `"exacta"` y la pantalla solo reconocía `"exacto"`, así que la base exacta se mostraba en rojo como si fuera un problema. Ahora se aceptan ambas: verde con ✓.
+
+### Verificación exhaustiva antes del commit
+Se compararon la versión anterior (último commit) y la nueva lado a lado, con los mismos datos de prueba:
+
+| Qué se comparó | Resultado |
+|---|---|
+| Revisión de código: cada línea funcional modificada en `src/` (340) | Solo presentación, salvo los 2 cambios autorizados. Fórmulas de metas, porcentajes y redondeos idénticos |
+| Payload del cierre enviado al backend (28 campos llenados, incluidos desfases) | Idéntico; solo cambia la hora de envío |
+| Modal de confirmación y pantalla de resultados (85 cifras) | Idénticos (+ el texto "Base de caja exacta - $450.000" de la corrección 2) |
+| Escrituras de gestión: ajuste y transferencia de cuentas, crear código, crear usuario, pago a empleada | Payloads idénticos byte a byte |
+| Consultas al backend en 14 rutas (74 peticiones) | Idénticas |
+| Errores en consola | Los mismos que antes, ninguno nuevo |
+| Build de producción: login, cierre con descarga (escritorio y móvil), modales, 13 rutas | Sin errores |
+| Lint de `src/` | Exactamente la misma lista que antes de la transformación |
+
+---
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 15 (cierre y entrega)
+
+### 🐛 Corrección (autorizada)
+- **Base de caja exacta en rojo:** cuando la base quedaba exacta, el resultado y el reporte la mostraban en un recuadro rojo con ícono de alerta. El backend envía `"exacta"` y la pantalla solo reconocía `"exacto"`. Ahora acepta ambas: recuadro verde con ✓ y "Base de caja exacta - $450.000". No cambia ningún cálculo.
+
+### ✨ Pulido
+- **Rankings** (Horas pico, Top vendedoras, Top productos): las medallas emoji pasan a un círculo numerado oro / plata / bronce (`RankBadge`), igual en cualquier dispositivo y legible por lector de pantalla.
+- **Botones de ícono en celular/tablet:** 44 px mínimos (editar, eliminar, cerrar, mes anterior/siguiente…). En computador no cambian. Los de Usuarios y Códigos ahora también tienen nombre accesible.
+- **Calidad de la escena por equipo:** `?quality=low` (o `medium` / `high`) en la dirección la fija en ese navegador; `?quality=auto` vuelve a automático.
+
+### 🚀 Despliegue
+- `vercel.json`: caché largo para `/assets/*` y `sw.js` siempre fresco. Notas completas en `README.md` → "Notas de despliegue".
+
+### ✅ Verificación final
+- 15/15 rutas sin problemas de accesibilidad; cierre completo con descarga (escritorio, móvil, sin WebGL, movimiento reducido); login; modales con teclado; 320 px sin desborde; lint idéntico al previo a la transformación; build OK.
+
+---
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 14 (auditoría antes/después)
+
+### 🔍 Auditoría
+- Comparación contra el último commit (estado previo a la transformación) con 60 capturas en 390 / 768 / 1366 / 1920 / 2560 y las 6 skills de diseño. Resultados y checklist del Master Prompt en `PLAN_EXPERIENCIA_WEBGL.md` (Fase 14).
+
+### 🛠️ Correcciones que salieron de la auditoría
+- **Cuentas en tablet:** los nombres de las cuentas en "Cómo se compone el total" se montaban unos sobre otros entre 768 y 1024 px. Ahora pasa a dos filas según el espacio real y cada nombre tiene fondo propio para que las corrientes no lo tapen.
+- **Encabezados de Analytics, Productos e Inventario:** mismo estilo que el resto de páginas (sin tarjeta con franja de color).
+- **Avisos** de Ventas mensuales, Estadísticas avanzadas e Inventario: contorno fino en lugar de franja lateral.
+- **Reporte del cierre:** los emoji 💰 y 🏦 de "Caja Base" y "Para Consignación" pasan a íconos (se ven igual en cualquier teléfono o PC). Inventario sin emoji en títulos.
+- **Transiciones:** se reemplazó `transition-all` por propiedades explícitas (63 lugares); las barras de progreso conservan su animación de ancho.
+- **Textos:** "..." → "…" en 40 mensajes de carga y ayudas de campos.
+- **Logo de la barra en celular:** área táctil más grande (27 → ~47 px) sin cambiar cómo se ve.
+
+### ✅ Verificación
+- Cierre completo con descarga JPEG (escritorio y móvil), login, modales con teclado, auditoría de accesibilidad en las páginas tocadas (0 problemas), lint idéntico al de antes de la transformación, build OK.
+- Sin cambios de lógica.
+
+---
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 13 (accesibilidad)
+
+### ♿ Contraste (`tailwind.config.js`, `src/index.css`, 49 componentes)
+- Los tonos 600 de verde, esmeralda, teal, naranja, ámbar, amarillo, rojo y rosa bajan un paso: los montos de color y los botones blancos sobre color ahora cumplen WCAG AA (4.5:1). Los fondos suaves (50-500) no cambian. El reporte del cierre sigue en hex (compatible con html2canvas).
+- Textos secundarios `gray-400` sobre fondo claro pasan a `gray-500`; red de seguridad para gris sobre fondos oscuros; pie del login legible.
+- Resultado en las 15 rutas: 0 textos bajo AA.
+
+### ⌨️ Teclado y lectores de pantalla
+- Todos los campos (fechas, filtros, búsquedas, formularios de Empleadas, Cuentas, Recompras, Códigos, Inventario) tienen nombre accesible, igual al texto visible. Los 32 botones de solo ícono (editar, eliminar, cerrar, mes anterior/siguiente, marcar hecho) también.
+- Foco visible en todos los campos, incluidos los segmentos día/mes/año de las fechas.
+- Nuevo `src/hooks/useDialog.js`: en los 8 modales (confirmar cierre, éxito, error, advertencia, carga, facturas anuladas, código, usuario) Escape cierra con el mismo botón Cerrar/Cancelar, Tab no se sale del modal y el foco vuelve al botón que lo abrió. El modal de carga no se puede cerrar.
+- Menús de la barra (Estadísticas, Gestión, usuario): Escape los cierra.
+- Un solo `h1` por página (Analytics, Productos, Estadísticas Avanzadas).
+
+### ✅ Verificación
+- Auditoría automática en 15 rutas: 0 campos/botones sin nombre, 0 paradas de Tab sin foco visible, 0 fallas de contraste.
+- Cierre completo con descarga JPEG (escritorio y móvil), login con clave errada y correcta, lint sin errores nuevos (70 = base), build OK.
+- Sin cambios de lógica: solo atributos de accesibilidad, estilos y comportamiento de foco.
+
+---
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 12 (rendimiento)
+
+### ⚡ Correcciones basadas en medición (`CashScene.jsx`, `MetricsScene.jsx`, `FlowScene.jsx`, `ExperienceCanvas.jsx`, `ExperienceLayer.jsx`)
+- **Fuga de memoria GPU:** los tanques de métricas y la constelación de Cuentas no liberaban su geometría al salir de la página (5 → 26 geometrías en 10 ciclos). Ahora se liberan; queda estable en 6.
+- **Teclas lentas en el conteo:** la primera tecla de monedas y de medios de pago tardaba hasta ~230 ms porque three.js compilaba ahí los shaders de las pilas. Ahora se precompilan cuando el navegador está libre, y mientras hay un campo con foco la escena baja a 30 FPS (20 en teléfono). Resultado: igual que sin escena (~110 ms con CPU 4× más lenta).
+- **Pilas del cierre:** ya no recalculan sus ~440 posiciones en cada frame cuando están quietas o su sala no se ve (p95 del frame con CPU 6×: 33 → 17 ms).
+- **Monitor de calidad:** 3 s de calentamiento tras montar y tras cada cambio de página; antes bajaba la calidad por la carga de la página, no por la escena.
+- **Carga:** el motor 3D se pide después de que la página terminó de cargar (y más tarde en conexiones lentas); en 3G ya no retrasa el login.
+- Solo en desarrollo: `?quality=low|medium|high` y `window.__koajGL` para medir.
+
+### ✅ Verificación
+- Mediciones por página y nivel, con CPU ralentizada, fugas con GC forzado, INP del conteo con y sin escena, y carga del build de producción en escritorio y móvil 3G (detalle en `PLAN_EXPERIENCIA_WEBGL.md`).
+- Regresión: cierre + descarga JPEG (1440/390), login incorrecto/correcto, prueba táctil móvil OK. Lint: 70 problemas (los mismos). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 11 (móvil)
+
+### 📱 Móvil (`ExperienceLayer.jsx`, `ExperienceCanvas.jsx`, `SceneDirector.jsx`, `Dashboard.jsx`)
+- Fix: al hacer scroll con el dedo el navegador cancela el puntero (`pointercancel`); la escena no lo escuchaba y dejaba un hueco fijo en las partículas.
+- Mientras se escribe en un campo en un teléfono, la escena baja a ~20 FPS para dejarle el procesador al teclado y al formulario.
+- Giroscopio opcional (solo Android, sin pedir permisos): inclinar el teléfono mueve levemente la cámara. Se apaga con movimiento reducido.
+- Cinta del total en teléfonos de 320 px: la cifra ya no se corta.
+
+### ✅ Verificación
+- Perfil de teléfono con táctil real y CPU ralentizada (4× y 20×): la calidad baja sola cuando hace falta (39 → 53 FPS); gesto de scroll, escritura en el conteo y total correcto; 320 px y horizontal.
+- Regresión: cierre + descarga JPEG (1440/390) y login incorrecto/correcto OK. Lint: 70 problemas (los mismos). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 10 (pantallas restantes)
+
+### 🔎 Códigos KOAJ, 👥 Usuarios, 📊 Ventas Mensuales (`KoajCodes.jsx`, `UsersManagement.jsx`, `MonthlySales.jsx`, `SceneDirector.jsx`, `formations.js`)
+- Códigos KOAJ: las partículas escriben lo que se busca (tras 400 ms sin teclear) o la cantidad de códigos del catálogo; al cambiar la búsqueda viajan de una palabra a otra. La búsqueda y el filtrado no cambiaron.
+- Usuarios: un cúmulo de partículas por persona con acceso (administrador grande, ventas mediano, inactivo tenue) con una leyenda que lo explica.
+- Ventas Mensuales: el mismo "horizonte de datos" de Estadísticas con los totales por medio de pago.
+- Acceso denegado: sin fondo propio, deja ver el ambiente.
+
+### ✅ Verificación
+- Playwright con API simulada: 1440 y 390; búsqueda "jeans" (viaje entre palabras); usuarios con admin/ventas/inactivo; ventas mensuales; movimiento reducido; sin WebGL (páginas iguales que antes).
+- Regresión: cierre + descarga JPEG (1440/390) y login incorrecto/correcto OK. Lint: 70 problemas (los mismos). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 9 (Gestión: flujo de saldos)
+
+### 💸 Cuentas → Resumen (`CuentasLayout.jsx`, `scenes/FlowScene.jsx`)
+- Nueva ventana "Cómo se compone el total": cada cuenta envía una corriente de partículas al "Total Recompras" con densidad proporcional a su saldo real; Jhonatan también suma. Saldo negativo = corriente al revés en ámbar. AHORRO orbita aparte (el backend lo excluye del total) con el rótulo "aparte".
+- Pasar el cursor por una cuenta resalta su corriente y atenúa las demás.
+- Rótulos (nombre, saldo) y corrientes comparten las mismas coordenadas calculadas en el DOM: nunca se desalinean. Desktop en arco, móvil en dos filas.
+- Solo presentación: la lectura de cuentas y del balance de recompras no cambió; ninguna acción (ajustes, transferencias, sincronizar) se tocó.
+
+### 🌊 Ambiente de Gestión (`SceneDirector.jsx`, `scenes/BaseField.jsx`)
+- En Cuentas, Cuentas Recompras, Empleadas y Notas el campo de fondo deriva en corrientes horizontales ("flujo / conexiones").
+
+### ✅ Verificación
+- Playwright con API simulada (incluye un saldo negativo y AHORRO): 1440 y 390, resaltado al pasar el cursor, movimiento reducido (corrientes quietas), sin WebGL (Cuentas igual que antes); Empleadas y Notas a ~60 FPS.
+- Regresión: cierre + descarga JPEG (1440/390) y login incorrecto/correcto OK. Lint: 70 problemas (los mismos). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fase 8 (estadísticas como datos)
+
+### 📈 Horizonte de datos (`MainLayout.jsx`, `SceneDirector.jsx`, `formations.js`, `scenes/BaseField.jsx`, `store.js`)
+- Nueva franja en las rutas de estadísticas donde las partículas forman una gráfica de columnas con la serie real del módulo abierto. Se abre solo cuando hay datos.
+- Módulos que publican su serie (solo lectura, sin cambiar su lógica): Horas pico, Tendencias, Top vendedoras, Top clientes, Cross-selling, Top productos, Categorías, Totales de ventas (vista mensual) e Inventario por departamento.
+- Al cambiar de módulo o período las partículas viajan de la gráfica anterior a la nueva en vez de saltar.
+- Cursor o dedo sobre la franja: la columna se resalta y un tooltip muestra el valor exacto (hora/fecha/nombre + monto, cantidad o %).
+- `store.js`: suscripción por clave (`useSceneValue`) y `useSceneSeries` para publicar series con firma estable.
+- Ajustes de legibilidad: en las gráficas las columnas no "respiran" y el cursor apenas las perturba.
+
+### ✅ Verificación
+- Playwright con API simulada: Horas pico (24 columnas) → Top vendedoras (5 columnas) con captura a mitad del viaje; tooltip "18:00 - 19:00 · $ 1.420.000"; móvil 390; movimiento reducido; sin WebGL (sin franja); Productos, Inventario, Totales y Documentos abren sin errores.
+- Regresión: flujo completo del cierre + descarga JPEG OK (1440 y 390); login incorrecto/correcto OK. Lint: 70 problemas (los mismos). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fases 6-7 (métricas como datos, transiciones entre páginas)
+
+### 📊 Métricas del día y del mes (`scenes/MetricsScene.jsx`, `MainLayout.jsx`)
+- La barra de meta se vuelve un tanque de partículas cuyo nivel es el avance real hacia la meta (+25%) que la página ya calculaba; la meta es una marca al 80% del ancho. Líquido con volumen y menisco, ola de superficie, oleaje con la velocidad del scroll y apertura con el puntero. Meta cumplida: verde, sobrepasa la marca y burbujea. Cargando: tanque vacío.
+- Con escena activa las tarjetas de métricas pasan a fondo transparente (conservan su borde); sin WebGL vuelven la barra y el fondo blanco. `role="progressbar"` intacto.
+
+### 🔁 Transiciones entre páginas (`SceneDirector.jsx`, `BaseField.jsx`, `index.css`)
+- Al navegar, el campo de partículas hace un pulso de "warp" y se asienta; el contenido entra con un ascenso corto.
+- Fix: la escena del cierre desaparece al instante al salir de la página (antes alcanzaba a verse medio segundo sobre la página nueva).
+- `.animate-rise` y la nueva `.page-enter` usan `animation-fill-mode: backwards`: no dejan un `transform` aplicado, que rompería los `position: fixed` (modales, avisos) y `sticky` de su interior.
+
+### ✅ Verificación
+- Playwright con API simulada: tanques en 1440 y 390, meta cumplida, cursor, movimiento reducido (tanques quietos al nivel real) y sin WebGL (barra DOM); transición Cierre → Analytics capturada a 120/500/1800 ms; flujo completo del cierre + descarga JPEG OK en ambos anchos; login con contraseña incorrecta y correcta OK.
+- Lint: 70 problemas (los mismos de antes). Build OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Fix login con contraseña incorrecta + Experiencia WebGL Fase 5 (cierre de caja)
+
+### 🐛 `src/services/api.js` - el error de credenciales incorrectas nunca se veía (autorizado por el usuario)
+- **Causa:** `authenticatedFetch` trataba cualquier 401 como "sesión expirada": limpiaba la sesión y recargaba `/login` con `window.location.href`. En el propio login un 401 significa "credenciales incorrectas", así que la página se recargaba antes de mostrar el mensaje, el formulario se vaciaba y el contador de 5 intentos de `AuthContext` se reiniciaba con cada recarga.
+- **Fix:** en los 3 puntos donde se maneja el 401 se excluye la petición `/auth/login` (`isLoginRequest`); esa respuesta vuelve a `AuthContext`, que ya sabía mostrar el mensaje y contar el intento. Cualquier otra petición con 401 sigue redirigiendo a `/login` igual que antes.
+- Verificado con Playwright (API simulada): contraseña incorrecta → se queda en `/login`, conserva el correo y muestra el error; contraseña correcta → entra a `/dashboard`.
+
+### 💵 Escena 3D del cierre (`scenes/CashScene.jsx`, `Dashboard.jsx`, `index.css`)
+- Ventana de la escena: panel lateral sticky en desktop (el formulario pasa a una columna; Medios de pago y Ajustes quedan apilados) y vitrina bajo el conteo en móvil. Solo existen si la escena está activa (`html.has-scene`); sin WebGL el formulario vuelve a ocupar todo el ancho.
+- El Dashboard publica en solo lectura lo que ya calcula (conteo por denominación, totales de Alegra, registrado, ajustes, paso visible, envío y resultado). Ninguna lógica del cierre cambió.
+- Salas por paso: Alegra por medio de pago → pilas 3D de billetes y monedas que crecen al digitar → registrado vs Alegra + ajustes. Al enviar se comprime; validado → verde y asentado; diferencias → pilas separadas en ámbar.
+- Corrección menor: la línea superior del grupo "Datafono" cruzaba su título.
+- Infraestructura: anclaje DOM→3D con proyección exacta rayo-plano (sigue a la cámara que se mueve con el cursor); con movimiento reducido la escena se redibuja cuando la página publica datos.
+
+### ✅ Verificación
+- Playwright con API simulada, 1440 y 390: recorrido completo por las 3 salas, estado validado y estado con diferencias; movimiento reducido (pilas quietas) y sin WebGL (sin columna vacía); flujo completo + descarga del reporte JPEG OK en ambos anchos.
+- Lint: 70 problemas (los mismos de antes). Build OK; bundle principal sin cambio relevante (94,8 kB).
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fases 3-4 (sistema de movimiento y Login)
+
+### 🌀 Sistema de movimiento (`src/experience/motion.js`, `SceneDirector.jsx`)
+- Tokens de movimiento espejo de los CSS, constantes físicas únicas para la escena, `damp` y `spring` interrumpible independientes del framerate.
+- `Conductor`: lee scroll y velocidad cada frame (sin listeners de scroll) y mueve la cámara con el puntero.
+- `SceneDirector`: el campo de partículas cambia de estado por ruta en vez de recrearse (base de las transiciones de la Fase 7).
+
+### 🔐 Login (`Login.jsx`, `formations.js`, `scenes/BaseField.jsx`)
+- Las partículas forman la palabra KOAJ (muestreada con la fuente de la marca) sobre un ancla DOM del panel oscuro; el cursor/dedo las aparta con inercia y la palabra se rearma.
+- Conectando: la palabra "respira". Error: recula y se rearma. Ingreso exitoso: el ambiente pasa de tinta a papel y la palabra se dispersa mientras aparece la app.
+- El panel de marca ahora es transparente sobre el fondo tinta del body (`html.theme-login`); el formulario queda en un panel claro. Lógica de Formik, validación y reintentos sin cambios.
+- Respaldos: movimiento reducido = palabra estática; sin WebGL = marca KOAJ en DOM.
+
+### 🔎 Hallazgo (no modificado, pendiente de decisión)
+- Con contraseña incorrecta, `authenticatedFetch` trata el 401 como sesión expirada y recarga `/login`: el mensaje de credenciales incorrectas nunca se muestra y el contador de 5 intentos se reinicia.
+
+### ✅ Verificación
+- Playwright: palabra formada y rearmado tras el cursor en 1440 y 390; transición de ingreso capturada a 250/750/2250 ms (llega a `/dashboard`); movimiento reducido y sin WebGL correctos; flujo completo del cierre + descarga JPEG OK.
+- Lint: 70 problemas (los mismos de antes). Build OK; bundle principal 94,7 kB (sin cambio relevante).
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Experiencia WebGL: Fases 0-2 (instalación, estudio de referencias, capa base)
+
+Inicio del plan `PLAN_EXPERIENCIA_WEBGL.md` (a partir de `# MASTER PROMPT.txt`). Solo presentación: ninguna lógica, endpoint, cálculo ni flujo cambió.
+
+### 📦 Dependencias (instaladas con red alterna, la cableada bloquea el registro de npm)
+- `three` 0.186 y `@react-three/fiber` 8.18 (v8 porque el proyecto usa React 18).
+- `@fontsource-variable/geist` y `@fontsource-variable/schibsted-grotesk`, ahora importadas en `src/main.jsx` (auto-hospedadas, las cachea el service worker). Antes la app caía a la fuente del sistema.
+
+### 🔭 Estudio de referencias (Fase 1)
+- Principios extraídos y decisiones documentadas en `PLAN_EXPERIENCIA_WEBGL.md`. `akira.art` ya no existe y `resn.co` está fuera de línea; `toruslab.com` no responde desde ninguna de las dos redes. Se agregó igloo.inc como referencia de "desarmar / rearmar".
+
+### ✨ Capa WebGL base (Fase 2) - `src/experience/`
+- Un solo canvas fijo detrás de toda la app (`ExperienceLayer` en `App.jsx`), persistente entre rutas, `aria-hidden` y con `pointer-events: none`: nunca captura clics ni foco.
+- Campo de partículas en shader GLSL que deriva, hace parallax con el scroll y se aparta del cursor/dedo con inercia.
+- Calidad adaptativa (alta/media/baja según dispositivo y FPS medido), pausa con la pestaña oculta, escena quieta con movimiento reducido, y sin WebGL o con "Ahorro de datos" simplemente no se monta.
+- Carga diferida: three viaja en un chunk aparte (~232 kB gzip) que se pide cuando el navegador está libre; el bundle principal no cambió.
+- `MainLayout` deja de pintar su propio fondo para que la escena se vea detrás.
+- Cifras grandes en fuente display con dígitos proporcionales (las tabulares de Schibsted separaban el punto de miles).
+
+### ✅ Verificación
+- Playwright con API simulada: 60 FPS en 1440 y 390; clic en el fondo cae en `<main>`; movimiento reducido = escena quieta; sin WebGL = sin canvas y sin errores; flujo completo del cierre + descarga del reporte JPEG OK en ambos anchos (reporte limpio).
+- `npm run lint` sin problemas nuevos (70, los mismos de antes); `vite build` OK.
+
+**Deploy:** solo frontend, Vercel con auto-deploy.
+
+## [2026-09-23] (continuación) - Rediseño visual y de UX "Arqueo" (solo presentación)
+
+El usuario pidió una transformación visual e interactiva completa (documento "MASTER PROMPT - VISUAL & UX TRANSFORMATION") **sin tocar lógica de negocio, endpoints, cálculos, estados ni flujos**. Todos los handlers, `value`, `id`, `aria-label`, condiciones y llamadas a la API quedaron idénticos; solo cambió JSX de presentación y estilos.
+
+### 🎨 Sistema de diseño centralizado (`tailwind.config.js`, `src/index.css`)
+- Las escalas de color de Tailwind se **reemplazan** (no se extienden): `gray/slate` → grafito frío, `blue/indigo` → "tinta" (único acento), `purple/violet` → ciruela (categoría transferencias). Así las ~4.500 clases ya escritas en 50+ componentes heredan la nueva identidad sin editarlas una por una. Verde/rojo/ámbar/naranja/teal/rosa se conservan: son semántica o código de módulo.
+- Radios, sombras (tintadas, no negras) y curvas de movimiento (`ease-out` fuerte) como tokens. Todo en hex: **html2canvas (reporte PDF/JPEG del cierre) no soporta oklch/color-mix**.
+- Capa global: foco visible solo con teclado, `scale: 0.98` al presionar botones (propiedad `scale`, no `transform`, para no romper los `-translate-*` existentes), inputs a 16px en móvil (evita el zoom de iOS), cifras tabulares en toda la app, `prefers-reduced-motion`, `scroll-padding-bottom` para que la cinta fija nunca tape el campo enfocado, `touch-action: manipulation`.
+- Tipografías declaradas: **Schibsted Grotesk** (títulos y cifras) + **Geist** (interfaz), con respaldo al sistema. **Pendiente instalarlas** (`npm install @fontsource-variable/geist @fontsource-variable/schibsted-grotesk` + importarlas en `main.jsx`): el registro de npm no respondía desde la red de ese momento. Mientras tanto la app usa la fuente del sistema.
+
+### 🧭 Shell (`MainLayout.jsx`, nuevos `common/BrandMark.jsx` y `common/AppLoader.jsx`)
+- Marca KOAJ real en el header (antes: ícono de gráfica en cuadro con degradado). Navegación en texto con subrayado activo; menús con animación desde su disparador; avatar con iniciales; header translúcido cuya sombra aparece al hacer scroll (IntersectionObserver, sin listener de scroll).
+- Métricas del día/mes: cifras protagonistas, metas como barras finas con `role="progressbar"`, skeletons en vez de spinners. En móvil las dos tarjetas se deslizan en horizontal (scroll-snap) para que el cierre no quede dos pantallas abajo.
+- Menú móvil con objetivos táctiles de 44-48px; enlace "Saltar al contenido"; aviso de cierre pendiente con acción explícita "Hacer el cierre ahora".
+- Corrección de paso: `ActiveRule`/`DropdownPanel` se definieron primero como componentes dentro del render; como el reloj re-renderiza cada segundo, se habrían remontado (y re-animado) cada segundo. Se dejaron como funciones de render.
+
+### 💵 Cierre de caja (`Dashboard.jsx`)
+- Encabezado de página alineado a la izquierda (se quitó el logo KOAJ gigante duplicado). El formulario se organiza en 4 pasos numerados (Fecha, Efectivo, Medios de pago, Ajustes) con navegación contextual en desktop que resalta el paso visible.
+- Monedas/billetes como libro de caja: denominación | cantidad | subtotal alineados; subtotales en cero atenuados.
+- Resultado de la preconsulta como recibo (rangos de facturas + totales por medio de pago con marca de color de categoría) y skeleton mientras consulta.
+- **Cinta de total fija abajo** (`sticky`) con "Total en Caja" + "Realizar Cierre": el total queda visible mientras se cuenta. Base Caja y Limpiar pasan a una fila propia justo encima.
+- Modales: hoja inferior en móvil / diálogo en desktop, fondo con desenfoque leve, `role="dialog"`, `overscroll-contain`, área segura del iPhone. Botones de degradado → sólidos.
+
+### 🧹 Resto de pantallas
+- 85 degradados en 21 archivos → colores sólidos con una sola regla (`bg-gradient` claro → tono suave; fuerte azul/morado → negro tinta; fuerte semántico → su color sólido). Se conservaron los de `CategoriasProductos` (codifican categorías en gráficas).
+- Botones primarios azules (`bg-blue-600 … text-white … hover:bg-blue-700`) → negro tinta en 23 archivos, para que la acción principal se vea igual en toda la app.
+- Modales de Códigos KOAJ, Usuarios y Facturas anuladas con el mismo tratamiento de hoja/diálogo. `MonthlySales` ya no pinta su propio fondo de pantalla completa dentro del layout.
+- `Login`, `Unauthorized`, `ErrorBoundary` y cargadores rediseñados con la misma identidad. `index.html` en `lang="es"`, favicon KOAJ, `theme-color` y manifest actualizados; caché del service worker `v1` → `v2` para que los celulares tomen el ícono nuevo (se sirve cache-first).
+
+### ✅ Verificación
+- Capturas con Playwright a 390px y 1440px de login, cierre, cuentas, empleadas, analytics, inventario, usuarios, códigos, ventas mensuales, con **toda la API interceptada con datos de prueba** (ninguna petición salió a un backend real, local ni de producción).
+- Flujo completo del cierre simulado: preconsulta → conteo → confirmación → modal de éxito → resultados → **descarga real del reporte JPEG con html2canvas** en ambos anchos; el reporte se genera correcto y legible con la nueva paleta.
+- `npm run lint`: sin errores nuevos (los 5 de los archivos tocados ya existían). `vite build` sin errores; el chunk de Dashboard pesa lo mismo que antes (~675 kB, por html2canvas/jsPDF), CSS +3,6 kB.
+- Auditorías: `impeccable detect` (se corrigieron rebote y animación de `width`), Web Interface Guidelines de Vercel (elipsis tipográfica, skip link, touch-action, scroll-padding).
+
+**Deploy:** solo frontend, Vercel con auto-deploy. No requiere cambios de backend.
+
 ## [2026-09-23] - Tooling: skills de diseño/UX y MCP para Claude Code
 
 El usuario pidió instalar en este proyecto el mismo stack de skills y MCP de diseño que usa en su otro proyecto (PlataformaVentasInventariosCierres), versionado aquí para que un `git pull` en otro PC los traiga.

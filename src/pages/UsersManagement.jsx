@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   Plus,
@@ -24,6 +24,8 @@ import {
   resetPassword
 } from '../services/usersService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useDialog from '../hooks/useDialog';
+import { usePublishSceneData } from '../experience/store';
 
 const UsersManagement = () => {
   useDocumentTitle('Gestionar Usuarios');
@@ -128,6 +130,7 @@ const UsersManagement = () => {
     setFormError('');
     setShowPassword(false);
   };
+  const dialogRef = useDialog(showModal, closeModal);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -239,6 +242,13 @@ const UsersManagement = () => {
     });
   };
 
+  // --- Escena WebGL (solo lectura): un cúmulo por persona con acceso ---
+  const sceneTeam = useMemo(() => (users.length ? {
+    key: users.map((u) => `${u.role}:${u.is_active !== false}`).join(','),
+    members: users.map((u) => ({ role: u.role, active: u.is_active !== false })),
+  } : null), [users]);
+  usePublishSceneData('team', loading ? null : sceneTeam);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -264,12 +274,20 @@ const UsersManagement = () => {
           </button>
           <button
             onClick={openCreateModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Nuevo Usuario
           </button>
         </div>
+      </div>
+
+      {/* Escenario de la escena WebGL: el equipo con acceso al sistema */}
+      <div className="page-stage" aria-hidden="true">
+        <div data-scene-anchor="page-stage" className="h-20 sm:h-24" />
+        <p className="mt-1 text-xs text-gray-500 text-center">
+          Cada cúmulo es una persona con acceso: los grandes son administradores y los tenues, usuarios inactivos.
+        </p>
       </div>
 
       {/* Mensajes */}
@@ -299,11 +317,11 @@ const UsersManagement = () => {
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-3 text-gray-600">Cargando usuarios...</p>
+            <p className="mt-3 text-gray-600">Cargando usuarios…</p>
           </div>
         ) : users.length === 0 ? (
           <div className="p-12 text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
             <p className="text-gray-600">No hay usuarios registrados</p>
           </div>
         ) : (
@@ -375,14 +393,14 @@ const UsersManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <button aria-label="Editar"
                           onClick={() => openEditModal(user)}
                           className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button
+                        <button aria-label="Resetear Contrasena"
                           onClick={() => openResetPasswordModal(user)}
                           className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                           title="Resetear Contrasena"
@@ -390,7 +408,7 @@ const UsersManagement = () => {
                           <Key className="w-4 h-4" />
                         </button>
                         {user.is_active ? (
-                          <button
+                          <button aria-label="Desactivar"
                             onClick={() => handleDelete(user)}
                             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Desactivar"
@@ -398,7 +416,7 @@ const UsersManagement = () => {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         ) : (
-                          <button
+                          <button aria-label="Reactivar"
                             onClick={() => handleReactivate(user)}
                             className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="Reactivar"
@@ -419,24 +437,24 @@ const UsersManagement = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+          <div className="flex items-end sm:items-center justify-center min-h-full sm:p-4">
             {/* Overlay */}
             <div
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop"
               onClick={closeModal}
             ></div>
 
             {/* Modal content */}
-            <div className="relative bg-white rounded-xl shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+            <div className="relative w-full bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl sm:max-w-lg animate-sheet pb-safe max-h-[92dvh] overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="dlg-usuario" ref={dialogRef}>
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 id="dlg-usuario" className="text-lg font-semibold text-gray-900">
                   {modalMode === 'create' && 'Crear Usuario'}
                   {modalMode === 'edit' && 'Editar Usuario'}
                   {modalMode === 'reset-password' && 'Resetear Contrasena'}
                 </h3>
-                <button
+                <button aria-label="Cerrar"
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-500 hover:text-gray-600 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -564,7 +582,7 @@ const UsersManagement = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
                     disabled={formLoading}
                   >
                     {formLoading && (

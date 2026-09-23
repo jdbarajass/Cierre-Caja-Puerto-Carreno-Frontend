@@ -52,7 +52,7 @@ const InventoryDashboard = () => {
   // Estado inicial: sin datos
   if (!summary && !loading && !error) {
     return (
-      <div className="bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-200 rounded-xl p-12">
+      <div className="bg-teal-50 border-2 border-teal-200 rounded-xl p-12">
         <div className="text-center max-w-2xl mx-auto">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-teal-100 rounded-full mb-6">
             <Package className="w-10 h-10 text-teal-600" />
@@ -63,7 +63,7 @@ const InventoryDashboard = () => {
           </p>
           <button
             onClick={fetchData}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition shadow-lg hover:shadow-xl text-lg font-semibold"
           >
             <Database className="w-6 h-6" />
             Consultar Inventario desde Alegra
@@ -78,7 +78,7 @@ const InventoryDashboard = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Consultando inventario desde Alegra...</p>
+          <p className="mt-4 text-gray-600 font-medium">Consultando inventario desde Alegra…</p>
         </div>
       </div>
     );
@@ -96,7 +96,7 @@ const InventoryDashboard = () => {
         </div>
         <button
           onClick={fetchData}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -112,7 +112,7 @@ const InventoryDashboard = () => {
         <h2 className="text-2xl font-bold text-gray-900">Resumen Ejecutivo</h2>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar
@@ -265,14 +265,14 @@ const InventoryDashboard = () => {
 
       {/* Promedios */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border border-blue-200">
+        <div className="bg-blue-50 rounded-xl shadow-md p-6 border border-blue-200">
           <h4 className="text-sm font-semibold text-blue-900 mb-2">Costo Promedio por Unidad</h4>
           <p className="text-3xl font-bold text-blue-700">
             {formatCurrency(summary.costo_promedio_por_unidad)}
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md p-6 border border-green-200">
+        <div className="bg-green-50 rounded-xl shadow-md p-6 border border-green-200">
           <h4 className="text-sm font-semibold text-green-900 mb-2">Precio Promedio de Venta</h4>
           <p className="text-3xl font-bold text-green-700">
             {formatCurrency(summary.precio_promedio_venta)}

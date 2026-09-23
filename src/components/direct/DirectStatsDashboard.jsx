@@ -53,7 +53,7 @@ const DirectStatsDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header Principal */}
-      <div className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-yellow-600 rounded-xl shadow-lg p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <Zap className="w-10 h-10" />
           <div>
@@ -66,7 +66,7 @@ const DirectStatsDashboard = () => {
       </div>
 
       {/* Información */}
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+      <div className="bg-blue-50 ring-1 ring-inset ring-blue-200 p-4 rounded-xl">
         <div className="flex items-start gap-3">
           <Zap className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>

@@ -142,6 +142,12 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
     headers,
   };
 
+  // En el propio login, un 401 significa "credenciales incorrectas", no
+  // "sesión expirada": se devuelve la respuesta a AuthContext para que muestre
+  // el mensaje y cuente el intento, en vez de recargar /login (lo que borraba
+  // el formulario, ocultaba el error y reiniciaba el contador de intentos).
+  const isLoginRequest = endpoint.startsWith('/auth/login');
+
   let response = null;
   let lastError = null;
 
@@ -171,7 +177,7 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
 
         // Si la conexión fue exitosa (incluso con errores HTTP), retornar la respuesta
         // Solo resetear workingApiBase si hay error de CONEXIÓN (timeout, red, etc.)
-        if (response.status === 401) {
+        if (response.status === 401 && !isLoginRequest) {
           secureRemoveItem('authToken');
           secureRemoveItem('authUser');
           window.location.href = '/login';
@@ -239,7 +245,7 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
         logger.info(`✅ Backend local configurado: ${localApi} - Peticiones futuras usarán este backend exclusivamente`);
 
         // Si la respuesta es 401 (no autorizado), limpiar la sesión
-        if (response.status === 401) {
+        if (response.status === 401 && !isLoginRequest) {
           secureRemoveItem('authToken');
           secureRemoveItem('authUser');
           window.location.href = '/login';
@@ -290,7 +296,7 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
     logger.info('Conectado exitosamente con backend desplegado');
 
     // Si la respuesta es 401 (no autorizado), limpiar la sesión
-    if (response.status === 401) {
+    if (response.status === 401 && !isLoginRequest) {
       secureRemoveItem('authToken');
       secureRemoveItem('authUser');
       window.location.href = '/login';

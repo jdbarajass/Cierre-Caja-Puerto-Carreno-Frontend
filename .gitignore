@@ -30,3 +30,6 @@ node_modules
 # Python cache (scripts de skills)
 __pycache__/
 *.pyc
+
+# Snapshots temporales del MCP de Playwright
+.playwright-mcp/

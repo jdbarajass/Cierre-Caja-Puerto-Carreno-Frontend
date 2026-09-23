@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wallet, History, Plus, Minus, RefreshCw,
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat
@@ -10,6 +10,7 @@ import {
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
+import { usePublishSceneData, experience } from '../experience/store';
 
 const fmt = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v || 0);
@@ -23,6 +24,125 @@ const COLOR_CLASSES = {
   teal:   { dot: 'bg-teal-500',   bg: 'bg-teal-50',   text: 'text-teal-700' },
   indigo: { dot: 'bg-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700' },
   emerald: { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+};
+
+// --- Escena WebGL de Gestión → Cuentas (solo presentación) ----------------
+
+// Mismo color que el punto de cada tarjeta (tokens de tailwind.config.js)
+const ACCOUNT_HEX = {
+  green: '#22C55E', purple: '#93529E', red: '#EF4444', orange: '#F97316',
+  blue: '#4A58D6', teal: '#14B8A6', indigo: '#4A58D6', emerald: '#10B981',
+};
+// El backend excluye estas cuentas del total para recompras
+// (ACCOUNTS_EXCLUDED_FROM_RECOMPRA_TOTAL): la escena las dibuja aparte
+const APART_KEYS = new Set(['ahorro']);
+
+/**
+ * Constelación de saldos: calcula en el DOM dónde va cada cuenta (posición
+ * normalizada 0..1 dentro de la ventana), dibuja sus rótulos y publica esos
+ * mismos nodos para que la escena WebGL trace las corrientes. Así rótulo y
+ * partículas nunca se desalinean.
+ */
+// Ancho mínimo por cuenta en una sola fila; por debajo, los rótulos
+// (hasta 118 px) se montan unos sobre otros y se pasa a dos filas
+const MIN_NODE_SPACING = 100;
+
+const FlowWindow = ({ accounts, repurchase, total, fmtMoney }) => {
+  const ref = useRef(null);
+  const [width, setWidth] = useState(0);
+  const [hover, setHover] = useState(-1);
+
+  // Se decide por el ancho REAL de la ventana, no del viewport: en tablet
+  // (768) la ventana es angosta aunque la pantalla no sea de teléfono
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    setWidth(el.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const flowingCount = accounts.filter((a) => !APART_KEYS.has(a.payment_key)).length + 1;
+  const narrow = width > 0 && (width * 0.72) / Math.max(flowingCount - 1, 1) < MIN_NODE_SPACING;
+  useEffect(() => () => { experience.flowHover = -1; }, []);
+
+  const flow = useMemo(() => {
+    const inStore = accounts.filter((a) => !APART_KEYS.has(a.payment_key));
+    const apart = accounts.filter((a) => APART_KEYS.has(a.payment_key));
+    const flowing = [
+      ...inStore.map((a) => ({ id: a.id, name: a.name, value: Number(a.balance) || 0, color: ACCOUNT_HEX[a.color] || ACCOUNT_HEX.blue })),
+      { id: 'jhonatan', name: 'Jhonatan', value: Number(repurchase) || 0, color: '#3341C2' },
+    ];
+    const n = flowing.length;
+    const nodes = flowing.map((node, i) => {
+      if (narrow) {
+        const perRow = Math.ceil(n / 2);
+        const row = i < perRow ? 0 : 1;
+        const col = row === 0 ? i : i - perRow;
+        const cols = row === 0 ? perRow : n - perRow;
+        return { ...node, u: 0.12 + (cols > 1 ? (col / (cols - 1)) * 0.76 : 0.38), v: row === 0 ? 0.32 : 0.6 };
+      }
+      const u = 0.07 + (n > 1 ? (i / (n - 1)) * 0.72 : 0.36);
+      return { ...node, u, v: 0.4 + Math.pow((u - 0.43) * 1.6, 2) * 0.1 };
+    });
+    apart.forEach((a) => nodes.push({
+      id: a.id, name: a.name, value: Number(a.balance) || 0, color: ACCOUNT_HEX[a.color] || ACCOUNT_HEX.emerald,
+      detached: true, u: narrow ? 0.14 : 0.92, v: narrow ? 0.9 : 0.62,
+    }));
+    // `v` del centro = donde llegan las corrientes; el rótulo va justo debajo
+    const hub = narrow ? { u: 0.62, v: 0.8 } : { u: 0.43, v: 0.76 };
+    const key = `${narrow}|${nodes.map((x) => `${x.id}:${x.value}`).join(',')}`;
+    return { key, nodes, hub };
+  }, [accounts, repurchase, narrow]);
+
+  usePublishSceneData('flow', flow);
+
+  const focus = (i) => { setHover(i); experience.flowHover = i; experience.invalidate?.(); };
+
+  return (
+    <div
+      ref={ref}
+      data-scene-anchor="flow-window"
+      className={`flow-window relative ${narrow ? 'h-80' : 'h-72'} rounded-2xl ring-1 ring-gray-900/[0.06]`}
+      aria-hidden="true"
+    >
+      <div className="absolute top-4 left-5 right-5 flex items-baseline justify-between gap-3 pointer-events-none">
+        <p className="text-[13px] font-semibold text-gray-900">Cómo se compone el total</p>
+        <p className="hidden sm:block text-xs text-gray-500">Cada corriente es proporcional al saldo de la cuenta</p>
+      </div>
+      {flow.nodes.map((node, i) => (
+        <button
+          key={node.id}
+          type="button"
+          tabIndex={-1}
+          onPointerEnter={() => focus(i)}
+          onPointerLeave={() => focus(-1)}
+          onFocus={() => focus(i)}
+          className={`absolute -translate-x-1/2 -translate-y-full pb-[3px] flex flex-col items-center text-center transition-opacity ${hover >= 0 && hover !== i ? 'opacity-40' : 'opacity-100'}`}
+          style={{ left: `${node.u * 100}%`, top: `${node.v * 100}%` }}
+        >
+          {/* Fondo translúcido: en dos filas las corrientes de arriba pasan
+              detrás de los rótulos de abajo y el texto debe seguir legible */}
+          <span className="flex flex-col items-center rounded-md px-1.5 py-0.5 bg-paper/80">
+            <span className="text-[11px] font-semibold text-gray-700 max-w-[84px] sm:max-w-[118px] truncate">{node.name}</span>
+            <span className={`text-[11px] font-medium ${node.value < 0 ? 'text-amber-700' : 'text-gray-500'}`}>
+              {fmtMoney(node.value)}{node.detached && <span className="text-gray-500"> · aparte</span>}
+            </span>
+          </span>
+          {/* Punto de origen: de aquí sale la corriente de la escena */}
+          <span className="mt-1.5 w-2.5 h-2.5 rounded-full ring-4 ring-white/70" style={{ backgroundColor: node.color }} />
+        </button>
+      ))}
+      <div
+        className="absolute -translate-x-1/2 mt-2 px-3 py-1.5 rounded-xl bg-gray-900 text-white text-center pointer-events-none shadow-lg"
+        style={{ left: `${flow.hub.u * 100}%`, top: `${flow.hub.v * 100}%` }}
+      >
+        <p className="text-[10px] text-gray-300 leading-tight">Total Recompras</p>
+        <p className="text-sm font-bold leading-tight">{fmtMoney(total)}</p>
+      </div>
+    </div>
+  );
 };
 
 const MOVEMENT_TYPE_LABELS = {
@@ -41,7 +161,7 @@ const CurrencyInput = ({ value, onChange, placeholder }) => {
   const display = focused ? value : (value ? Number(value).toLocaleString('es-CO') : '');
   return (
     <input
-      type="text" inputMode="numeric" placeholder={placeholder}
+      type="text" inputMode="numeric" placeholder={placeholder} aria-label={placeholder}
       value={display}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
@@ -343,7 +463,7 @@ const CuentasLayout = () => {
                   La sincronización automática falló el {formatColombiaDateTime(syncStatus.last_failure.at)}
                 </p>
                 <p className="text-red-600">{syncStatus.last_failure.message}</p>
-                <p className="text-red-500 text-xs mt-1">Se resuelve sola en la próxima sincronización exitosa (o haz clic en "Sincronizar ahora").</p>
+                <p className="text-red-600 text-xs mt-1">Se resuelve sola en la próxima sincronización exitosa (o haz clic en "Sincronizar ahora").</p>
               </div>
             </div>
           )}
@@ -353,7 +473,7 @@ const CuentasLayout = () => {
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Saldo total (real)</p>
                 <p className="text-3xl font-bold text-gray-900">{loading ? 'Cargando...' : fmt(totalBalance)}</p>
-                <p className="text-xs text-gray-400 mt-0.5">Cuentas de la tienda para recompras (sin Ahorro)</p>
+                <p className="text-xs text-gray-500 mt-0.5">Cuentas de la tienda para recompras (sin Ahorro)</p>
               </div>
 
               <span className="hidden sm:block text-2xl text-gray-300 font-light">+</span>
@@ -363,7 +483,7 @@ const CuentasLayout = () => {
                 <p className="text-3xl font-bold text-indigo-700">
                   {loadingRepurchase ? 'Cargando...' : fmt(repurchaseBalance.balance)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {fmt(repurchaseBalance.recibido)} recibido − {fmt(repurchaseBalance.compras)} en compras (este mes)
                 </p>
               </div>
@@ -375,7 +495,7 @@ const CuentasLayout = () => {
                 <p className="text-3xl font-bold text-emerald-700">
                   {(loading || loadingRepurchase) ? 'Cargando...' : fmt(totalBalance + repurchaseBalance.balance)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">Tienda + Jhonatan (sin Ahorro)</p>
+                <p className="text-xs text-gray-500 mt-0.5">Tienda + Jhonatan (sin Ahorro)</p>
               </div>
             </div>
 
@@ -383,7 +503,7 @@ const CuentasLayout = () => {
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Sincronizando...' : 'Sincronizar ahora'}
@@ -391,7 +511,7 @@ const CuentasLayout = () => {
               {syncStatus && (
                 <div className="text-right">
                   {syncStatus.last_synced_at ? (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500">
                       Última sincronización: {formatColombiaDateTime(syncStatus.last_synced_at)} ({syncStatus.last_synced_date})
                       {syncStatus.last_discrepancy != null && (
                         <>
@@ -403,7 +523,7 @@ const CuentasLayout = () => {
                       )}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400">Aún no se ha sincronizado ningún cierre.</p>
+                    <p className="text-xs text-gray-500">Aún no se ha sincronizado ningún cierre.</p>
                   )}
                   {syncStatus.pending_count > 0 && (
                     <p className="text-xs text-amber-600 font-medium">
@@ -414,6 +534,15 @@ const CuentasLayout = () => {
               )}
             </div>
           </div>
+
+          {!loading && !loadingRepurchase && accounts.length > 0 && (
+            <FlowWindow
+              accounts={accounts}
+              repurchase={repurchaseBalance.balance}
+              total={totalBalance + repurchaseBalance.balance}
+              fmtMoney={fmt}
+            />
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {accounts.map(a => {
@@ -426,11 +555,11 @@ const CuentasLayout = () => {
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{fmt(a.balance)}</p>
                   {a.payment_key === 'cash' && (
-                    <p className="text-xs text-gray-400 mt-1">Está en el local, aún no se ha enviado</p>
+                    <p className="text-xs text-gray-500 mt-1">Está en el local, aún no se ha enviado</p>
                   )}
                   {a.payment_key === 'addi_datafono' && (
                     <div className="mt-2 flex items-center gap-1.5">
-                      <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-400 whitespace-nowrap">
+                      <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-500 whitespace-nowrap">
                         Contempla saldo hasta:
                       </label>
                       <DateNoteInput
@@ -451,11 +580,12 @@ const CuentasLayout = () => {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Ajuste manual de saldo</h3>
               <form onSubmit={handleAdjustSubmit} className="space-y-3">
                 <select
+                  aria-label="Cuenta a ajustar"
                   value={adjustForm.accountId}
                   onChange={e => setAdjustForm(f => ({ ...f, accountId: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  <option value="">Selecciona una cuenta...</option>
+                  <option value="">Selecciona una cuenta…</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
 
@@ -486,7 +616,7 @@ const CuentasLayout = () => {
                   onChange={v => setAdjustForm(f => ({ ...f, amount: v }))}
                 />
                 <input
-                  type="text" placeholder="Nota (opcional)"
+                  type="text" aria-label="Nota (opcional)" placeholder="Nota (opcional)"
                   value={adjustForm.description}
                   onChange={e => setAdjustForm(f => ({ ...f, description: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -495,7 +625,7 @@ const CuentasLayout = () => {
                 <button
                   type="submit"
                   disabled={savingAdjust}
-                  className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                 >
                   {savingAdjust ? 'Registrando...' : 'Registrar ajuste'}
                 </button>
@@ -506,11 +636,12 @@ const CuentasLayout = () => {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Transferir entre cuentas</h3>
               <form onSubmit={handleTransferSubmit} className="space-y-3">
                 <select
+                  aria-label="Cuenta origen"
                   value={transferForm.fromAccountId}
                   onChange={e => setTransferForm(f => ({ ...f, fromAccountId: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  <option value="">Cuenta origen...</option>
+                  <option value="">Cuenta origen…</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({fmt(a.balance)})</option>)}
                 </select>
 
@@ -519,11 +650,12 @@ const CuentasLayout = () => {
                 </div>
 
                 <select
+                  aria-label="Cuenta destino"
                   value={transferForm.toAccountId}
                   onChange={e => setTransferForm(f => ({ ...f, toAccountId: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  <option value="">Cuenta destino...</option>
+                  <option value="">Cuenta destino…</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
 
@@ -533,7 +665,7 @@ const CuentasLayout = () => {
                   onChange={v => setTransferForm(f => ({ ...f, amount: v }))}
                 />
                 <input
-                  type="text" placeholder="Nota (opcional)"
+                  type="text" aria-label="Nota (opcional)" placeholder="Nota (opcional)"
                   value={transferForm.description}
                   onChange={e => setTransferForm(f => ({ ...f, description: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -542,7 +674,7 @@ const CuentasLayout = () => {
                 <button
                   type="submit"
                   disabled={savingTransfer}
-                  className="w-full bg-rose-400 hover:bg-rose-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+                  className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                 >
                   {savingTransfer ? 'Transfiriendo...' : 'Transferir'}
                 </button>
@@ -558,6 +690,7 @@ const CuentasLayout = () => {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-4 border-b border-gray-200 flex flex-wrap gap-3">
             <select
+              aria-label="Filtrar por cuenta"
               value={movementFilters.accountId}
               onChange={e => setMovementFilters(f => ({ ...f, accountId: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
@@ -566,6 +699,7 @@ const CuentasLayout = () => {
               {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
             <select
+              aria-label="Filtrar por tipo"
               value={movementFilters.type}
               onChange={e => setMovementFilters(f => ({ ...f, type: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
@@ -575,12 +709,14 @@ const CuentasLayout = () => {
             </select>
             <input
               type="date"
+              aria-label="Desde"
               value={movementFilters.startDate}
               onChange={e => setMovementFilters(f => ({ ...f, startDate: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
             <input
               type="date"
+              aria-label="Hasta"
               value={movementFilters.endDate}
               onChange={e => setMovementFilters(f => ({ ...f, endDate: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
@@ -601,9 +737,9 @@ const CuentasLayout = () => {
               </thead>
               <tbody>
                 {loadingMovements ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Cargando...</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">Cargando…</td></tr>
                 ) : movements.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Sin movimientos</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">Sin movimientos</td></tr>
                 ) : movements.map(m => (
                   <tr key={m.id} className="border-b border-gray-100 last:border-0">
                     <td className="px-4 py-3 text-gray-600">{m.created_at ? formatColombiaDateTime(m.created_at) : '-'}</td>

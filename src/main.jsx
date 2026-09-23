@@ -1,6 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+// Fuentes auto-hospedadas (sin Google Fonts): quedan en /assets con hash y el
+// service worker las cachea, así la app sigue viéndose igual sin conexión.
+import '@fontsource-variable/geist'
+import '@fontsource-variable/schibsted-grotesk'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

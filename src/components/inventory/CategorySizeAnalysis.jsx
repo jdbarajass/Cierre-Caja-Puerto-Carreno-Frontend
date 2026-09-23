@@ -51,7 +51,7 @@ const CategorySizeAnalysis = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando análisis de categorías y tallas...</p>
+          <p className="mt-4 text-gray-600 font-medium">Cargando análisis de categorías y tallas…</p>
         </div>
       </div>
     );
@@ -69,7 +69,7 @@ const CategorySizeAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -91,7 +91,7 @@ const CategorySizeAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar
@@ -101,7 +101,7 @@ const CategorySizeAnalysis = () => {
       {/* Análisis por Categoría */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div
-          className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-colors"
+          className="flex items-center justify-between p-6 bg-blue-50 border-b border-gray-200 cursor-pointer hover:bg-blue-200 transition-colors"
           onClick={() => setShowCategories(!showCategories)}
         >
           <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ const CategorySizeAnalysis = () => {
                       </div>
                       <div className="w-full h-8 bg-gray-200 rounded-lg overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-between px-3 transition-all"
+                          className="h-full bg-gray-900 flex items-center justify-between px-3 transition-[width]"
                           style={{ width: `${Math.max(percentage, 5)}%` }}
                         >
                           <span className="text-white text-xs font-semibold">
@@ -207,7 +207,7 @@ const CategorySizeAnalysis = () => {
       {/* Análisis por Talla */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <div
-          className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 cursor-pointer hover:from-purple-100 hover:to-pink-100 transition-colors"
+          className="flex items-center justify-between p-6 bg-purple-50 border-b border-gray-200 cursor-pointer hover:bg-purple-200 transition-colors"
           onClick={() => setShowSizes(!showSizes)}
         >
           <div className="flex items-center gap-3">
@@ -250,7 +250,7 @@ const CategorySizeAnalysis = () => {
                       </div>
                       <div className="w-full h-6 bg-gray-200 rounded-lg overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-end px-3 transition-all"
+                          className="h-full bg-gray-900 flex items-center justify-end px-3 transition-[width]"
                           style={{ width: `${Math.max(percentage, 5)}%` }}
                         >
                           <span className="text-white text-xs font-semibold">
@@ -312,7 +312,7 @@ const CategorySizeAnalysis = () => {
 
       {/* Estadísticas Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl shadow-md p-6 border border-blue-200">
+        <div className="bg-blue-50 rounded-xl shadow-md p-6 border border-blue-200">
           <h4 className="text-sm font-semibold text-blue-900 mb-4">Resumen de Categorías</h4>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -332,7 +332,7 @@ const CategorySizeAnalysis = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-xl shadow-md p-6 border border-purple-200">
+        <div className="bg-purple-50 rounded-xl shadow-md p-6 border border-purple-200">
           <h4 className="text-sm font-semibold text-purple-900 mb-4">Resumen de Tallas</h4>
           <div className="space-y-2">
             <div className="flex items-center justify-between">

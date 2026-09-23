@@ -57,16 +57,15 @@ const ProductosLayout = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header de Sección */}
-      <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-green-100 rounded-lg">
-            <Package className="w-8 h-8 text-green-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Análisis de Productos</h2>
-            <p className="text-sm text-gray-600">Sistema de reportes desde Alegra</p>
-          </div>
+      {/* Encabezado: mismo patrón que el resto de páginas (título + subtítulo,
+          sin tarjeta); el ícono conserva el color de la sección */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-green-50 rounded-xl ring-1 ring-inset ring-green-100">
+          <Package className="w-6 h-6 text-green-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Análisis de Productos</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Sistema de reportes desde Alegra</p>
         </div>
       </div>
 
@@ -81,7 +80,7 @@ const ProductosLayout = () => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition ${
                   isActive
                     ? 'bg-green-600 text-white shadow-md'
                     : 'bg-gray-50 text-gray-700 hover:bg-green-50 hover:text-green-700 border border-gray-200'

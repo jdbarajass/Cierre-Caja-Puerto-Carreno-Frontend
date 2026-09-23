@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -33,6 +33,8 @@ import { canAccess } from '../../utils/auth';
 import { useSalesComparison } from '../../hooks/useSalesComparison';
 import { getApiDocsUrl, getPendingClosingDates } from '../../services/api';
 import { formatDateStringToColombiaDate } from '../../utils/dateUtils';
+import BrandMark from '../common/BrandMark';
+import { usePublishSceneData, useSceneValue, experience } from '../../experience/store';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -127,8 +129,23 @@ const MainLayout = ({ children }) => {
       }
     };
 
+    // Escape cierra los menús; si el foco estaba dentro, vuelve a su botón
+    const handleEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      [userDropdownRef, statsDropdownRef, gestionDropdownRef].forEach((ref) => {
+        if (ref.current?.contains(document.activeElement)) ref.current.querySelector('button')?.focus();
+      });
+      setUserDropdownOpen(false);
+      setStatsDropdownOpen(false);
+      setGestionDropdownOpen(false);
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   // Estructura de navegación
@@ -258,296 +275,250 @@ const MainLayout = ({ children }) => {
     navigate('/login');
   };
 
+  // Borde/sombra del header solo cuando hay contenido desplazado debajo.
+  // IntersectionObserver sobre un centinela: sin listeners de scroll.
+  const topSentinelRef = useRef(null);
+  const [headerRaised, setHeaderRaised] = useState(false);
+  useEffect(() => {
+    const el = topSentinelRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([entry]) => setHeaderRaised(!entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const userName = user?.name || user?.email || 'Admin';
+  const userInitials = userName
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+
+  const statsActive = statsDropdownOpen || location.pathname.includes('/estadisticas');
+  const gestionActive = gestionDropdownOpen || isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes');
+
+  // Estilo de los enlaces de la barra superior: texto + subrayado activo
+  const navLinkClass = (active) =>
+    `relative flex items-center gap-1.5 h-16 px-3 text-sm font-medium transition-colors ${
+      active ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'
+    }`;
+  const activeRule = (show) => (
+    <span
+      aria-hidden="true"
+      className={`absolute left-3 right-3 bottom-0 h-[2px] rounded-full bg-gray-900 origin-center transition-transform duration-200 ease-out ${
+        show ? 'scale-x-100' : 'scale-x-0'
+      }`}
+    />
+  );
+
+  const dropdownPanel = (items) => (
+    <div className="animate-pop absolute top-full right-0 mt-1 w-80 bg-white rounded-2xl shadow-xl ring-1 ring-gray-900/5 p-1.5 z-50">
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = isActive(item.path);
+        return (
+          <button
+            key={item.id}
+            onClick={() => handleNavigation(item.path)}
+            className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-start gap-3 ${
+              active ? 'bg-gray-100' : 'hover:bg-gray-50'
+            }`}
+          >
+            <Icon className={`w-[18px] h-[18px] mt-0.5 flex-shrink-0 ${active ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={1.75} />
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-gray-900">{item.label}</span>
+              <span className="block text-xs text-gray-500 leading-snug mt-0.5">{item.description}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  // --- Escena WebGL (solo lectura): avance hacia las metas que ya se muestran ---
+  const sceneMetrics = useMemo(() => {
+    const dayGoal = dailyComparison?.previous?.total > 0 ? dailyComparison.previous.total * 1.25 : null;
+    const monthGoal = fullMonthLastYear?.total > 0 ? fullMonthLastYear.total * 1.25 : null;
+    return {
+      day: { progress: dayGoal ? dailySales / dayGoal : 0, done: dayGoal ? dailySales >= dayGoal : false, tone: 'amber', loading: salesLoading },
+      month: { progress: monthGoal ? monthlySales / monthGoal : 0, done: monthGoal ? monthlySales >= monthGoal : false, tone: 'ink', loading: salesLoading },
+    };
+  }, [dailyComparison, fullMonthLastYear, dailySales, monthlySales, salesLoading]);
+  usePublishSceneData('metrics', sceneMetrics);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* HEADER PRINCIPAL COMPACTO - 60px */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-[100dvh] flex flex-col">
+      <div ref={topSentinelRef} aria-hidden="true" className="absolute top-0 h-px w-px" />
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[80] focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-gray-900 focus:text-white focus:text-sm focus:font-semibold"
+      >
+        Saltar al contenido
+      </a>
+
+      {/* HEADER */}
+      <header
+        className={`sticky top-0 z-50 bg-white/85 backdrop-blur-md supports-[backdrop-filter]:bg-white/75 border-b transition-[border-color,box-shadow] duration-200 ${
+          headerRaised ? 'border-gray-200 shadow-[0_6px_20px_-12px_rgb(22_23_27/0.18)]' : 'border-transparent'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo + Breadcrumb */}
-            <div className="flex items-center gap-4">
-              {/* Logo KOAJ */}
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Marca */}
+            <button
+              onClick={() => handleNavigation('/dashboard')}
+              // py/-my: área táctil de ~47 px sin mover el diseño (la marca mide 27 px)
+              className="flex items-center gap-3 rounded-lg py-2.5 -my-2.5"
+              aria-label="Ir al cierre de caja"
+            >
+              <BrandMark size="sm" />
+              <span className="hidden sm:flex flex-col items-start leading-tight">
+                <span className="text-[13px] font-semibold text-gray-900">Puerto Carreño</span>
+                <span className="text-[11px] text-gray-500">Cierre y gestión</span>
+              </span>
+            </button>
 
-              {/* Breadcrumb */}
-              <div className="hidden md:flex items-center gap-2 text-sm">
-                <span className="font-semibold text-gray-900">Sistema KOAJ</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">Puerto Carreño</span>
-              </div>
-            </div>
+            {/* Navegación (desktop) */}
+            <nav className="hidden lg:flex items-center" aria-label="Principal">
+              {visibleDashboardItems.map((item) => {
+                const active = isActive(item.path);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigation(item.path)}
+                    className={navLinkClass(active)}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {item.label}
+                    {activeRule(active)}
+                  </button>
+                );
+              })}
 
-            {/* Navegación + Reloj + Usuario */}
-            <div className="flex items-center gap-6">
-              {/* Navegación Horizontal */}
-              <nav className="hidden lg:flex items-center gap-1">
-                {/* Cierre de Caja / Ventas Mensuales */}
-                {visibleDashboardItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.path);
-
-                  // Colores por tipo de item
-                  const iconColors = {
-                    blue: { bg: 'bg-blue-50', icon: 'text-blue-600' },
-                    purple: { bg: 'bg-purple-50', icon: 'text-purple-600' }
-                  };
-                  const colors = iconColors[item.color] || iconColors.blue;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNavigation(item.path)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                    >
-                      <div className={`w-7 h-7 ${colors.bg} rounded-lg flex items-center justify-center`}>
-                        <Icon className={`w-4 h-4 ${colors.icon}`} />
-                      </div>
-                      {item.label}
-                    </button>
-                  );
-                })}
-
-                {/* Estadísticas Dropdown */}
-                {canAccess(['admin']) && visibleStatsItems.length > 0 && (
-                  <div ref={statsDropdownRef} className="relative">
-                    <button
-                      onClick={() => setStatsDropdownOpen(!statsDropdownOpen)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${statsDropdownOpen || location.pathname.includes('/estadisticas')
-                          ? 'bg-indigo-50 text-indigo-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                    >
-                      <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center">
-                        <BarChart3 className="w-4 h-4 text-indigo-600" />
-                      </div>
-                      Estadísticas
-                      <ChevronDown className={`w-4 h-4 transition-transform ${statsDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {statsDropdownOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                        {visibleStatsItems.map((item) => {
-                          const Icon = item.icon;
-                          const colorConfig = {
-                            purple: {
-                              icon: 'text-purple-600',
-                              bg: 'bg-purple-50',
-                              hover: 'hover:bg-purple-100'
-                            },
-                            blue: {
-                              icon: 'text-blue-600',
-                              bg: 'bg-blue-50',
-                              hover: 'hover:bg-blue-100'
-                            },
-                            orange: {
-                              icon: 'text-orange-600',
-                              bg: 'bg-orange-50',
-                              hover: 'hover:bg-orange-100'
-                            },
-                            green: {
-                              icon: 'text-green-600',
-                              bg: 'bg-green-50',
-                              hover: 'hover:bg-green-100'
-                            },
-                            teal: {
-                              icon: 'text-teal-600',
-                              bg: 'bg-teal-50',
-                              hover: 'hover:bg-teal-100'
-                            }
-                          };
-
-                          const colors = colorConfig[item.color] || colorConfig.blue;
-
-                          return (
-                            <button
-                              key={item.id}
-                              onClick={() => handleNavigation(item.path)}
-                              className={`w-full text-left px-3 py-2.5 ${colors.hover} transition-colors flex items-start gap-3`}
-                            >
-                              <div className={`w-8 h-8 ${colors.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                                <Icon className={`w-4 h-4 ${colors.icon}`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
-                                <div className="text-xs text-gray-500 leading-tight">{item.description}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Gestión Dropdown: Recompras + Empleadas + Notas y Pendientes */}
-                {visibleGestionItems.length > 0 && (
-                  <div ref={gestionDropdownRef} className="relative">
-                    <button
-                      onClick={() => setGestionDropdownOpen(!gestionDropdownOpen)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${gestionDropdownOpen || isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
-                          ? 'bg-violet-50 text-violet-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                    >
-                      <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center">
-                        <Briefcase className="w-4 h-4 text-violet-600" />
-                      </div>
-                      Gestión
-                      <ChevronDown className={`w-4 h-4 transition-transform ${gestionDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {gestionDropdownOpen && (
-                      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                        {visibleGestionItems.map((item) => {
-                          const Icon = item.icon;
-                          const colorConfig = {
-                            teal: {
-                              icon: 'text-teal-600',
-                              bg: 'bg-teal-50',
-                              hover: 'hover:bg-teal-100'
-                            },
-                            indigo: {
-                              icon: 'text-indigo-600',
-                              bg: 'bg-indigo-50',
-                              hover: 'hover:bg-indigo-100'
-                            },
-                            pink: {
-                              icon: 'text-pink-600',
-                              bg: 'bg-pink-50',
-                              hover: 'hover:bg-pink-100'
-                            },
-                            emerald: {
-                              icon: 'text-emerald-600',
-                              bg: 'bg-emerald-50',
-                              hover: 'hover:bg-emerald-100'
-                            }
-                          };
-
-                          const colors = colorConfig[item.color] || colorConfig.indigo;
-
-                          return (
-                            <button
-                              key={item.id}
-                              onClick={() => handleNavigation(item.path)}
-                              className={`w-full text-left px-3 py-2.5 ${colors.hover} transition-colors flex items-start gap-3`}
-                            >
-                              <div className={`w-8 h-8 ${colors.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                                <Icon className={`w-4 h-4 ${colors.icon}`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-gray-900">{item.label}</div>
-                                <div className="text-xs text-gray-500 leading-tight">{item.description}</div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Docs API */}
-                <a
-                  href={getApiDocsUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-7 h-7 bg-teal-50 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-teal-600" />
-                  </div>
-                  Docs
-                </a>
-              </nav>
-
-              {/* Reloj */}
-              <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-7 h-7 bg-slate-50 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-slate-600" />
+              {canAccess(['admin']) && visibleStatsItems.length > 0 && (
+                <div ref={statsDropdownRef} className="relative">
+                  <button
+                    onClick={() => setStatsDropdownOpen(!statsDropdownOpen)}
+                    className={navLinkClass(statsActive)}
+                    aria-expanded={statsDropdownOpen}
+                    aria-haspopup="menu"
+                  >
+                    Estadísticas
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${statsDropdownOpen ? 'rotate-180' : ''}`} />
+                    {activeRule(location.pathname.includes('/estadisticas'))}
+                  </button>
+                  {statsDropdownOpen && dropdownPanel(visibleStatsItems)}
                 </div>
-                <span className="font-medium">{currentTime}</span>
+              )}
+
+              {visibleGestionItems.length > 0 && (
+                <div ref={gestionDropdownRef} className="relative">
+                  <button
+                    onClick={() => setGestionDropdownOpen(!gestionDropdownOpen)}
+                    className={navLinkClass(gestionActive)}
+                    aria-expanded={gestionDropdownOpen}
+                    aria-haspopup="menu"
+                  >
+                    Gestión
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${gestionDropdownOpen ? 'rotate-180' : ''}`} />
+                    {activeRule(isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes'))}
+                  </button>
+                  {gestionDropdownOpen && dropdownPanel(visibleGestionItems)}
+                </div>
+              )}
+
+              <a
+                href={getApiDocsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={navLinkClass(false)}
+              >
+                Docs
+                <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+              </a>
+            </nav>
+
+            {/* Reloj + usuario + menú móvil */}
+            <div className="flex items-center gap-1 sm:gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3 h-9 rounded-full bg-gray-100 text-[13px] text-gray-700" aria-label="Hora de Colombia">
+                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <span className="font-medium tabular-nums">{currentTime}</span>
               </div>
 
-              {/* Botón menú móvil (hamburguesa) - reemplaza la nav horizontal por debajo de lg */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
-                aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-                aria-expanded={mobileMenuOpen}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-
-              {/* Usuario Dropdown */}
               <div ref={userDropdownRef} className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
+                  className="flex items-center gap-2.5 rounded-full pl-1 pr-2 py-1 hover:bg-gray-100 transition-colors min-h-[44px]"
+                  aria-expanded={userDropdownOpen}
+                  aria-haspopup="menu"
+                  aria-label="Menú de usuario"
                 >
-                  <div className="w-8 h-8 bg-violet-50 rounded-lg flex items-center justify-center">
-                    <User className="w-5 h-5 text-violet-600" />
-                  </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'Admin'}</p>
-                    <p className="text-xs text-gray-500">{user?.role === 'admin' ? 'Administrador' : 'Ventas'}</p>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span className="w-9 h-9 rounded-full bg-gray-900 text-white text-xs font-semibold flex items-center justify-center tracking-wide">
+                    {userInitials || <User className="w-4 h-4" />}
+                  </span>
+                  <span className="hidden md:block text-left leading-tight">
+                    <span className="block text-[13px] font-semibold text-gray-900 max-w-[160px] truncate">{userName}</span>
+                    <span className="block text-[11px] text-gray-500">{user?.role === 'admin' ? 'Administrador' : 'Ventas'}</span>
+                  </span>
+                  <ChevronDown className={`hidden sm:block w-4 h-4 text-gray-400 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {userDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{user?.name || user?.email || 'Administrador KOAJ'}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                  <div className="animate-pop absolute top-full right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl ring-1 ring-gray-900/5 p-1.5 z-50">
+                    <div className="px-3 py-2.5 mb-1 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || user?.email || 'Administrador KOAJ'}</p>
+                      <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>
-                    {/* Link de Gestionar Usuarios (solo admin) */}
                     {canAccess(['admin']) && (
                       <button
                         onClick={() => {
                           setUserDropdownOpen(false);
                           navigate('/usuarios');
                         }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors flex items-center gap-3 text-gray-700"
+                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
                       >
-                        <Users className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium">Gestionar Usuarios</span>
+                        <Users className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-medium">Gestionar usuarios</span>
                       </button>
                     )}
-                    {/* Link de Códigos KOAJ (todos los usuarios) */}
                     <button
                       onClick={() => {
                         setUserDropdownOpen(false);
                         navigate('/codigos-koaj');
                       }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors flex items-center gap-3 text-gray-700"
+                      className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
                     >
-                      <Tag className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium">Codigos KOAJ</span>
+                      <Tag className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium">Códigos KOAJ</span>
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                      className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600 mt-1"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span className="text-sm font-medium">Cerrar Sesión</span>
+                      <span className="text-sm font-medium">Cerrar sesión</span>
                     </button>
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden flex items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
+                aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* MENÚ MÓVIL - reemplaza la nav horizontal (hidden lg:flex) por debajo de lg */}
+        {/* MENÚ MÓVIL - reemplaza la nav horizontal por debajo de lg */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 bg-white shadow-sm max-h-[calc(100vh-4rem)] overflow-y-auto">
-            <div className="px-4 py-3 space-y-1">
-              {/* Cierre de Caja / Ventas Mensuales */}
+          <div className="lg:hidden animate-fade-in-scale origin-top border-t border-gray-100 bg-white max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
+            <div className="px-3 py-3 space-y-0.5">
               {visibleDashboardItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -555,46 +526,45 @@ const MainLayout = ({ children }) => {
                   <button
                     key={item.id}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${active
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                    className={`w-full flex items-center gap-3 px-3 min-h-[48px] rounded-xl text-[15px] font-medium transition-colors ${
+                      active ? 'bg-gray-900 text-white' : 'text-gray-800 hover:bg-gray-100'
+                    }`}
+                    aria-current={active ? 'page' : undefined}
                   >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.75} />
                     {item.label}
                   </button>
                 );
               })}
 
-              {/* Estadísticas (acordeón) */}
               {canAccess(['admin']) && visibleStatsItems.length > 0 && (
                 <div>
                   <button
                     onClick={() => setMobileStatsOpen(!mobileStatsOpen)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${mobileStatsOpen || location.pathname.includes('/estadisticas')
-                        ? 'bg-indigo-50 text-indigo-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                    className={`w-full flex items-center justify-between gap-3 px-3 min-h-[48px] rounded-xl text-[15px] font-medium transition-colors ${
+                      location.pathname.includes('/estadisticas') ? 'text-gray-900' : 'text-gray-800'
+                    } hover:bg-gray-100`}
+                    aria-expanded={mobileStatsOpen}
                   >
                     <span className="flex items-center gap-3">
-                      <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                      <BarChart3 className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.75} />
                       Estadísticas
                     </span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileStatsOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${mobileStatsOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {mobileStatsOpen && (
-                    <div className="mt-1 ml-4 pl-3 border-l-2 border-indigo-100 space-y-1">
+                    <div className="animate-fade-in-scale origin-top ml-[21px] pl-4 border-l border-gray-200 space-y-0.5 pb-1">
                       {visibleStatsItems.map((item) => {
-                        const Icon = item.icon;
                         const active = isActive(item.path);
                         return (
                           <button
                             key={item.id}
                             onClick={() => handleNavigation(item.path)}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-3 ${active ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+                            className={`w-full text-left px-3 min-h-[44px] rounded-xl text-sm transition-colors ${
+                              active ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                            }`}
                           >
-                            <Icon className="w-4 h-4 flex-shrink-0" />
-                            <span>{item.label}</span>
+                            {item.label}
                           </button>
                         );
                       })}
@@ -603,35 +573,32 @@ const MainLayout = ({ children }) => {
                 </div>
               )}
 
-              {/* Gestión (acordeón) */}
               {visibleGestionItems.length > 0 && (
                 <div>
                   <button
                     onClick={() => setMobileGestionOpen(!mobileGestionOpen)}
-                    className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${mobileGestionOpen || isActive('/cuentas') || isActive('/cuentas-recompras') || isActive('/empleadas') || isActive('/notas-pendientes')
-                        ? 'bg-violet-50 text-violet-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                    className="w-full flex items-center justify-between gap-3 px-3 min-h-[48px] rounded-xl text-[15px] font-medium text-gray-800 hover:bg-gray-100 transition-colors"
+                    aria-expanded={mobileGestionOpen}
                   >
                     <span className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 flex-shrink-0" />
+                      <Briefcase className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.75} />
                       Gestión
                     </span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${mobileGestionOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${mobileGestionOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {mobileGestionOpen && (
-                    <div className="mt-1 ml-4 pl-3 border-l-2 border-violet-100 space-y-1">
+                    <div className="animate-fade-in-scale origin-top ml-[21px] pl-4 border-l border-gray-200 space-y-0.5 pb-1">
                       {visibleGestionItems.map((item) => {
-                        const Icon = item.icon;
                         const active = isActive(item.path);
                         return (
                           <button
                             key={item.id}
                             onClick={() => handleNavigation(item.path)}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-3 ${active ? 'bg-violet-50 text-violet-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}
+                            className={`w-full text-left px-3 min-h-[44px] rounded-xl text-sm transition-colors ${
+                              active ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100'
+                            }`}
                           >
-                            <Icon className="w-4 h-4 flex-shrink-0" />
-                            <span>{item.label}</span>
+                            {item.label}
                           </button>
                         );
                       })}
@@ -640,22 +607,20 @@ const MainLayout = ({ children }) => {
                 </div>
               )}
 
-              {/* Docs API */}
               <a
                 href={getApiDocsUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                className="w-full flex items-center gap-3 px-3 min-h-[48px] rounded-xl text-[15px] font-medium text-gray-800 hover:bg-gray-100 transition-colors"
               >
-                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                <BookOpen className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.75} />
                 Docs
               </a>
 
-              {/* Reloj (oculto en el header por debajo de md) */}
-              <div className="flex md:hidden items-center gap-3 px-3 py-2.5 text-sm text-gray-500 border-t border-gray-100 mt-1 pt-3">
+              <div className="flex md:hidden items-center gap-3 px-3 pt-3 mt-2 border-t border-gray-100 text-sm text-gray-500">
                 <Clock className="w-4 h-4 flex-shrink-0" />
-                <span className="font-medium">{currentTime}</span>
+                <span className="font-medium tabular-nums">{currentTime}</span>
               </div>
             </div>
           </div>
@@ -666,341 +631,366 @@ const MainLayout = ({ children }) => {
           visible en cualquier página hasta que se haga el cierre de esa fecha
           (o el usuario navegue y ya no se detecte pendiente). */}
       {pendingClosingDates.length > 0 && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="bg-amber-50 border-b border-amber-200/70">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
             <button
               onClick={() => navigate(`/dashboard?date=${pendingClosingDates[0]}`)}
-              className="w-full flex items-center gap-3 text-left group"
+              className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-left group rounded-lg"
             >
-              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-              <span className="text-sm text-amber-800">
-                <span className="font-semibold">
+              <span className="flex items-start gap-3 flex-1 min-w-0">
+                <AlertTriangle className="w-[18px] h-[18px] text-amber-600 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-amber-900 font-medium">
                   {pendingClosingDates.length === 1
                     ? `No se registró el cierre de caja del ${formatDateStringToColombiaDate(pendingClosingDates[0])}.`
                     : `Hay ${pendingClosingDates.length} cierres de caja sin registrar, el más antiguo del ${formatDateStringToColombiaDate(pendingClosingDates[0])}.`}
                 </span>
-                {' '}
-                <span className="underline group-hover:text-amber-900">Haz clic para hacerlo ahora</span>
+              </span>
+              <span className="self-start sm:self-auto ml-8 sm:ml-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-900 text-amber-50 text-xs font-semibold group-hover:bg-amber-950 transition-colors whitespace-nowrap">
+                Hacer el cierre ahora
+                <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </button>
           </div>
         </div>
       )}
 
-      {/* SECCIÓN DE MÉTRICAS - Solo visible en Dashboard */}
+      {/* SECCIÓN DE MÉTRICAS - Solo visible en Dashboard.
+          En móvil las dos tarjetas se deslizan en horizontal (scroll-snap)
+          para no empujar el formulario del cierre dos pantallas hacia abajo. */}
       {isActive('/dashboard') && (
-        <div className="bg-gray-50 border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section aria-label="Ventas de hoy y del mes" className="border-b border-gray-200/70">
+          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-5 pb-5 sm:pt-7 sm:pb-7">
+            <div className="flex md:grid md:grid-cols-2 gap-3 md:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 px-4 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* Venta del Día */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <DollarSign className="w-7 h-7 text-white" />
+              <article className="metric-card snap-start shrink-0 w-[86%] sm:w-[70%] md:w-auto bg-white rounded-2xl ring-1 ring-gray-900/[0.06] shadow-sm p-5 sm:p-6">
+                <header className="flex items-center justify-between gap-3">
+                  <p className="text-[13px] font-medium text-gray-500">Venta del día</p>
+                  <DollarSign className="w-4 h-4 text-gray-300" />
+                </header>
+
+                {salesLoading ? (
+                  <MetricSkeleton />
+                ) : (
+                  <div className="animate-fade-in-scale">
+                    <p className="mt-2 font-display text-[2.5rem] sm:text-5xl font-bold text-gray-900 leading-none tracking-tight">
+                      {formatCurrency(dailySales)}
+                    </p>
+
+                    {/* META DIARIA */}
+                    {dailyComparison && dailyComparison.previous && dailyComparison.previous.total > 0 && (() => {
+                      const metaDiaria = dailyComparison.previous.total * 1.25;
+                      const progreso = (dailySales / metaDiaria) * 100;
+                      const cumplida = dailySales >= metaDiaria;
+                      const faltante = Math.max(0, metaDiaria - dailySales);
+                      return (
+                        <GoalMeter
+                          label="Meta diaria (+25%)"
+                          goal={formatCurrency(metaDiaria)}
+                          progress={progreso}
+                          done={cumplida}
+                          missing={!cumplida && faltante > 0 ? formatCurrency(faltante) : null}
+                          tone="amber"
+                          scene="day"
+                        />
+                      );
+                    })()}
+
+                    {/* Fechas del año anterior con porcentajes */}
+                    <dl className="mt-4 pt-4 border-t border-gray-100 space-y-2.5">
+                      {dailyComparison && dailyComparison.previous && (() => {
+                        const prevTotal = dailyComparison.previous.total || 0;
+                        const currentTotal = dailySales || 0;
+                        const percentage = prevTotal > 0
+                          ? ((currentTotal - prevTotal) / prevTotal) * 100
+                          : (currentTotal > 0 ? 100 : 0);
+                        return (
+                          <CompareRow
+                            label={`Venta ${dailyComparison.previous.date}`}
+                            value={dailyComparison.previous.formatted}
+                            growth={percentage >= 0}
+                            percent={Math.abs(Math.round(percentage * 100) / 100)}
+                          />
+                        );
+                      })()}
+                      {nextDayLastYear && nextDayLastYear.date && (() => {
+                        const nextDayTotal = nextDayLastYear.total || 0;
+                        const currentTotal = dailySales || 0;
+                        const percentage = nextDayTotal > 0
+                          ? ((currentTotal - nextDayTotal) / nextDayTotal) * 100
+                          : (currentTotal > 0 ? 100 : 0);
+                        return (
+                          <CompareRow
+                            label={`Venta ${nextDayLastYear.date}`}
+                            value={nextDayLastYear.formatted}
+                            growth={percentage >= 0}
+                            percent={Math.abs(Math.round(percentage * 100) / 100)}
+                          />
+                        );
+                      })()}
+                    </dl>
                   </div>
-                  <div className="flex-1">
-                    {/* NIVEL 1: Título */}
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Día</h3>
-
-                    {salesLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                          <span className="text-sm">Cargando...</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {/* NIVEL 1: Valor Principal - PROTAGONISTA */}
-                        <div>
-                          <p className="text-4xl font-bold text-gray-900 leading-none">
-                            {formatCurrency(dailySales)}
-                          </p>
-                        </div>
-
-                        {/* META DIARIA */}
-                        {dailyComparison && dailyComparison.previous && dailyComparison.previous.total > 0 && (() => {
-                          const metaDiaria = dailyComparison.previous.total * 1.25;
-                          const progreso = (dailySales / metaDiaria) * 100;
-                          const cumplida = dailySales >= metaDiaria;
-                          const faltante = Math.max(0, metaDiaria - dailySales);
-                          return (
-                            <div className={`p-3 rounded-lg border ${cumplida ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1.5">
-                                  {cumplida ? (
-                                    <Award className="w-4 h-4 text-emerald-600" />
-                                  ) : (
-                                    <Target className="w-4 h-4 text-amber-600" />
-                                  )}
-                                  <span className="text-xs font-semibold text-gray-700">Meta Diaria (+25%)</span>
-                                </div>
-                                {cumplida && (
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">
-                                    CUMPLIDA
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center justify-between text-xs mb-2">
-                                <span className="text-gray-600">Meta:</span>
-                                <span className="font-bold text-gray-800">{formatCurrency(metaDiaria)}</span>
-                              </div>
-                              {/* Barra de progreso */}
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${cumplida ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                                  style={{ width: `${Math.min(100, progreso)}%` }}
-                                />
-                              </div>
-                              <div className="flex justify-between mt-1 text-[10px]">
-                                <span className="text-gray-500">{Math.round(progreso)}%</span>
-                                {!cumplida && faltante > 0 && (
-                                  <span className="text-amber-700 font-medium">Falta: {formatCurrency(faltante)}</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-
-                        {/* NIVEL 2: Fechas del año anterior con porcentajes */}
-                        <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
-                          {/* Fecha de hace un año */}
-                          {dailyComparison && dailyComparison.previous && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Venta {dailyComparison.previous.date}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-700">{dailyComparison.previous.formatted}</span>
-                                {(() => {
-                                  const prevTotal = dailyComparison.previous.total || 0;
-                                  const currentTotal = dailySales || 0;
-                                  const percentage = prevTotal > 0
-                                    ? ((currentTotal - prevTotal) / prevTotal) * 100
-                                    : (currentTotal > 0 ? 100 : 0);
-                                  const isGrowth = percentage >= 0;
-                                  return (
-                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                                      isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                    }`}>
-                                      {isGrowth ? '↑' : '↓'} {Math.abs(Math.round(percentage * 100) / 100)}%
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                          {/* Día siguiente del año anterior */}
-                          {nextDayLastYear && nextDayLastYear.date && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Venta {nextDayLastYear.date}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-700">{nextDayLastYear.formatted}</span>
-                                {(() => {
-                                  const nextDayTotal = nextDayLastYear.total || 0;
-                                  const currentTotal = dailySales || 0;
-                                  const percentage = nextDayTotal > 0
-                                    ? ((currentTotal - nextDayTotal) / nextDayTotal) * 100
-                                    : (currentTotal > 0 ? 100 : 0);
-                                  const isGrowth = percentage >= 0;
-                                  return (
-                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                                      isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                    }`}>
-                                      {isGrowth ? '↑' : '↓'} {Math.abs(Math.round(percentage * 100) / 100)}%
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                )}
+              </article>
 
               {/* Venta del Mes */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <Calendar className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    {/* NIVEL 1: Título */}
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Venta del Mes</h3>
+              <article className="metric-card snap-start shrink-0 w-[86%] sm:w-[70%] md:w-auto bg-white rounded-2xl ring-1 ring-gray-900/[0.06] shadow-sm p-5 sm:p-6">
+                <header className="flex items-center justify-between gap-3">
+                  <p className="text-[13px] font-medium text-gray-500">Venta del mes</p>
+                  <Calendar className="w-4 h-4 text-gray-300" />
+                </header>
 
-                    {salesLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                          <span className="text-sm">Cargando...</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {/* NIVEL 1: Valor Principal - PROTAGONISTA */}
-                        <div>
-                          <p className="text-4xl font-bold text-gray-900 leading-none">
-                            {formatCurrency(monthlySales)}
-                          </p>
-                        </div>
+                {salesLoading ? (
+                  <MetricSkeleton />
+                ) : (
+                  <div className="animate-fade-in-scale">
+                    <p className="mt-2 font-display text-[2.5rem] sm:text-5xl font-bold text-gray-900 leading-none tracking-tight">
+                      {formatCurrency(monthlySales)}
+                    </p>
 
-                        {/* META MENSUAL - Basada en el mes COMPLETO del año anterior */}
-                        {fullMonthLastYear && fullMonthLastYear.total > 0 && (() => {
-                          const metaMensual = fullMonthLastYear.total * 1.25;
-                          const progreso = (monthlySales / metaMensual) * 100;
-                          const cumplida = monthlySales >= metaMensual;
-                          const faltante = Math.max(0, metaMensual - monthlySales);
-                          return (
-                            <div className={`p-3 rounded-lg border ${cumplida ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1.5">
-                                  {cumplida ? (
-                                    <Award className="w-4 h-4 text-emerald-600" />
-                                  ) : (
-                                    <Target className="w-4 h-4 text-blue-600" />
-                                  )}
-                                  <span className="text-xs font-semibold text-gray-700">Meta Mensual (+25%)</span>
-                                </div>
-                                {cumplida && (
-                                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">
-                                    CUMPLIDA
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center justify-between text-xs mb-2">
-                                <span className="text-gray-600">Meta:</span>
-                                <span className="font-bold text-gray-800">{formatCurrency(metaMensual)}</span>
-                              </div>
-                              {/* Barra de progreso */}
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${cumplida ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                                  style={{ width: `${Math.min(100, progreso)}%` }}
-                                />
-                              </div>
-                              <div className="flex justify-between mt-1 text-[10px]">
-                                <span className="text-gray-500">{Math.round(progreso)}%</span>
-                                {!cumplida && faltante > 0 && (
-                                  <span className="text-blue-700 font-medium">Falta: {formatCurrency(faltante)}</span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
+                    {/* META MENSUAL - Basada en el mes COMPLETO del año anterior */}
+                    {fullMonthLastYear && fullMonthLastYear.total > 0 && (() => {
+                      const metaMensual = fullMonthLastYear.total * 1.25;
+                      const progreso = (monthlySales / metaMensual) * 100;
+                      const cumplida = monthlySales >= metaMensual;
+                      const faltante = Math.max(0, metaMensual - monthlySales);
+                      return (
+                        <GoalMeter
+                          label="Meta mensual (+25%)"
+                          goal={formatCurrency(metaMensual)}
+                          progress={progreso}
+                          done={cumplida}
+                          missing={!cumplida && faltante > 0 ? formatCurrency(faltante) : null}
+                          tone="ink"
+                          scene="month"
+                        />
+                      );
+                    })()}
 
-                        {/* NIVEL 2: Comparación con año anterior */}
-                        {monthlyComparison && monthlyComparison.previous && (
-                          <div className="pt-2 mt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">
-                                {(() => {
-                                  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                                  const periodo = monthlyComparison.previous.period;
-                                  const partes = periodo.split('-');
-                                  if (partes.length >= 2) {
-                                    const year = partes[0];
-                                    const monthNum = parseInt(partes[1], 10);
-                                    const monthName = meses[monthNum - 1] || '';
-                                    return monthName ? `${monthName} ${year}` : year;
-                                  }
-                                  return periodo;
-                                })()}
+                    <dl className="mt-4 pt-4 border-t border-gray-100 space-y-2.5">
+                      {/* Comparación con año anterior */}
+                      {monthlyComparison && monthlyComparison.previous && (
+                        <CompareRow
+                          label={(() => {
+                            const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                            const periodo = monthlyComparison.previous.period;
+                            const partes = periodo.split('-');
+                            if (partes.length >= 2) {
+                              const year = partes[0];
+                              const monthNum = parseInt(partes[1], 10);
+                              const monthName = meses[monthNum - 1] || '';
+                              return monthName ? `${monthName} ${year}` : year;
+                            }
+                            return periodo;
+                          })()}
+                          value={monthlyComparison.previous.formatted}
+                          growth={monthlyComparison.isGrowth}
+                          percent={Math.abs(monthlyComparison.percentageChange)}
+                        />
+                      )}
+
+                      {/* Inventario Total - Solo Admin */}
+                      {canAccess(['admin']) && (
+                        <div className="flex items-center justify-between gap-3 text-[13px]">
+                          <dt className="text-gray-500">Inventario total</dt>
+                          <dd>
+                            {loadingInventory || !inventoryTotal ? (
+                              <span className="skeleton inline-block h-4 w-24 align-middle" aria-label="Cargando" />
+                            ) : (
+                              <span className="font-semibold text-gray-900">
+                                {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
                               </span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-700">{monthlyComparison.previous.formatted}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                                  monthlyComparison.isGrowth ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                }`}>
-                                  {monthlyComparison.isGrowth ? '↑' : '↓'} {Math.abs(monthlyComparison.percentageChange)}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                            )}
+                          </dd>
+                        </div>
+                      )}
 
-                        {/* NIVEL 3: Inventario Total - Solo Admin */}
-                        {canAccess(['admin']) && (
-                          <div className="pt-2 mt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Inventario Total</span>
-                              {loadingInventory ? (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-3 h-3 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin"></div>
-                                </div>
-                              ) : inventoryTotal ? (
-                                <span className="text-sm font-bold text-purple-700">
-                                  {inventoryTotal.valueFormatted || formatCurrency(inventoryTotal.value)}
-                                </span>
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* NIVEL 4: Cuentas Por Pagar - Solo Admin */}
-                        {canAccess(['admin']) && (
-                          <div className="pt-2 mt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cuentas Por Pagar</span>
-                              {loadingBills ? (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
-                                </div>
-                              ) : billsOpenTotal ? (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-bold text-red-700">
-                                    {billsOpenTotal.amountFormatted || formatCurrency(billsOpenTotal.amount)}
+                      {/* Cuentas Por Pagar - Solo Admin */}
+                      {canAccess(['admin']) && (
+                        <div className="flex items-center justify-between gap-3 text-[13px]">
+                          <dt className="text-gray-500">Cuentas por pagar</dt>
+                          <dd className="flex items-center gap-2">
+                            {loadingBills || !billsOpenTotal ? (
+                              <span className="skeleton inline-block h-4 w-24 align-middle" aria-label="Cargando" />
+                            ) : (
+                              <>
+                                {billsOpenTotal.totalDocuments > 0 && (
+                                  <span className="text-[11px] text-gray-500">
+                                    {billsOpenTotal.totalDocuments} doc.
                                   </span>
-                                  {billsOpenTotal.totalDocuments > 0 && (
-                                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                      {billsOpenTotal.totalDocuments} doc.
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                                )}
+                                <span className="font-semibold text-red-700">
+                                  {billsOpenTotal.amountFormatted || formatCurrency(billsOpenTotal.amount)}
+                                </span>
+                              </>
+                            )}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
                   </div>
-                </div>
-              </div>
+                )}
+              </article>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
+      {/* HORIZONTE DE DATOS - Estadísticas: la serie del módulo abierto, en partículas */}
+      {(location.pathname.startsWith('/estadisticas') || location.pathname === '/monthly-sales') && <DataHorizon />}
+
       {/* CONTENIDO PRINCIPAL */}
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="contenido" tabIndex={-1} className="flex-1 outline-none">
+        <div className="page-enter max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {children}
         </div>
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Sistema de Gestión KOAJ. Todos los derechos reservados.
-            </p>
-            <p className="text-xs text-gray-500">
-              Versión 2.0 | Desarrollado con ❤️
-            </p>
-          </div>
+      <footer className="mt-auto border-t border-gray-200/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-1 text-xs text-gray-500">
+          <p>© {new Date().getFullYear()} Sistema de Gestión KOAJ Puerto Carreño</p>
+          <p>Versión 2.0</p>
         </div>
       </footer>
     </div>
   );
 };
+
+/* --- Horizonte de datos (Fase 8) ------------------------------------------ */
+
+const formatSeriesValue = (value, format) => {
+  if (format === 'percent') return `${Number(value).toFixed(1)}%`;
+  if (format === 'count') return Number(value).toLocaleString('es-CO');
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+};
+
+/**
+ * Franja transparente donde la escena WebGL dibuja la serie del módulo de
+ * estadísticas abierto. Se abre solo cuando hay datos y, al pasar el cursor
+ * (o el dedo), muestra el valor exacto de la columna.
+ */
+const DataHorizon = () => {
+  const series = useSceneValue('series');
+  const [hover, setHover] = useState(-1);
+  const n = series?.values.length || 0;
+
+  useEffect(() => () => { experience.hover = -1; }, []);
+  useEffect(() => { setHover(-1); experience.hover = -1; }, [series?.key]);
+
+  const onMove = (e) => {
+    if (!n) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const i = Math.min(n - 1, Math.max(0, Math.floor(((e.clientX - r.left) / r.width) * n)));
+    setHover(i);
+    experience.hover = i;
+    experience.invalidate?.();
+  };
+  const onLeave = () => { setHover(-1); experience.hover = -1; experience.invalidate?.(); };
+
+  const max = n ? Math.max(...series.values) : 0;
+
+  return (
+    <div className={`data-horizon grid transition-[grid-template-rows] duration-500 ease-out ${n ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`} aria-hidden="true">
+      <div className="overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="text-[13px] font-semibold text-gray-900">{series?.label}</p>
+            {n > 0 && <p className="text-xs text-gray-500">Máximo {formatSeriesValue(max, series.format)}</p>}
+          </div>
+          <div
+            data-scene-anchor="data-horizon"
+            className="relative h-28 sm:h-36 mt-2 touch-pan-y"
+            onPointerMove={onMove}
+            onPointerDown={onMove}
+            onPointerLeave={onLeave}
+          >
+            {hover >= 0 && n > 0 && (
+              <div
+                className="absolute -top-1 -translate-x-1/2 -translate-y-full px-2.5 py-1.5 rounded-lg bg-gray-900 text-white text-xs whitespace-nowrap shadow-lg pointer-events-none"
+                style={{ left: `${Math.min(92, Math.max(8, ((hover + 0.5) / n) * 100))}%` }}
+              >
+                <span className="text-gray-400">{series.labels[hover]}</span>
+                <span className="ml-2 font-semibold">{formatSeriesValue(series.values[hover], series.format)}</span>
+              </div>
+            )}
+            <span className="absolute left-0 right-0 bottom-0 h-px bg-gray-900/10" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* --- Piezas de presentación de las métricas ------------------------------ */
+
+const MetricSkeleton = () => (
+  <div className="mt-3 space-y-3" aria-busy="true" aria-label="Cargando ventas">
+    <div className="skeleton h-11 w-3/4" />
+    <div className="skeleton h-16 w-full rounded-xl" />
+    <div className="skeleton h-4 w-full" />
+    <div className="skeleton h-4 w-5/6" />
+  </div>
+);
+
+const GOAL_TONES = {
+  amber: { track: 'bg-amber-100', fill: 'bg-amber-500', text: 'text-amber-800' },
+  ink: { track: 'bg-blue-100', fill: 'bg-blue-600', text: 'text-blue-700' },
+};
+
+const GoalMeter = ({ label, goal, progress, done, missing, tone, scene }) => {
+  const t = done
+    ? { track: 'bg-emerald-100', fill: 'bg-emerald-500', text: 'text-emerald-700' }
+    : GOAL_TONES[tone];
+  return (
+    <div className="mt-4">
+      <div className="flex items-baseline justify-between gap-3 text-[13px]">
+        <span className="flex items-center gap-1.5 font-medium text-gray-700">
+          {done ? <Award className="w-3.5 h-3.5 text-emerald-600" /> : <Target className="w-3.5 h-3.5 text-gray-400" />}
+          {label}
+        </span>
+        <span className="font-semibold text-gray-900">{goal}</span>
+      </div>
+      <div
+        className="mt-2"
+        role="progressbar"
+        aria-valuenow={Math.round(progress)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+      >
+        {/* Tanque de partículas (escena WebGL). La meta está al 80% del ancho. */}
+        <div data-scene-anchor={`metric-${scene}`} className="metric-vessel relative" aria-hidden="true">
+          <span className="absolute -top-1 -bottom-1 left-[80%] w-[1.5px] -translate-x-1/2 bg-gray-900/70 rounded-full" />
+        </div>
+        {/* Barra DOM: se ve solo sin escena (sin WebGL) */}
+        <div className={`metric-bar h-1.5 rounded-full overflow-hidden ${t.track}`}>
+          <div className={`animate-grow-x h-full rounded-full ${t.fill}`} style={{ width: `${Math.min(100, progress)}%` }} />
+        </div>
+      </div>
+      <div className="mt-1.5 flex justify-between text-xs">
+        <span className={`font-semibold ${t.text}`}>
+          {Math.round(progress)}%{done && ' · cumplida'}
+        </span>
+        {missing && <span className="text-gray-500">Falta {missing}</span>}
+      </div>
+    </div>
+  );
+};
+
+const CompareRow = ({ label, value, growth, percent }) => (
+  <div className="flex items-center justify-between gap-3 text-[13px]">
+    <dt className="text-gray-500">{label}</dt>
+    <dd className="flex items-center gap-2">
+      <span className="font-medium text-gray-700">{value}</span>
+      <span
+        className={`inline-flex items-center min-w-[64px] justify-center px-1.5 py-0.5 rounded-md text-[11px] font-semibold ${
+          growth ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+        }`}
+      >
+        {growth ? '↑' : '↓'} {percent}%
+      </span>
+    </dd>
+  </div>
+);
 
 export default MainLayout;

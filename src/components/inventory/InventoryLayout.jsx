@@ -87,16 +87,15 @@ const InventoryLayout = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header de Sección */}
-      <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-teal-500">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-teal-100 rounded-lg">
-            <Package className="w-8 h-8 text-teal-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Análisis de Inventario</h2>
-            <p className="text-sm text-gray-600">Gestión y análisis de inventario desde Alegra</p>
-          </div>
+      {/* Encabezado: mismo patrón que el resto de páginas (título + subtítulo,
+          sin tarjeta); el ícono conserva el color de la sección */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-teal-50 rounded-xl ring-1 ring-inset ring-teal-100">
+          <Package className="w-6 h-6 text-teal-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Análisis de Inventario</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Gestión y análisis de inventario desde Alegra</p>
         </div>
       </div>
 
@@ -111,7 +110,7 @@ const InventoryLayout = () => {
               <button
                 key={section.id}
                 onClick={() => handleMainSectionChange(section.id)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg whitespace-nowrap transition-all flex-1 ${
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg whitespace-nowrap transition flex-1 ${
                   isActive
                     ? 'bg-teal-600 text-white shadow-lg transform scale-105'
                     : 'bg-gray-50 text-gray-700 hover:bg-teal-50 hover:text-teal-700 border border-gray-200'
@@ -144,7 +143,7 @@ const InventoryLayout = () => {
                 <button
                   key={subsection.id}
                   onClick={() => setActiveSubsection(subsection.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition ${
                     isActive
                       ? 'bg-teal-600 text-white shadow-md'
                       : 'bg-gray-50 text-gray-700 hover:bg-teal-50 hover:text-teal-700 border border-gray-200'

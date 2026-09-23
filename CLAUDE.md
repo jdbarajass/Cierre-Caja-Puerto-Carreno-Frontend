@@ -2,6 +2,12 @@
 
 Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` para stack, estructura y despliegue.
 
+## Sistema visual y capa WebGL
+
+- Diseño "Arqueo": escalas de color reemplazadas en `tailwind.config.js` (gray→grafito, blue/indigo→tinta, purple→ciruela, tonos 600 semánticos desplazados para WCAG AA). Todo en hex: el reporte del cierre se exporta con html2canvas, que no soporta oklch.
+- `src/experience/`: un solo canvas three.js detrás de la app (solo lectura de datos que publican las páginas con `usePublishSceneData`). Nunca modifica lógica de negocio. Historia completa, decisiones y mediciones por fase: `PLAN_EXPERIENCIA_WEBGL.md`.
+- Al cambiar `tailwind.config.js` hay que reiniciar el servidor de Vite: no recarga la configuración solo.
+
 ## Skills y MCP de diseño (`.claude/skills/`, `.mcp.json`)
 
 Este repo trae 6 skills de diseño/UX de Claude Code y 2 servidores MCP (Playwright, 21st.dev).

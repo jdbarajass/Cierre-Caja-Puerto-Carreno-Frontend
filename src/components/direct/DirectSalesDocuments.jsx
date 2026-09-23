@@ -90,7 +90,7 @@ const DirectSalesDocuments = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-gray-900 rounded-xl shadow-lg p-6 text-white">
         <div className="flex items-center gap-3 mb-2">
           <FileText className="w-8 h-8" />
           <h1 className="text-2xl font-bold">Documentos de Venta</h1>
@@ -111,7 +111,7 @@ const DirectSalesDocuments = () => {
               <Calendar className="w-4 h-4 inline mr-1" />
               Desde
             </label>
-            <input
+            <input aria-label="Desde"
               type="date"
               value={fromDate}
               onChange={(e) => {
@@ -129,7 +129,7 @@ const DirectSalesDocuments = () => {
               <Calendar className="w-4 h-4 inline mr-1" />
               Hasta
             </label>
-            <input
+            <input aria-label="Hasta"
               type="date"
               value={toDate}
               onChange={(e) => {
@@ -147,7 +147,7 @@ const DirectSalesDocuments = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Documentos por página
             </label>
-            <select
+            <select aria-label="Documentos por página"
               value={limit}
               onChange={(e) => {
                 setLimit(Number(e.target.value));
@@ -193,7 +193,7 @@ const DirectSalesDocuments = () => {
       {loading && (
         <div className="bg-white rounded-xl shadow-md p-12 text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando documentos de venta...</p>
+          <p className="text-gray-600">Cargando documentos de venta…</p>
         </div>
       )}
 
@@ -242,7 +242,7 @@ const DirectSalesDocuments = () => {
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-400" />
+                        <User className="w-4 h-4 text-gray-500" />
                         <div>
                           <div className="text-gray-900 font-medium">
                             {doc.client?.name || 'Cliente sin nombre'}

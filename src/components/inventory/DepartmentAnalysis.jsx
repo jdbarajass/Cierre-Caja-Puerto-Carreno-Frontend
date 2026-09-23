@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Grid, RefreshCw, AlertCircle, ChevronDown, ChevronUp, Package, Database } from 'lucide-react';
 import { getByDepartment } from '../../services/inventoryService';
+import { useSceneSeries } from '../../experience/store';
 
 const DepartmentAnalysis = () => {
   const [data, setData] = useState(null);
@@ -57,9 +58,12 @@ const DepartmentAnalysis = () => {
   };
 
   // Estado inicial: sin datos
+  // Escena WebGL (solo lectura): la serie que este módulo ya muestra
+  useSceneSeries('Inventario por departamento', data ? Object.entries(data) : null, ([, d]) => d.valor_inventario, ([name]) => name, 'money');
+
   if (!data && !loading && !error) {
     return (
-      <div className="bg-gradient-to-br from-teal-50 to-blue-50 border-2 border-teal-200 rounded-xl p-12">
+      <div className="bg-teal-50 border-2 border-teal-200 rounded-xl p-12">
         <div className="text-center max-w-2xl mx-auto">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-teal-100 rounded-full mb-6">
             <Grid className="w-10 h-10 text-teal-600" />
@@ -70,7 +74,7 @@ const DepartmentAnalysis = () => {
           </p>
           <button
             onClick={fetchData}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl text-lg font-semibold"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition shadow-lg hover:shadow-xl text-lg font-semibold"
           >
             <Database className="w-6 h-6" />
             Consultar Análisis por Departamento
@@ -85,7 +89,7 @@ const DepartmentAnalysis = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Consultando análisis por departamento...</p>
+          <p className="mt-4 text-gray-600 font-medium">Consultando análisis por departamento…</p>
         </div>
       </div>
     );
@@ -103,7 +107,7 @@ const DepartmentAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -132,7 +136,7 @@ const DepartmentAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar
@@ -155,7 +159,7 @@ const DepartmentAnalysis = () => {
                 </div>
                 <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${colors.badge.split(' ')[0]} transition-all`}
+                    className={`h-full ${colors.badge.split(' ')[0]} transition-[width]`}
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>

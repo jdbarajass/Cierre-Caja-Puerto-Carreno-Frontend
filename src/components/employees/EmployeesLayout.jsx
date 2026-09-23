@@ -73,9 +73,10 @@ const EmployeesLayout = () => {
         </div>
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
+              aria-label="Buscar empleada por nombre"
               placeholder="O escribe un nombre…"
               value={filterInput}
               onChange={e => setFilterInput(e.target.value)}
@@ -84,13 +85,13 @@ const EmployeesLayout = () => {
             />
           </div>
           <button onClick={applyFilter}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
             Buscar
           </button>
           {filterNombre && (
             <span className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
               Mostrando: <strong>{filterNombre}</strong>
-              <button onClick={clearFilter} className="ml-1 text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              <button aria-label="Quitar filtro" onClick={clearFilter} className="ml-1 text-gray-500 hover:text-gray-600"><X className="w-4 h-4" /></button>
             </span>
           )}
         </div>

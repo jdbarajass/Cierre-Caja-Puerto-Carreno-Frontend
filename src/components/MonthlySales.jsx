@@ -7,6 +7,7 @@ import useDocumentTitle from '../hooks/useDocumentTitle';
 import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
+import { useSceneSeries } from '../experience/store';
 
 const MonthlySales = () => {
   const navigate = useNavigate();
@@ -48,9 +49,12 @@ const MonthlySales = () => {
     navigate('/dashboard');
   };
 
+  // Escena WebGL (solo lectura): la serie que esta vista ya muestra
+  useSceneSeries('Ventas por medio de pago', data?.payment_methods ? Object.values(data.payment_methods) : null, (m) => m.total, (m) => m.label, 'money');
+
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="min-h-[50dvh] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
@@ -61,14 +65,14 @@ const MonthlySales = () => {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={refetch}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 Reintentar
               </button>
               <button
                 onClick={handleBackToDashboard}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all"
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
               >
                 Volver
               </button>
@@ -80,17 +84,17 @@ const MonthlySales = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
+    <div>
       {/* Notificación de Validación - Popup Superior */}
       {validationWarning && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
+          <div className="bg-yellow-50 ring-1 ring-inset ring-yellow-200 rounded-xl shadow-lg p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-yellow-900">Validación</h3>
               <p className="text-sm text-yellow-700 mt-1">{validationWarning}</p>
             </div>
-            <button
+            <button aria-label="Cerrar aviso"
               onClick={() => setValidationWarning(null)}
               className="text-yellow-600 hover:text-yellow-800 transition-colors"
             >
@@ -104,9 +108,9 @@ const MonthlySales = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <button
+            <button aria-label="Volver al Dashboard"
               onClick={handleBackToDashboard}
-              className="p-2 hover:bg-white rounded-lg transition-all"
+              className="p-2 hover:bg-white rounded-lg transition"
               title="Volver al Dashboard"
             >
               <ArrowLeft className="w-6 h-6 text-gray-600" />
@@ -136,7 +140,7 @@ const MonthlySales = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de Inicio
               </label>
-              <input
+              <input aria-label="Fecha de Inicio"
                 type="date"
                 value={startDate}
                 onChange={(e) => {
@@ -158,7 +162,7 @@ const MonthlySales = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha de Fin
               </label>
-              <input
+              <input aria-label="Fecha de Fin"
                 type="date"
                 value={endDate}
                 onChange={(e) => {
@@ -184,10 +188,10 @@ const MonthlySales = () => {
             <button
               onClick={refetch}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
+              className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition shadow-md ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                  : 'bg-gray-900 hover:bg-gray-800 text-white'
               }`}
             >
               {loading ? (
@@ -219,7 +223,7 @@ const MonthlySales = () => {
             <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md">
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-                <p className="text-gray-800 font-semibold text-lg">Procesando facturas...</p>
+                <p className="text-gray-800 font-semibold text-lg">Procesando facturas…</p>
                 <p className="text-sm text-gray-600 text-center">
                   Estamos consultando todas las facturas del periodo en Alegra.
                 </p>
@@ -250,7 +254,7 @@ const MonthlySales = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Total Vendido */}
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+              <div className="bg-gray-900 rounded-2xl shadow-lg p-6 text-white">
                 <div className="flex items-center justify-between mb-3">
                   <DollarSign className="w-8 h-8 opacity-80" />
                 </div>

@@ -1,0 +1,1665 @@
+# MASTER PROMPT
+
+# KOAJ — IMMERSIVE WEB EXPERIENCE TRANSFORMATION
+
+Quiero que transformes radicalmente la experiencia visual e interactiva de mi aplicación web existente.
+
+IMPORTANTE:
+
+Este proyecto YA FUNCIONA.
+
+La lógica de negocio YA FUNCIONA.
+
+Los endpoints YA FUNCIONAN.
+
+La autenticación YA FUNCIONA.
+
+Las consultas YA FUNCIONAN.
+
+La base de datos YA FUNCIONA.
+
+NO quiero reconstruir el producto.
+
+QUIERO TRANSFORMAR COMPLETAMENTE LA CAPA DE EXPERIENCIA.
+
+---
+
+# 0. LO QUE QUIERO CONSEGUIR
+
+No quiero un simple:
+
+* cambio de colores
+* cambio de tipografías
+* cambio de tarjetas
+* cambio de bordes
+* cambio de navbar
+* dashboard más limpio
+* glassmorphism
+* algunas animaciones de entrada
+* hover effects
+
+Eso NO es suficiente.
+
+Quiero pasar de:
+
+"aplicación administrativa convencional"
+
+a:
+
+"experiencia digital inmersiva de nueva generación".
+
+La diferencia debe ser evidente incluso en una captura de pantalla.
+
+Pero cuando el usuario interactúe con la aplicación, debe sentirse todavía más radical.
+
+---
+
+# 1. ANALIZA ESTAS REFERENCIAS ANTES DE ESCRIBIR CÓDIGO
+
+Quiero que estudies profundamente estas experiencias como REFERENCIA DE PRINCIPIOS, NO PARA COPIARLAS:
+
+Lusion:
+https://lusion.co/
+
+Superbien:
+https://www.superbien.studio/
+
+Torus Lab:
+https://toruslab.com/
+
+Refik Anadol:
+https://refikanadol.com/
+
+Active Theory:
+https://activetheory.net/
+
+RESN:
+https://resn.co/
+
+Akira:
+https://akira.art/
+
+Además, busca otras experiencias contemporáneas que utilicen:
+
+* WebGL
+* WebGPU cuando sea apropiado
+* Three.js
+* React Three Fiber
+* GLSL
+* custom shaders
+* particle systems
+* GPU particles
+* GPGPU
+* physics
+* procedural geometry
+* generative art
+* scroll-driven storytelling
+* cinematic transitions
+* interactive 3D
+* real-time deformation
+* morphing geometry
+* fluid effects
+* depth
+* spatial UI
+* immersive dashboards
+
+No te limites a leer el texto de las páginas.
+
+Si tienes navegador/preview disponible:
+
+ABRE LAS PÁGINAS.
+
+INTERACTÚA CON ELLAS.
+
+HAZ SCROLL.
+
+MUEVE EL CURSOR.
+
+PRUEBA HOVER.
+
+PRUEBA CLICK.
+
+OBSERVA LAS TRANSICIONES.
+
+OBSERVA QUÉ PASA CUANDO EL USUARIO HACE SCROLL RÁPIDO.
+
+OBSERVA CÓMO CAMBIAN LAS ESCENAS.
+
+OBSERVA CÓMO SE COMBINA EL DOM CON EL CANVAS.
+
+Quiero que extraigas los PRINCIPIOS TÉCNICOS Y DE EXPERIENCIA.
+
+NO copies una página concreta.
+
+---
+
+# 2. REFERENCIAS DE DISEÑO: QUÉ DEBES APRENDER DE ELLAS
+
+De Lusion quiero estudiar especialmente:
+
+* storytelling visual
+* 3D
+* motion
+* interacción
+* composición cinematográfica
+* integración entre DOM y WebGL
+
+Lusion describe explícitamente su trabajo como una combinación de diseño, motion, 3D y desarrollo para crear experiencias digitales interactivas.
+
+De Superbien quiero estudiar:
+
+* experimentación
+* experiencias inmersivas
+* arte digital
+* movimiento
+* 3D
+* interacción experimental
+
+Su Superlab es precisamente un espacio de experimentación tecnológica y experiencias 3D inmersivas.
+
+De Active Theory quiero estudiar:
+
+* WebGL
+* partículas
+* entornos 3D
+* interacción mediante mouse/touch
+* navegación espacial
+* experiencias guiadas por scroll
+* rendimiento
+
+De Refik Anadol quiero estudiar:
+
+* datos convertidos en arte
+* visualización generativa
+* movimiento orgánico
+* campos de partículas
+* deformación
+* composición abstracta
+* relación entre información y visualización
+
+De RESN, Torus Lab y Akira quiero investigar especialmente:
+
+* dirección de arte
+* interacción
+* experimental web
+* motion
+* 3D
+* composición
+* comportamiento del cursor
+* navegación no convencional
+
+---
+
+# 3. LA REGLA MÁS IMPORTANTE
+
+## NO CONFUNDAS "NO CAMBIAR LA LÓGICA" CON "NO PODER CAMBIAR LA CAPA VISUAL"
+
+Puedes crear una NUEVA CAPA VISUAL completamente encima de la aplicación existente.
+
+Puedes incorporar:
+
+* Three.js
+* React Three Fiber
+* shaders GLSL
+* WebGL
+* partículas
+* geometría procedural
+* post-processing
+* GSAP
+* ScrollTrigger
+* Lenis
+* instanced meshes
+* noise
+* displacement
+* morph targets
+* canvas overlays
+* WebGL backgrounds
+* physics simulations
+* GPU particles
+
+si son necesarios para conseguir la experiencia.
+
+Esto NO constituye un cambio de lógica de negocio.
+
+Es infraestructura visual.
+
+---
+
+# 4. QUÉ NO PUEDES MODIFICAR
+
+NO modificar:
+
+* backend
+* APIs
+* endpoints
+* base de datos
+* autenticación
+* autorización
+* reglas de negocio
+* cálculos
+* consultas
+* modelos
+* contratos frontend/backend
+* estructura de datos
+* permisos
+* procesos empresariales
+* comportamiento funcional
+
+Si actualmente un botón hace X:
+
+seguirá haciendo X.
+
+Si una consulta devuelve X:
+
+seguirá devolviendo X.
+
+Si una pantalla tiene una tabla:
+
+la información de la tabla seguirá siendo la misma.
+
+Si existe un formulario:
+
+seguirá funcionando igual.
+
+---
+
+# 5. QUÉ SÍ PUEDES TRANSFORMAR
+
+Puedes transformar radicalmente:
+
+* composición
+* layout
+* navegación visual
+* jerarquía
+* motion
+* interacción
+* transición entre estados
+* presentación de datos
+* visualización de métricas
+* backgrounds
+* profundidad
+* iluminación
+* 3D
+* partículas
+* shaders
+* scroll
+* cursor
+* transiciones
+* entrada/salida
+* estados visuales
+* loading
+* feedback
+* storytelling
+* experiencia espacial
+
+---
+
+# 6. QUIERO UNA CAPA WEBGL REAL
+
+Este punto es CRÍTICO.
+
+No quiero que simules 3D con:
+
+* CSS transforms
+* sombras
+* gradientes
+* cards inclinadas
+* blur
+
+si una escena WebGL sería la solución adecuada.
+
+Cuando una experiencia lo justifique, utiliza:
+
+Three.js / React Three Fiber
+
+para construir una capa visual real.
+
+La escena puede coexistir con el DOM funcional.
+
+Ejemplo conceptual:
+
+DOM
+↓
+UI funcional existente
+
+WEBGL
+↓
+capa visual inmersiva
+
+La capa WebGL puede reaccionar a:
+
+* scroll
+* cursor
+* touch
+* datos existentes
+* estado visual
+* navegación
+* interacción
+
+pero NO debe modificar la lógica de negocio.
+
+---
+
+# 7. QUIERO PARTICLE SYSTEMS REALES
+
+No quiero únicamente pequeños puntos decorativos.
+
+Explora sistemas de partículas reales.
+
+Por ejemplo:
+
+* cientos/miles de partículas
+* partículas conectadas
+* campos de partículas
+* particle morphing
+* particle dissolution
+* particle attraction
+* particle repulsion
+* particle turbulence
+* particle trails
+* particle fields
+* partículas que reaccionen al cursor
+* partículas que formen números
+* partículas que formen texto
+* partículas que formen geometrías
+
+Cuando sea apropiado:
+
+utiliza GPU/GPGPU o shaders para mantener el rendimiento.
+
+---
+
+# 8. QUIERO DEFORMACIÓN GEOMÉTRICA REAL
+
+Explora:
+
+* vertex displacement
+* noise deformation
+* procedural geometry
+* morphing
+* distortion
+* fluid-like motion
+* wave deformation
+* organic movement
+* shader-based deformation
+
+No quiero que el objeto simplemente:
+
+"gire 360 grados".
+
+Quiero que pueda:
+
+* deformarse
+* fragmentarse
+* reconstruirse
+* cambiar de forma
+* reaccionar al cursor
+* reaccionar al scroll
+* transformarse entre estados
+
+---
+
+# 9. QUIERO SHADERS
+
+Cuando aporten valor, utiliza shaders GLSL.
+
+Explora:
+
+* vertex shaders
+* fragment shaders
+* noise
+* displacement
+* distortion
+* procedural textures
+* gradients generativos
+* fresnel
+* refraction
+* particles
+* glow
+* depth
+* chromatic effects
+* metaballs
+* fluid-like effects
+
+NO agregues shaders únicamente porque son técnicamente impresionantes.
+
+Cada shader debe formar parte de una dirección artística.
+
+---
+
+# 10. QUIERO FÍSICA E INTERACCIÓN
+
+Cuando sea apropiado, explora interacción física.
+
+Por ejemplo:
+
+* objetos que reaccionan al cursor
+* objetos que se atraen
+* objetos que se repelen
+* partículas que colisionan
+* elementos que tienen inercia
+* objetos que siguen al cursor con elasticidad
+* elementos que se deforman al tocarlos
+* componentes que reaccionan a la velocidad del scroll
+
+La interfaz debe sentirse como un sistema físico.
+
+No como una colección de elementos HTML.
+
+---
+
+# 11. QUIERO SCROLL STORYTELLING
+
+Esta es una de las partes MÁS IMPORTANTES.
+
+El scroll no debe ser simplemente:
+
+"bajar por una página".
+
+Quiero que el scroll pueda convertirse en una herramienta narrativa.
+
+Ejemplo conceptual:
+
+SCROLL 0%
+
+La escena aparece.
+
+SCROLL 20%
+
+La geometría comienza a separarse.
+
+SCROLL 40%
+
+Los fragmentos flotan.
+
+SCROLL 60%
+
+Los fragmentos cambian de posición.
+
+SCROLL 80%
+
+Se reorganizan.
+
+SCROLL 100%
+
+Se reconstruye la escena.
+
+Esto es solamente un ejemplo.
+
+Diseña experiencias similares para el producto real.
+
+---
+
+# 12. QUIERO "DISASSEMBLE / REASSEMBLE"
+
+Explora específicamente esta clase de interacción:
+
+ELEMENTO
+
+↓
+
+se descompone
+
+↓
+
+sus partes se separan
+
+↓
+
+flotan
+
+↓
+
+cambian
+
+↓
+
+se reorganizan
+
+↓
+
+vuelven a ensamblarse
+
+↓
+
+se convierten en otra representación
+
+Esto puede utilizarse para:
+
+* métricas
+* cierre de caja
+* estadísticas
+* navegación
+* gestión
+* procesos
+* estados
+* visualizaciones
+
+La información real de la aplicación debe seguir siendo la misma.
+
+Lo que cambia es cómo se presenta.
+
+---
+
+# 13. TRANSFORMAR DATOS EN EXPERIENCIAS VISUALES
+
+No quiero que todas las métricas sean:
+
+┌──────────────┐
+│ Venta del día│
+│ $265.200     │
+└──────────────┘
+
+Eso es un dashboard convencional.
+
+Quiero explorar:
+
+DATOS → VISUALIZACIÓN → INTERACCIÓN
+
+Por ejemplo:
+
+VENTA DEL DÍA
+
+puede convertirse visualmente en:
+
+* campo de partículas
+* volumen
+* barra espacial
+* geometría que crece
+* esfera que cambia
+* sistema de partículas
+* objeto 3D
+* composición generativa
+
+El número real debe permanecer visible y legible.
+
+La visualización debe complementar la información.
+
+NO reemplazarla.
+
+---
+
+# 14. APLICA ESTO A MI PRODUCTO REAL
+
+Mi aplicación contiene conceptos como:
+
+* Cierre de Caja
+* Venta del día
+* Venta del mes
+* Metas
+* Estadísticas
+* Gestión
+* Cuentas
+* Cuentas de recompras
+* Dinero enviado
+* Inventario
+* Cuentas por pagar
+* Conciliación
+* Usuarios
+* Documentación
+
+No inventes nuevas funcionalidades.
+
+Pero sí puedes transformar visualmente la representación de estos conceptos.
+
+---
+
+# 15. EJEMPLO: CIERRE DE CAJA
+
+La pantalla de "Cierre de Caja" NO debe parecer simplemente:
+
+título
++
+formulario
++
+botones
++
+tabla.
+
+Quiero explorar una experiencia donde:
+
+1. el usuario entra en la pantalla;
+2. aparece una escena visual relacionada con el concepto de caja/flujo/dinero;
+3. los datos reales se incorporan visualmente;
+4. al hacer scroll, la escena evoluciona;
+5. los pasos del cierre aparecen progresivamente;
+6. los elementos visuales responden al progreso;
+7. los controles funcionales permanecen accesibles;
+8. al llegar al proceso de cierre, la experiencia visual converge hacia el formulario real.
+
+La visualización NO debe cambiar el proceso.
+
+Debe explicar visualmente el proceso.
+
+---
+
+# 16. EJEMPLO: ESTADÍSTICAS
+
+No quiero simplemente:
+
+gráfica
+gráfica
+gráfica
+gráfica
+
+Explora:
+
+* gráficos que se construyen mediante partículas
+* líneas que aparecen progresivamente
+* datos que generan geometría
+* transición entre periodos
+* zoom espacial
+* partículas que representan volumen
+* animaciones ligadas al cambio de datos
+* morphing entre visualizaciones
+
+Los valores reales deben seguir siendo exactos.
+
+---
+
+# 17. EJEMPLO: CUENTAS / RECOMPRAS
+
+La tabla debe seguir existiendo porque es funcional.
+
+Pero la experiencia alrededor de ella puede convertirse en:
+
+* entorno espacial
+* navegación por periodos
+* timeline
+* visualización de flujo de dinero
+* conexiones entre envíos y compras
+* agrupaciones visuales
+* expansión de registros
+* transición entre meses
+
+La tabla NO se elimina.
+
+Se transforma su contexto visual.
+
+---
+
+# 18. EJEMPLO: LOGIN
+
+El login actual NO debería quedarse como:
+
+fondo azul claro
++
+card blanca
++
+formulario.
+
+Quiero una experiencia de entrada al sistema.
+
+Puede incluir:
+
+* ambiente WebGL
+* partículas
+* geometría
+* iluminación
+* movimiento suave
+* logo integrado en la escena
+* reacción al cursor
+* transición al entrar
+* sensación de "entrar al sistema"
+
+Pero:
+
+el formulario debe seguir siendo extremadamente usable.
+
+No sacrifiques autenticación ni accesibilidad por espectáculo visual.
+
+---
+
+# 19. QUIERO TRANSICIONES ENTRE PANTALLAS
+
+Cuando el usuario navegue entre:
+
+Cierre de Caja
+→
+Estadísticas
+→
+Gestión
+→
+Cuentas
+
+no quiero necesariamente que cada página aparezca como una página independiente.
+
+Explora transiciones visuales coherentes.
+
+Ejemplo:
+
+La geometría de una página puede transformarse en la siguiente.
+
+Una escena puede cambiar de estado.
+
+Una nube de partículas puede convertirse en otra.
+
+Una forma puede hacer morph hacia otra.
+
+El objetivo es crear CONTINUIDAD.
+
+---
+
+# 20. EL CURSOR TAMBIÉN ES UNA INTERFAZ
+
+En desktop puedes explorar:
+
+* cursor magnético
+* campos de influencia
+* partículas que reaccionan
+* deformaciones
+* trails
+* attraction
+* repulsion
+* hover physics
+
+Pero nunca sacrifiques:
+
+* precisión
+* accesibilidad
+* botones
+* selección de texto
+* formularios
+
+El cursor debe enriquecer la experiencia, no dificultarla.
+
+---
+
+# 21. LA INTERACCIÓN DEBE SENTIRSE FÍSICA
+
+Quiero estudiar conceptos como:
+
+* inertia
+* damping
+* spring
+* elasticity
+* velocity
+* momentum
+* friction
+* attraction
+* repulsion
+
+El objetivo es que los elementos tengan una sensación física.
+
+No quiero que todas las animaciones sean:
+
+`ease-in-out`
+
+y listo.
+
+---
+
+# 22. NO QUIERO "ANIMACIONES DE LANDING PAGE" PEGADAS A UN DASHBOARD
+
+Este es un punto CRÍTICO.
+
+No hagas:
+
+Dashboard normal
++
+partículas de fondo.
+
+Eso NO cumple el objetivo.
+
+No hagas:
+
+Dashboard normal
++
+un objeto 3D decorativo en el hero.
+
+Eso tampoco.
+
+La interacción debe formar parte de la arquitectura visual de la experiencia.
+
+---
+
+# 23. QUIERO UNA EXPERIENCIA HÍBRIDA DOM + WEBGL
+
+La arquitectura visual ideal puede ser:
+
+┌───────────────────────────────┐
+│       WEBGL / 3D LAYER        │
+│                               │
+│  partículas / geometría /     │
+│  shaders / profundidad        │
+│                               │
+│       ┌──────────────┐        │
+│       │ DOM UI       │        │
+│       │ funcional    │        │
+│       └──────────────┘        │
+│                               │
+└───────────────────────────────┘
+
+El DOM mantiene:
+
+* formularios
+* botones
+* tablas
+* accesibilidad
+* texto
+* datos
+* interacción funcional
+
+WebGL aporta:
+
+* profundidad
+* visualización
+* atmósfera
+* motion
+* partículas
+* geometría
+* transición
+* storytelling
+
+---
+
+# 24. LAS INTERACCIONES DEBEN SER DIFERENTES SEGÚN EL CONTEXTO
+
+No uses la misma animación en todas partes.
+
+Crea un lenguaje de interacción.
+
+Por ejemplo:
+
+LOGIN
+→ ambiente
+
+DASHBOARD
+→ datos
+
+CIERRE DE CAJA
+→ proceso / ensamblaje
+
+ESTADÍSTICAS
+→ transformación de datos
+
+GESTIÓN
+→ flujo / conexiones
+
+CUENTAS
+→ movimiento financiero
+
+DOCUMENTACIÓN
+→ navegación / exploración
+
+Esto genera una experiencia coherente pero no repetitiva.
+
+---
+
+# 25. MOBILE NO PUEDE SER UNA VERSIÓN REDUCIDA
+
+Este proyecto debe diseñarse explícitamente para mobile.
+
+En desktop puedes utilizar:
+
+* WebGL completo
+* partículas
+* cursor
+* 3D
+* shaders
+* física
+* efectos de profundidad
+
+En mobile:
+
+adapta la experiencia.
+
+Puedes utilizar:
+
+* touch interaction
+* gyroscope cuando sea apropiado y seguro
+* simplificación de partículas
+* menor cantidad de geometría
+* shaders más ligeros
+* menor resolución de render
+* motion reducido
+* interacciones mediante swipe/touch
+
+NO simplemente ocultes el canvas.
+
+Crea una versión móvil deliberadamente diseñada.
+
+---
+
+# 26. PERFORMANCE
+
+Quiero una experiencia espectacular PERO REALMENTE UTILIZABLE.
+
+Implementa:
+
+* adaptive quality
+* device capability detection
+* DPR control
+* instancing
+* frustum culling
+* lazy loading
+* asset compression
+* texture optimization
+* geometry optimization
+* reduced particle count on mobile
+* shader optimization
+
+Si el FPS baja:
+
+reduce automáticamente la complejidad visual.
+
+Ejemplo conceptual:
+
+HIGH
+→ GPU potente
+
+MEDIUM
+→ dispositivo promedio
+
+LOW
+→ dispositivo limitado
+
+La funcionalidad siempre permanece intacta.
+
+---
+
+# 27. SI NECESITAS ASSETS, MODELOS O RECURSOS EXTERNOS
+
+NO inventes que ya existen.
+
+Si necesitas:
+
+* modelos 3D
+* texturas
+* HDRI
+* sonidos
+* imágenes
+* vídeos
+* fuentes
+* assets
+* archivos GLTF/GLB
+* recursos específicos
+
+DIME EXACTAMENTE QUÉ NECESITAS.
+
+Quiero una lista:
+
+ASSET:
+Qué es.
+
+FORMATO:
+GLB / PNG / HDR / SVG / etc.
+
+USO:
+Para qué lo utilizarás.
+
+DIMENSIONES / CALIDAD:
+Qué necesitas.
+
+NOMBRE SUGERIDO:
+Cómo debería llamarse.
+
+UBICACIÓN:
+Dónde debería colocarlo en el proyecto.
+
+NO continúes fingiendo que el asset existe.
+
+Si puedes generar el efecto proceduralmente sin asset externo, hazlo.
+
+---
+
+# 28. SI NECESITAS UNA LIBRERÍA
+
+Antes de agregar una dependencia importante:
+
+explícame:
+
+LIBRERÍA
+VERSIÓN
+PROPÓSITO
+POR QUÉ ES NECESARIA
+IMPACTO EN PERFORMANCE
+
+Ejemplos potenciales:
+
+Three.js
+React Three Fiber
+GSAP
+ScrollTrigger
+Lenis
+postprocessing
+physics engine
+shader utilities
+
+No agregues diez librerías para hacer algo que puede hacerse con una.
+
+---
+
+# 29. NO QUIERO QUE TE DETENGAS POR MIEDO A CAMBIAR LA ESTRUCTURA VISUAL
+
+Puedes modificar radicalmente:
+
+* layouts
+* composición
+* DOM visual
+* componentes de presentación
+* CSS
+* estructura de componentes visuales
+* sistema de diseño
+* canvas
+* escenas
+* transiciones
+
+siempre que:
+
+EL COMPORTAMIENTO FUNCIONAL SE CONSERVE.
+
+---
+
+# 30. NO INTERPRETES "NO CAMBIAR LÓGICA" COMO "NO CAMBIAR CÓDIGO"
+
+Puedes modificar código frontend.
+
+Puedes crear componentes visuales.
+
+Puedes crear hooks visuales.
+
+Puedes crear escenas.
+
+Puedes crear shaders.
+
+Puedes crear sistemas de partículas.
+
+Puedes crear animaciones.
+
+Puedes reorganizar componentes de presentación.
+
+Lo que NO puedes modificar es:
+
+LA LÓGICA DE NEGOCIO.
+
+---
+
+# 31. LAS DATOS REALES DEBEN CONECTARSE A LA EXPERIENCIA VISUAL
+
+Cuando sea técnicamente viable, utiliza los datos YA EXISTENTES.
+
+Por ejemplo:
+
+venta diaria
+→ controla intensidad de una visualización.
+
+venta mensual
+→ controla escala.
+
+meta
+→ controla progreso.
+
+porcentaje
+→ controla morph.
+
+número de transacciones
+→ controla cantidad de partículas.
+
+periodo seleccionado
+→ cambia el estado visual.
+
+IMPORTANTE:
+
+NO MODIFIQUES LOS DATOS.
+
+NO INVENTES DATOS.
+
+SOLO UTILIZA LOS DATOS QUE YA EXISTEN.
+
+---
+
+# 32. QUIERO QUE LA EXPERIENCIA TENGA "MOMENTOS WOW"
+
+Cada página importante debería tener al menos uno.
+
+Un momento WOW puede ser:
+
+* una transformación
+* un objeto que se desarma
+* una visualización generativa
+* un campo de partículas
+* un cambio de perspectiva
+* una transición de navegación
+* una escena que responde al usuario
+* una geometría que se reconstruye
+* una visualización de datos inesperada
+
+Pero el WOW debe estar relacionado con el contenido.
+
+No quiero fuegos artificiales sin sentido.
+
+---
+
+# 33. NO HAGAS TODO 3D
+
+Esto es igualmente importante.
+
+El objetivo NO es convertir cada botón en 3D.
+
+Quiero:
+
+2D + 3D + WebGL + DOM + motion
+
+trabajando juntos.
+
+El texto puede ser 2D.
+
+El formulario puede ser 2D.
+
+La tabla puede ser 2D.
+
+El contexto visual puede ser 3D.
+
+Las transiciones pueden ser WebGL.
+
+Los datos pueden generar partículas.
+
+Los estados pueden controlar shaders.
+
+La combinación es lo que debe sentirse avanzada.
+
+---
+
+# 34. SISTEMA DE MOTION
+
+Define un lenguaje global:
+
+* duración
+* easing
+* damping
+* spring
+* stagger
+* velocity
+* scroll response
+* entrance
+* exit
+* state transition
+
+No uses una animación diferente arbitrariamente en cada componente.
+
+Debe existir una física visual coherente.
+
+---
+
+# 35. SCROLL-DRIVEN WEBGL
+
+Cuando corresponda:
+
+conecta el progreso del scroll con:
+
+* posición de cámara
+* rotación
+* escala
+* morph
+* partículas
+* deformación
+* iluminación
+* materiales
+* composición
+* opacidad
+* profundidad
+
+El usuario debe poder sentir:
+
+"Mi scroll está controlando esta escena."
+
+No:
+
+"Hay una animación automática reproduciéndose."
+
+---
+
+# 36. PERMITE INTERACCIÓN BIDIRECCIONAL
+
+Cuando sea apropiado:
+
+SCROLL
+→ cambia escena.
+
+CURSOR
+→ cambia escena.
+
+CLICK
+→ cambia escena.
+
+TOUCH
+→ cambia escena.
+
+DATOS
+→ cambian escena.
+
+ESTADO DE UI
+→ cambia escena.
+
+La escena también puede dar feedback visual al usuario.
+
+---
+
+# 37. ACCESIBILIDAD
+
+Aunque la experiencia sea experimental:
+
+mantén:
+
+* teclado
+* focus
+* screen readers
+* contraste
+* labels
+* navegación accesible
+* reduced motion
+
+Respeta:
+
+`prefers-reduced-motion`
+
+Cuando el usuario solicite reducir movimiento:
+
+reemplaza la experiencia cinética por una experiencia visual estática o mucho más ligera.
+
+---
+
+# 38. FALLBACK
+
+Si WebGL no está disponible:
+
+la aplicación debe seguir funcionando.
+
+Debe existir un fallback visual razonable.
+
+NO bloquees el producto.
+
+---
+
+# 39. PERFORMANCE TARGET
+
+Apunta a:
+
+60 FPS como objetivo normal.
+
+En dispositivos potentes:
+
+puedes buscar más.
+
+En dispositivos débiles:
+
+reduce calidad.
+
+No sacrifiques la aplicación por mantener un efecto.
+
+---
+
+# 40. AUDITORÍA VISUAL OBLIGATORIA
+
+Después de implementar:
+
+NO digas simplemente:
+
+"Listo".
+
+Haz una auditoría.
+
+Pregúntate:
+
+¿Realmente parece una experiencia WebGL?
+
+¿Hay verdadera profundidad?
+
+¿Hay interacción real?
+
+¿El scroll controla elementos visuales?
+
+¿Hay partículas reales cuando corresponde?
+
+¿Hay geometría deformable?
+
+¿Hay shaders cuando aportan valor?
+
+¿Hay física?
+
+¿Hay transiciones?
+
+¿Hay momentos WOW?
+
+¿El usuario puede interactuar con la escena?
+
+¿La experiencia cambia según el contexto?
+
+¿Se siente diferente a un dashboard tradicional?
+
+Si la respuesta es:
+
+"no"
+
+entonces continúa trabajando.
+
+---
+
+# 41. PRUEBA VISUAL CONTRA EL ESTADO ANTERIOR
+
+Compara:
+
+ANTES
+
+vs.
+
+DESPUÉS
+
+La diferencia debe ser evidente.
+
+Si la comparación parece:
+
+"misma página pero con otro color"
+
+ENTONCES EL TRABAJO NO ESTÁ TERMINADO.
+
+---
+
+# 42. CRITERIO DE ACEPTACIÓN
+
+Consideraré que el trabajo fue exitoso solamente si:
+
+### VISUAL
+
+La aplicación tiene una identidad visual radicalmente diferente.
+
+### INTERACCIÓN
+
+El usuario puede interactuar con elementos visuales.
+
+### WEBGL
+
+Existe una capa WebGL/3D real donde sea apropiado.
+
+### MOTION
+
+El movimiento está integrado en la experiencia.
+
+### SCROLL
+
+El scroll puede controlar escenas y transformaciones.
+
+### PARTICLES
+
+Existen sistemas de partículas reales donde tengan sentido.
+
+### SHADERS
+
+Existen shaders/custom rendering donde realmente aporten.
+
+### PHYSICS
+
+Existen comportamientos físicos donde sean apropiados.
+
+### DATA
+
+Los datos reales pueden alimentar visualizaciones.
+
+### TRANSITIONS
+
+Las páginas pueden sentirse conectadas visualmente.
+
+### MOBILE
+
+Existe una experiencia mobile deliberadamente diseñada.
+
+### PERFORMANCE
+
+La experiencia mantiene un rendimiento razonable.
+
+### FUNCTIONALITY
+
+Toda la funcionalidad existente continúa funcionando.
+
+---
+
+# 43. MUY IMPORTANTE: SI NO PUEDES CONSEGUIR UN EFECTO
+
+No simplifiques silenciosamente.
+
+Si para conseguir el efecto necesito:
+
+* un modelo 3D
+* un asset
+* una textura
+* una fuente
+* una imagen
+* un vídeo
+* una librería
+* una herramienta
+* una dependencia
+* información sobre la arquitectura
+* acceso a una página
+* algún recurso que no tienes
+
+DETENTE Y DIME EXACTAMENTE QUÉ NECESITAS.
+
+Usa este formato:
+
+## BLOQUEO
+
+Necesito:
+
+[recurso]
+
+Para:
+
+[efecto]
+
+Porque:
+
+[razón técnica]
+
+Opciones:
+
+1. [opción]
+2. [opción]
+
+NO reemplaces automáticamente el efecto por una tarjeta blanca.
+
+NO reduzcas el objetivo sin avisarme.
+
+---
+
+# 44. PROCESO OBLIGATORIO
+
+FASE 1
+AUDITAR TODO EL PROYECTO.
+
+FASE 2
+ESTUDIAR LAS REFERENCIAS.
+
+FASE 3
+IDENTIFICAR LA ARQUITECTURA ACTUAL.
+
+FASE 4
+DISEÑAR LA NUEVA EXPERIENCIA.
+
+FASE 5
+DEFINIR LA ARQUITECTURA DOM + WEBGL.
+
+FASE 6
+IMPLEMENTAR LA ESCENA BASE.
+
+FASE 7
+IMPLEMENTAR MOTION.
+
+FASE 8
+IMPLEMENTAR SCROLL STORYTELLING.
+
+FASE 9
+IMPLEMENTAR INTERACCIONES.
+
+FASE 10
+CONECTAR DATOS EXISTENTES A VISUALIZACIONES.
+
+FASE 11
+OPTIMIZAR DESKTOP.
+
+FASE 12
+CREAR EXPERIENCIA MOBILE.
+
+FASE 13
+OPTIMIZAR PERFORMANCE.
+
+FASE 14
+AUDITAR ACCESIBILIDAD.
+
+FASE 15
+COMPARAR ANTES/DESPUÉS.
+
+FASE 16
+POLISH FINAL.
+
+---
+
+# 45. NO TERMINES PREMATURAMENTE
+
+Esta instrucción es importante.
+
+No consideres terminado el proyecto después de:
+
+* cambiar CSS
+* cambiar colores
+* cambiar tipografías
+* agregar algunas animaciones
+* agregar un canvas de fondo
+
+Eso sería solamente la primera capa.
+
+Quiero una transformación completa.
+
+---
+
+# 46. RESULTADO QUE BUSCO
+
+Quiero que la experiencia final se sienta como si:
+
+un estudio creativo especializado en WebGL
+
+*
+
+un equipo de product design
+
+*
+
+un motion designer
+
+*
+
+un creative technologist
+
+hubieran rediseñado la interfaz.
+
+No quiero que parezca:
+
+"un dashboard hecho por una IA con mejores colores".
+
+Quiero:
+
+IMMERSIVE
+INTERACTIVE
+GENERATIVE
+PHYSICAL
+CINEMATIC
+RESPONSIVE
+PERFORMANT
+FUNCTIONAL
+DISTINCTIVE
+
+---
+
+# 47. REGLA FINAL
+
+MANTÉN LA LÓGICA.
+
+TRANSFORMA LA EXPERIENCIA.
+
+No cambies cómo funciona el producto.
+
+Cambia radicalmente cómo se siente utilizarlo.
+
+Si tienes que elegir entre:
+
+A) mantener el layout actual y ponerle animaciones
+
+o
+
+B) mantener la funcionalidad pero reinventar completamente la presentación visual
+
+ELIGE B.
+
+Si tienes que elegir entre:
+
+A) una animación CSS sencilla
+
+o
+
+B) una solución WebGL/Three.js realmente justificada
+
+ELIGE B cuando aporte una mejora real a la experiencia.
+
+Si necesitas recursos para lograrlo:
+
+PÍDEMELOS.
+
+Si necesitas que yo proporcione modelos 3D, imágenes, vídeos, texturas, assets u otros recursos:
+
+DÍMELO.
+
+No reduzcas el objetivo.
+
+---
+
+# OBJETIVO FINAL
+
+Quiero abrir mi aplicación y que la reacción sea:
+
+"¿Esto sigue siendo el mismo sistema?"
+
+Sí.
+
+Misma información.
+
+Mismos datos.
+
+Mismos endpoints.
+
+Misma lógica.
+
+Misma funcionalidad.
+
+Pero:
+
+UNA EXPERIENCIA VISUAL COMPLETAMENTE DIFERENTE.
+
+Una experiencia donde:
+
+EL SCROLL HACE COSAS.
+
+EL CURSOR HACE COSAS.
+
+LOS DATOS SE VISUALIZAN.
+
+LAS FORMAS SE TRANSFORMAN.
+
+LAS PARTÍCULAS REACCIONAN.
+
+LA GEOMETRÍA SE DEFORMA.
+
+LAS ESCENAS CAMBIAN.
+
+LOS ELEMENTOS SE DESARMAN Y SE RECONSTRUYEN.
+
+LAS PÁGINAS SE CONECTAN.
+
+LA INTERFAZ RESPONDE AL USUARIO.
+
+Y TODO ESTO SIN ROMPER ABSOLUTAMENTE NADA DE LA LÓGICA DEL PRODUCTO.
+
+NO QUIERO UNA MEJORA DE UI.
+
+QUIERO UNA TRANSFORMACIÓN DE EXPERIENCIA.
+
+AHORA COMIENZA.

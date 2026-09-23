@@ -130,7 +130,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
                   <div key={type} className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
                     <p className="text-xl font-bold text-gray-800">{fmtHM(data[type].hours)}</p>
                     <p className="text-[11px] text-gray-500 mt-0.5">{cfg.label}</p>
-                    <p className="text-[10px] text-gray-400">{data[type].count} registro{data[type].count === 1 ? '' : 's'}</p>
+                    <p className="text-[10px] text-gray-500">{data[type].count} registro{data[type].count === 1 ? '' : 's'}</p>
                   </div>
                 ))}
               </div>
@@ -153,13 +153,13 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
-              <input type="date" required value={form.date} max={today()}
+              <input aria-label="Fecha" type="date" required value={form.date} max={today()}
                 onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Tipo *</label>
-              <select required value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+              <select aria-label="Tipo" required value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white">
                 {Object.entries(TYPE_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
               </select>
@@ -167,21 +167,21 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Tiempo (opcional)</label>
               <div className="flex gap-2">
-                <input type="number" min="0" max="23" placeholder="Horas" value={form.hoursPart}
+                <input aria-label="Horas" type="number" min="0" max="23" placeholder="Horas" value={form.hoursPart}
                   onChange={e => setForm(f => ({ ...f, hoursPart: e.target.value }))}
                   className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />
-                <select value={form.minutesPart} onChange={e => setForm(f => ({ ...f, minutesPart: e.target.value }))}
+                <select aria-label="Minutos" value={form.minutesPart} onChange={e => setForm(f => ({ ...f, minutesPart: e.target.value }))}
                   className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white">
                   <option value="">Min</option>
                   {MINUTE_OPTIONS.map(m => <option key={m} value={m}>{m} min</option>)}
                 </select>
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">Vacío = día completo ({WORKDAY_HOURS}h)</p>
+              <p className="text-[11px] text-gray-500 mt-1">Vacío = día completo ({WORKDAY_HOURS}h)</p>
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea rows={2} placeholder="Motivo…" value={form.description}
+            <textarea aria-label="Descripción" rows={2} placeholder="Motivo…" value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none" />
           </div>
@@ -196,7 +196,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
       )}
 
       {loading ? <div className="flex justify-center py-10"><div className="w-7 h-7 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin" /></div>
-      : items.length === 0 ? <div className="text-center py-10 text-gray-400"><Clock className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay permisos{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
+      : items.length === 0 ? <div className="text-center py-10 text-gray-500"><Clock className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay permisos{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
       : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -220,11 +220,11 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
                     <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span></td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{item.description || '—'}</td>
                     <td className="px-4 py-3 text-center text-gray-700">
-                      {item.hours ? fmtHM(item.hours) : <span title="Día completo, contado como 9h">{WORKDAY_HOURS}h <span className="text-gray-400 text-xs">(día completo)</span></span>}
+                      {item.hours ? fmtHM(item.hours) : <span title="Día completo, contado como 9h">{WORKDAY_HOURS}h <span className="text-gray-500 text-xs">(día completo)</span></span>}
                     </td>
                     {isAdmin && <td className="px-4 py-3"><div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button aria-label="Editar" onClick={() => handleEdit(item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button aria-label="Eliminar" onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div></td>}
                   </tr>
                 );

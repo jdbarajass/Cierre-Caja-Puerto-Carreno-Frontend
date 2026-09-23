@@ -97,26 +97,26 @@ const PagosSection = ({ isAdmin, filterNombre }) => {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Tipo *</label>
-              <select required value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+              <select aria-label="Tipo" required value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 bg-white">
                 {Object.entries(TYPE_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
-              <input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+              <input aria-label="Fecha" type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Monto *</label>
-              <input type="number" required min="1000" step="1000" placeholder="0" value={form.amount}
+              <input aria-label="Monto" type="number" required min="1000" step="1000" placeholder="0" value={form.amount}
                 onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Período, concepto…" value={form.notes}
+            <textarea aria-label="Notas" rows={2} placeholder="Período, concepto…" value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 resize-none" />
           </div>
@@ -131,7 +131,7 @@ const PagosSection = ({ isAdmin, filterNombre }) => {
       )}
 
       {loading ? <div className="flex justify-center py-10"><div className="w-7 h-7 border-2 border-green-300 border-t-green-600 rounded-full animate-spin" /></div>
-      : items.length === 0 ? <div className="text-center py-10 text-gray-400"><CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay pagos{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
+      : items.length === 0 ? <div className="text-center py-10 text-gray-500"><CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay pagos{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
       : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -156,8 +156,8 @@ const PagosSection = ({ isAdmin, filterNombre }) => {
                     <td className="px-4 py-3 text-right font-semibold text-green-700">{fmt(item.amount)}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{item.notes || '—'}</td>
                     {isAdmin && <td className="px-4 py-3"><div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button aria-label="Editar" onClick={() => handleEdit(item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button aria-label="Eliminar" onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div></td>}
                   </tr>
                 );

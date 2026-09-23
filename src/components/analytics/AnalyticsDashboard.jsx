@@ -44,11 +44,11 @@ const AnalyticsDashboard = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center max-w-md px-4">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-800 font-semibold mb-2">Procesando análisis de ventas...</p>
+          <p className="text-gray-800 font-semibold mb-2">Procesando análisis de ventas…</p>
           <p className="text-gray-600 text-sm">
             Esto puede tardar hasta 50 segundos dependiendo de la cantidad de facturas.
           </p>
-          <p className="text-gray-500 text-xs mt-2">Por favor espera...</p>
+          <p className="text-gray-500 text-xs mt-2">Por favor espera…</p>
         </div>
       </div>
     );
@@ -86,6 +86,7 @@ const AnalyticsDashboard = () => {
             </div>
             <input
               type="date"
+              aria-label="Fecha inicial"
               value={dateRange.start_date}
               onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -93,13 +94,14 @@ const AnalyticsDashboard = () => {
             <span className="text-gray-600">hasta</span>
             <input
               type="date"
+              aria-label="Fecha final"
               value={dateRange.end_date}
               onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <button
               onClick={fetchDashboard}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               Consultar Período
             </button>
@@ -130,6 +132,7 @@ const AnalyticsDashboard = () => {
           </div>
           <input
             type="date"
+            aria-label="Fecha inicial"
             value={dateRange.start_date}
             onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -137,13 +140,14 @@ const AnalyticsDashboard = () => {
           <span className="text-gray-600">hasta</span>
           <input
             type="date"
+            aria-label="Fecha final"
             value={dateRange.end_date}
             onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <button
             onClick={fetchDashboard}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
           >
             Consultar Período
           </button>

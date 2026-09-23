@@ -1,0 +1,1290 @@
+# MASTER PROMPT — VISUAL & UX TRANSFORMATION
+
+Quiero que transformes visual e interactivamente la interfaz de mi proyecto web existente hasta llevarla a un nivel de calidad visual comparable con productos digitales premium, sitios web experimentales de nueva generación y experiencias web inmersivas.
+
+IMPORTANTE:
+
+Tu trabajo es EXCLUSIVAMENTE VISUAL, INTERACTIVO Y UX.
+
+NO quiero que rediseñes, cambies, reestructures ni alteres la lógica de negocio de la aplicación.
+
+NO cambies:
+
+* lógica de negocio
+* endpoints
+* APIs
+* consultas
+* base de datos
+* autenticación
+* autorización
+* modelos
+* reglas de negocio
+* cálculos
+* estados funcionales
+* flujos de datos
+* nombres de variables o funciones salvo que sea estrictamente necesario para conectar el nuevo UI
+* comportamiento funcional existente
+* contratos entre frontend y backend
+* funcionalidades existentes
+
+Si algo funciona actualmente, debe seguir funcionando exactamente igual después del rediseño.
+
+Tu objetivo es hacer que el producto SE VEA, SE SIENTA Y SE INTERACTÚE como un producto digital de próxima generación.
+
+---
+
+# 1. PRIMERA REGLA: NO EMPIECES A MODIFICAR INMEDIATAMENTE
+
+Antes de escribir código:
+
+1. Explora completamente el proyecto.
+2. Identifica el framework utilizado.
+3. Identifica la arquitectura visual actual.
+4. Identifica las páginas, layouts, componentes y patrones existentes.
+5. Identifica qué componentes son reutilizables.
+6. Identifica qué partes son funcionales y no deben alterarse.
+7. Identifica inconsistencias visuales.
+8. Identifica problemas de jerarquía visual.
+9. Identifica problemas de UX.
+10. Identifica oportunidades para incorporar movimiento, microinteracciones y storytelling mediante scroll.
+11. Determina qué partes necesitan una transformación radical y cuáles solamente necesitan refinamiento.
+
+NO asumas que una interfaz debe parecerse a un dashboard SaaS tradicional.
+
+NO conviertas todo en tarjetas.
+
+NO conviertas todo en botones redondeados.
+
+NO uses automáticamente Inter, Roboto, Arial o una combinación genérica de fuentes.
+
+NO utilices el típico diseño generado por IA:
+
+* fondo blanco/gris genérico
+* tarjetas con bordes redondeados por todas partes
+* gradientes morado/azul
+* sombras genéricas
+* iconos dentro de cuadrados
+* tres tarjetas idénticas
+* demasiados contenedores
+* exceso de texto
+* jerarquía plana
+* botones idénticos
+* animaciones innecesarias
+* apariencia de plantilla SaaS
+
+Quiero decisiones de diseño intencionales.
+
+---
+
+# 2. UTILIZA LAS SKILLS DISPONIBLES COMO UN EQUIPO DE DISEÑO
+
+Si las siguientes skills están instaladas en el entorno, UTILÍZALAS y combina sus fortalezas:
+
+### frontend-design
+
+Utilízala para:
+
+* dirección artística
+* estética distintiva
+* tipografía
+* composición
+* color
+* layouts
+* personalidad visual
+* evitar estética genérica de IA
+* crear interfaces production-grade
+
+### ui-ux-pro-max
+
+Utilízala para:
+
+* sistema visual
+* paleta
+* tipografías
+* UX
+* accesibilidad
+* jerarquía
+* patrones de interacción
+* diseño responsive
+* consistencia entre componentes
+
+### emil-design-eng
+
+Utilízala especialmente para:
+
+* animaciones
+* timing
+* easing
+* microinteracciones
+* transiciones
+* entrada y salida de elementos
+* hover states
+* scroll interactions
+* movimiento con propósito
+
+Las animaciones deben sentirse físicas, naturales y deliberadas.
+
+Nunca agregues movimiento solamente porque "se ve bonito".
+
+### impeccable
+
+Utilízala para:
+
+* auditar
+* criticar
+* pulir
+* mejorar
+* detectar patrones de AI slop
+* mejorar spacing
+* mejorar typography
+* mejorar layout
+* mejorar accesibilidad
+* mejorar responsive
+* mejorar motion
+* elevar el nivel general de acabado
+
+Realiza una revisión visual antes de considerar terminado el trabajo.
+
+### design-taste-frontend
+
+Utilízala para controlar:
+
+* DESIGN VARIANCE
+* MOTION INTENSITY
+* VISUAL DENSITY
+
+No quiero una interfaz excesivamente conservadora.
+
+Quiero una identidad visual clara y memorable, pero coherente con el propósito real del producto.
+
+### web-design-guidelines
+
+Utilízala como auditoría final.
+
+Revisa:
+
+* UX
+* accesibilidad
+* navegación
+* jerarquía
+* responsive
+* interacción
+* touch targets
+* tipografía
+* contraste
+* estados
+* formularios
+* consistencia
+* comportamiento de la interfaz
+
+---
+
+# 3. CREA UNA DIRECCIÓN ARTÍSTICA PROPIA
+
+Antes de implementar, determina cuál es la mejor dirección visual para ESTE producto.
+
+No quiero que simplemente copies una tendencia.
+
+Quiero que interpretes el producto.
+
+Piensa como:
+
+* Creative Director
+* Senior Product Designer
+* UX Designer
+* Motion Designer
+* Design Engineer
+
+La interfaz debe tener una personalidad.
+
+Debe sentirse como un producto que podría existir en 2030–2050, pero sin caer en una estética infantil de "futurismo".
+
+El concepto es:
+
+"Future-grade digital product"
+
+No:
+
+"cyberpunk website".
+
+No abuses de:
+
+* neón
+* glow
+* glassmorphism
+* partículas
+* gradientes
+* efectos 3D
+* líneas futuristas
+* hologramas falsos
+
+Si utilizas alguno de ellos, debe tener una razón visual concreta.
+
+---
+
+# 4. QUIERO UNA EXPERIENCIA DE SCROLL MUCHO MÁS SOFISTICADA
+
+Analiza cada página y determina dónde el scroll puede convertirse en parte de la experiencia.
+
+Quiero que el usuario sienta que la interfaz responde a su presencia.
+
+Puedes utilizar, cuando tenga sentido:
+
+* reveal animations
+* staggered entrances
+* parallax sutil
+* elementos que cambian de escala
+* sticky sections
+* sticky headers inteligentes
+* transformación progresiva de componentes
+* scroll-linked animations
+* contenido que aparece progresivamente
+* transiciones entre secciones
+* elementos que se desplazan suavemente
+* indicadores de progreso
+* navegación contextual
+* morphing de componentes
+* cambios de estado según posición
+* depth effects
+* microinteracciones
+
+Pero existe una regla:
+
+## MOTION WITH PURPOSE
+
+Cada animación debe responder a una pregunta:
+
+"¿Esto ayuda al usuario a entender, navegar, priorizar o disfrutar la interfaz?"
+
+Si la respuesta es no, elimínala.
+
+---
+
+# 5. QUIERO MICROINTERACCIONES DE ALTA CALIDAD
+
+Mejora todos los estados interactivos relevantes.
+
+Por ejemplo:
+
+* hover
+* focus
+* active
+* pressed
+* selected
+* loading
+* success
+* error
+* disabled
+* empty
+* expanded
+* collapsed
+
+No quiero animaciones exageradas.
+
+Quiero pequeños detalles que hagan sentir que la interfaz está viva.
+
+Ejemplos:
+
+* botones con feedback físico
+* iconos que reaccionan
+* indicadores de estado dinámicos
+* transiciones de color suaves
+* expansión contextual
+* tooltips refinados
+* cambios de escala extremadamente sutiles
+* feedback inmediato
+* loaders elegantes
+* skeletons bien diseñados
+* transiciones entre estados
+
+---
+
+# 6. DISEÑA UNA VERDADERA JERARQUÍA VISUAL
+
+Cada pantalla debe tener:
+
+1. punto de entrada
+2. elemento principal
+3. información secundaria
+4. acciones principales
+5. acciones secundarias
+6. información contextual
+
+El usuario debe saber inmediatamente:
+
+"¿Dónde estoy?"
+
+"¿Qué puedo hacer aquí?"
+
+"¿Qué es lo más importante?"
+
+"¿Qué debería hacer después?"
+
+Reduce ruido visual.
+
+No intentes destacar todo.
+
+Si todo destaca, nada destaca.
+
+---
+
+# 7. TIPOGRAFÍA
+
+Diseña una verdadera escala tipográfica.
+
+Define conscientemente:
+
+* Display
+* H1
+* H2
+* H3
+* body
+* small
+* caption
+* labels
+* metadata
+
+Usa máximo las fuentes necesarias.
+
+La tipografía debe aportar personalidad.
+
+Presta especial atención a:
+
+* letter spacing
+* line height
+* weight
+* optical hierarchy
+* longitud de línea
+* contraste entre títulos y contenido
+
+No utilices tipografía genérica por defecto si existe una opción mejor.
+
+---
+
+# 8. SISTEMA DE DISEÑO
+
+Si el proyecto no posee un sistema visual sólido, créalo sin romper la aplicación.
+
+Centraliza, cuando sea apropiado:
+
+* colores
+* spacing
+* typography
+* border radius
+* shadows
+* elevation
+* motion
+* breakpoints
+* z-index
+* component states
+
+Utiliza variables/tokens cuando la arquitectura existente lo permita.
+
+Quiero consistencia.
+
+Un botón no debe verse diferente en cada página.
+
+Una tabla no debe comportarse visualmente diferente sin razón.
+
+Los formularios deben compartir lenguaje visual.
+
+---
+
+# 9. ESPACIADO Y COMPOSICIÓN
+
+Elimina el aspecto de "elementos puestos unos al lado de otros".
+
+Trabaja:
+
+* whitespace
+* ritmo
+* proporción
+* alineación
+* grids
+* composición
+* densidad
+* agrupación visual
+
+Utiliza el espacio vacío como herramienta de diseño.
+
+No llenes todos los espacios.
+
+---
+
+# 10. COMPONENTES
+
+Audita todos los componentes existentes.
+
+Busca oportunidades para mejorar:
+
+* navbar
+* sidebar
+* header
+* cards
+* tables
+* forms
+* modals
+* dialogs
+* dropdowns
+* tabs
+* badges
+* alerts
+* buttons
+* pagination
+* breadcrumbs
+* search
+* filters
+* dashboards
+* charts
+* empty states
+* loading states
+
+No crees componentes nuevos simplemente por crear componentes.
+
+Reutiliza cuando sea apropiado.
+
+---
+
+# 11. NAVEGACIÓN
+
+La navegación debe sentirse clara, rápida y elegante.
+
+Si existe sidebar:
+
+No asumas que un sidebar enorme es la solución.
+
+Evalúa:
+
+* navegación expandida
+* navegación compacta
+* estados activos
+* agrupación
+* iconografía
+* tooltips
+* comportamiento responsive
+* transición desktop/mobile
+
+Si existe navbar:
+
+Evalúa:
+
+* jerarquía
+* acciones principales
+* espacio
+* sticky behavior
+* scroll behavior
+
+---
+
+# 12. RESPONSIVE DESIGN
+
+No quiero que el diseño desktop simplemente se reduzca para mobile.
+
+Rediseña la composición para cada breakpoint.
+
+Evalúa:
+
+* desktop
+* laptop
+* tablet
+* mobile
+
+Especialmente:
+
+* navegación
+* tablas
+* formularios
+* cards
+* modales
+* botones
+* spacing
+* typography
+* imágenes
+* contenido largo
+
+La experiencia móvil debe sentirse diseñada, no comprimida.
+
+---
+
+# 13. ACCESIBILIDAD
+
+No sacrifiques accesibilidad por estética.
+
+Mantén:
+
+* contraste adecuado
+* focus states
+* keyboard navigation
+* tamaños táctiles adecuados
+* semántica
+* labels
+* aria cuando corresponda
+* reduced motion
+
+Si implementas animaciones:
+
+respeta `prefers-reduced-motion`.
+
+---
+
+# 14. PERFORMANCE
+
+Los efectos visuales no deben destruir el rendimiento.
+
+Prioriza:
+
+* CSS cuando sea suficiente
+* transform/opacity para animaciones
+* lazy loading
+* evitar renders innecesarios
+* evitar listeners de scroll costosos
+* evitar efectos pesados sin necesidad
+* evitar librerías adicionales si no aportan suficiente valor
+
+No quiero una experiencia espectacular que funcione mal.
+
+Quiero:
+
+HIGH VISUAL QUALITY + HIGH PERFORMANCE.
+
+---
+
+# 15. REGLA CRÍTICA: NO ROMPER LA APLICACIÓN
+
+Antes de modificar un componente funcional:
+
+entiende qué hace.
+
+Después:
+
+mejora únicamente su presentación y experiencia.
+
+Si necesitas modificar código funcional para implementar una mejora visual:
+
+haz solamente el cambio mínimo indispensable.
+
+No refactorices el backend.
+
+No cambies APIs.
+
+No cambies lógica de negocio.
+
+No cambies datos.
+
+No cambies reglas.
+
+No cambies autenticación.
+
+No cambies permisos.
+
+No cambies rutas funcionales salvo que sea absolutamente necesario para la presentación.
+
+---
+
+# 16. NO INVENTES FUNCIONALIDADES
+
+No inventes:
+
+* métricas
+* datos
+* botones
+* procesos
+* información
+* estados de negocio
+* acciones que la aplicación realmente no soporta
+
+Puedes mejorar la presentación de una funcionalidad existente.
+
+Pero no puedes inventar una funcionalidad simplemente porque visualmente quedaría bien.
+
+---
+
+# 17. USA LA INFORMACIÓN REAL DEL PROYECTO
+
+No rellenes la interfaz con:
+
+"Lorem ipsum"
+
+"Example User"
+
+"12345"
+
+"Dashboard Analytics"
+
+"Revenue"
+
+"Growth"
+
+"AI Insights"
+
+o cualquier contenido genérico si el proyecto ya tiene información real.
+
+Utiliza los datos existentes.
+
+El diseño debe adaptarse al producto real.
+
+---
+
+# 18. EFECTOS VISUALES DE NUEVA GENERACIÓN
+
+Cuando realmente aporten valor, puedes utilizar técnicas como:
+
+* layered depth
+* subtle glass
+* blur
+* masking
+* gradient meshes
+* noise textures
+* dynamic backgrounds
+* scroll choreography
+* magnetic interactions
+* cursor interactions
+* image reveal
+* text reveal
+* clipping
+* smooth transitions
+* progressive disclosure
+* kinetic typography
+* subtle 3D
+* perspective
+* sticky storytelling
+
+Pero recuerda:
+
+PREMIUM ≠ MÁS EFECTOS.
+
+La sofisticación está en el control.
+
+---
+
+# 19. NO QUIERO UNA COPIA DE UNA WEB FUTURISTA
+
+Utiliza como inspiración conceptual las mejores experiencias web contemporáneas e inmersivas:
+
+* storytelling mediante scroll
+* interfaces cinematográficas
+* motion design
+* editorial layouts
+* productos premium
+* interfaces experimentales
+* interacción física
+* transiciones de alta calidad
+
+Pero NO copies visualmente una página específica.
+
+Extrae principios.
+
+Crea una identidad propia para este producto.
+
+---
+
+# 20. PROCESO DE TRABAJO
+
+Trabaja en estas fases:
+
+## FASE 1 — AUDIT
+
+Analiza el proyecto completo.
+
+Identifica:
+
+* problemas visuales
+* inconsistencias
+* UX friction
+* componentes débiles
+* problemas responsive
+* problemas de accesibilidad
+* oportunidades de motion
+* oportunidades de composición
+
+## FASE 2 — DESIGN DIRECTION
+
+Define internamente:
+
+* visual identity
+* typography
+* color system
+* spacing
+* density
+* motion language
+* component language
+* responsive strategy
+
+No empieces todavía a modificar indiscriminadamente.
+
+## FASE 3 — TRANSFORMATION
+
+Implementa la transformación.
+
+Prioridad:
+
+1. layout
+2. hierarchy
+3. typography
+4. color
+5. spacing
+6. components
+7. interaction
+8. motion
+9. responsive
+10. micro-polish
+
+## FASE 4 — MOTION PASS
+
+Revisa específicamente:
+
+* entrada
+* salida
+* hover
+* focus
+* scroll
+* transitions
+* loading
+* state changes
+
+Elimina cualquier animación que no aporte.
+
+## FASE 5 — POLISH PASS
+
+Haz una revisión de nivel senior.
+
+Busca:
+
+* 1px inconsistencies
+* spacing inconsistencies
+* typography inconsistencies
+* weak hierarchy
+* excessive borders
+* excessive shadows
+* unnecessary cards
+* bad alignment
+* poor mobile layouts
+* generic UI patterns
+* awkward animations
+* excessive motion
+
+## FASE 6 — FINAL AUDIT
+
+Realiza una última auditoría utilizando los principios de:
+
+* frontend-design
+* UI/UX Pro Max
+* Emil Design Engineering
+* Impeccable
+* Design Taste
+* Web Interface Guidelines
+
+Corrige los problemas encontrados.
+
+---
+
+# 21. CRITERIO DE CALIDAD
+
+No quiero que simplemente digas:
+
+"Se ve mejor."
+
+Quiero que evalúes la interfaz como si fuera a ser presentada públicamente como un producto premium.
+
+Debe alcanzar un nivel donde:
+
+* el usuario entienda rápidamente la interfaz
+* la navegación se sienta natural
+* los componentes tengan personalidad
+* el movimiento tenga propósito
+* la jerarquía sea evidente
+* la interfaz sea memorable
+* el diseño sea coherente
+* el responsive sea sólido
+* la accesibilidad se mantenga
+* el rendimiento sea razonable
+* no parezca una plantilla generada por IA
+
+La meta no es hacer "más bonito".
+
+La meta es transformar la EXPERIENCIA.
+
+---
+
+# 22. RESTRICCIÓN ABSOLUTA
+
+REPITO:
+
+NO MODIFIQUES LA LÓGICA DEL PRODUCTO.
+
+NO REESCRIBAS LA APLICACIÓN.
+
+NO CAMBIES EL BACKEND.
+
+NO CAMBIES LA BASE DE DATOS.
+
+NO CAMBIES LOS ENDPOINTS.
+
+NO CAMBIES LAS REGLAS DE NEGOCIO.
+
+NO ELIMINES FUNCIONALIDADES.
+
+NO INVENTES FUNCIONALIDADES.
+
+NO CAMBIES EL COMPORTAMIENTO FUNCIONAL.
+
+ÚNICAMENTE:
+
+VISUAL DESIGN
++
+UX
++
+INTERACTION DESIGN
++
+MOTION DESIGN
++
+RESPONSIVE DESIGN
++
+ACCESSIBILITY
++
+MICROINTERACTIONS
++
+VISUAL POLISH
+
+---
+
+# 23. SI TIENES ACCESO A UN NAVEGADOR O PREVIEW
+
+ÚSALO.
+
+Visualiza la aplicación real.
+
+No te limites a leer el código.
+
+Inspecciona cómo se ve realmente.
+
+Revisa al menos:
+
+* desktop
+* mobile
+* principales páginas
+* navegación
+* formularios
+* tablas
+* estados vacíos
+* estados de carga
+* modales
+* componentes interactivos
+
+Si encuentras un problema visual, corrígelo directamente.
+
+---
+
+# 24. SI TIENES QUE ELEGIR ENTRE "SEGURO" Y "EXCEPCIONAL"
+
+Elige EXCEPCIONAL siempre que:
+
+* siga siendo usable
+* sea accesible
+* sea coherente con el producto
+* no rompa funcionalidad
+* no degrade el rendimiento
+
+No quiero un diseño mediocre por miedo a experimentar.
+
+Quiero una dirección visual clara.
+
+---
+
+# 25. RESULTADO FINAL
+
+Al terminar, quiero que mi aplicación conserve exactamente sus capacidades actuales, pero que la experiencia visual se sienta como una evolución radical del producto.
+
+Debe sentirse:
+
+MODERNA
+DISTINTIVA
+PREMIUM
+FLUIDA
+INTUITIVA
+INMERSIVA
+RÁPIDA
+ELEGANTE
+TECNOLÓGICA
+PROFESIONAL
+MEMORABLE
+
+Quiero que alguien que conocía la versión anterior pueda verla y pensar:
+
+"Esto parece otro producto."
+
+Pero cuando utilice la aplicación, todas sus funcionalidades deben seguir funcionando exactamente como antes.
+
+NO quiero solamente un cambio de colores.
+
+NO quiero solamente cambiar fuentes.
+
+NO quiero solamente agregar animaciones.
+
+Quiero una transformación completa de la EXPERIENCIA VISUAL E INTERACTIVA.
+
+Hazlo con criterio de un Senior Product Designer + Creative Director + Motion Designer + Design Engineer.
+
+Empieza por comprender el proyecto.
+
+Después diseña.
+
+Después implementa.
+
+Después audita.
+
+Después pule.
+
+Y solo termina cuando la interfaz haya alcanzado un nivel de acabado realmente excepcional.
+
+# 12. RESPONSIVE DESIGN — MOBILE FIRST QUALITY
+
+El responsive NO debe ser tratado como una adaptación secundaria del diseño desktop.
+
+Quiero una experiencia completamente diseñada para:
+
+* teléfonos pequeños
+* teléfonos grandes
+* tablets
+* laptops
+* desktops
+* pantallas ultra-wide
+
+La interfaz debe conservar su identidad visual en todos los tamaños, pero la composición puede y DEBE cambiar cuando sea necesario.
+
+## MOBILE NO ES DESKTOP EN PEQUEÑO
+
+No hagas simplemente:
+
+desktop → reducir tamaños → apilar elementos.
+
+En mobile debes replantear la experiencia.
+
+Evalúa individualmente:
+
+* navegación
+* header
+* sidebar
+* botones
+* formularios
+* tablas
+* cards
+* filtros
+* búsqueda
+* modales
+* dropdowns
+* gráficos
+* imágenes
+* menús
+* acciones principales
+* contenido secundario
+
+Si un componente funciona bien en desktop pero no tiene sentido en mobile, rediseña SU PRESENTACIÓN, manteniendo exactamente la misma funcionalidad.
+
+---
+
+## MOBILE NAVIGATION
+
+Analiza la navegación existente y determina la mejor solución para móvil.
+
+Puede utilizarse, cuando tenga sentido:
+
+* bottom navigation
+* hamburger navigation
+* drawer
+* compact header
+* contextual navigation
+* sticky action bar
+* floating action
+* collapsible navigation
+
+No introduzcas una navegación nueva si la existente puede adaptarse correctamente.
+
+La navegación debe permitir que el usuario llegue rápidamente a las funciones principales.
+
+---
+
+## TOUCH-FIRST INTERACTION
+
+En mobile no existen hover states como en desktop.
+
+Por lo tanto:
+
+NO dependas de hover para comunicar información importante.
+
+Toda interacción importante debe funcionar mediante:
+
+* tap
+* swipe cuando tenga sentido
+* scroll
+* focus
+* teclado móvil
+
+Los elementos táctiles deben tener suficiente área de interacción.
+
+Como referencia, las Web Interface Guidelines de Vercel recomiendan objetivos táctiles de al menos **44 px en mobile**.
+
+Evita:
+
+* botones diminutos
+* iconos demasiado juntos
+* elementos difíciles de pulsar
+* controles pegados a los bordes
+* zonas táctiles ambiguas
+
+---
+
+## MOBILE FORMS
+
+Revisa especialmente todos los formularios.
+
+En mobile:
+
+* inputs cómodos
+* labels claros
+* teclado apropiado según el tipo de dato
+* spacing suficiente
+* errores visibles
+* botones accesibles
+* evitar saltos inesperados de layout
+
+Los campos de texto deben evitar tamaños que provoquen zoom automático no deseado en navegadores móviles; las guidelines de Vercel recomiendan un tamaño de fuente de al menos 16 px para inputs móviles.
+
+NO desactives el zoom del navegador.
+
+---
+
+## MOBILE TABLES
+
+Las tablas requieren especial atención.
+
+NO permitas que una tabla simplemente desborde horizontalmente sin analizar la experiencia.
+
+Cuando sea apropiado, considera:
+
+* scroll horizontal controlado
+* columnas prioritarias
+* columnas secundarias ocultables
+* transformación de filas en cards
+* información expandible
+* jerarquía de datos
+
+Pero NO elimines información funcional.
+
+La información debe seguir estando disponible.
+
+---
+
+## MOBILE CARDS
+
+No reduzcas automáticamente todas las cards.
+
+Evalúa si en mobile deben convertirse en:
+
+* lista
+* sección
+* acordeón
+* card compacta
+* elemento expandible
+
+La densidad visual debe adaptarse al tamaño de pantalla.
+
+---
+
+## MOBILE MODALS
+
+Los modales desktop no necesariamente funcionan bien en teléfonos.
+
+Cuando corresponda, adapta su presentación a:
+
+* bottom sheet
+* full-screen modal
+* drawer
+* modal compacto
+
+Manteniendo exactamente la misma funcionalidad.
+
+---
+
+## MOBILE SCROLL EXPERIENCE
+
+Quiero que el scroll en móvil sea especialmente cuidado.
+
+Las animaciones de scroll deben:
+
+* ser fluidas
+* no bloquear el scroll
+* no generar lag
+* no provocar movimientos inesperados
+* no ocultar contenido
+* no interferir con gestos normales
+
+NO conviertas el scroll en una experiencia pesada.
+
+El usuario siempre debe sentir que tiene el control.
+
+---
+
+## RESPONSIVE MOTION
+
+Las animaciones también deben adaptarse al dispositivo.
+
+Una animación espectacular en desktop puede resultar molesta o pesada en mobile.
+
+Por eso:
+
+DESKTOP:
+mayor profundidad visual cuando tenga sentido.
+
+TABLET:
+interacciones moderadas.
+
+MOBILE:
+animaciones más cortas, simples y eficientes cuando sea necesario.
+
+Además, respeta:
+
+`prefers-reduced-motion`
+
+y proporciona una alternativa adecuada para usuarios que prefieran reducir movimiento. Las Web Interface Guidelines actuales también exigen considerar esta preferencia.
+
+---
+
+## SAFE AREAS
+
+Considera dispositivos con:
+
+* notch
+* Dynamic Island
+* barras del sistema
+* navegación gestual
+* orientación horizontal
+
+Utiliza correctamente las áreas seguras cuando corresponda.
+
+Ningún botón importante debe quedar oculto detrás de elementos del sistema.
+
+---
+
+## MOBILE PERFORMANCE
+
+El diseño visual debe funcionar correctamente incluso en dispositivos móviles con recursos limitados.
+
+Evita:
+
+* efectos excesivamente pesados
+* animaciones JavaScript innecesarias
+* listeners de scroll costosos
+* imágenes gigantes
+* video innecesario
+* partículas excesivas
+* múltiples efectos simultáneos
+
+Prioriza animaciones basadas en:
+
+`transform`
+
+y
+
+`opacity`
+
+cuando sea posible.
+
+---
+
+## RESPONSIVE BREAKPOINTS
+
+No diseñes pensando únicamente en:
+
+`desktop / mobile`
+
+Utiliza breakpoints basados en el contenido y en cómo realmente cambia la composición.
+
+La interfaz debe funcionar correctamente en tamaños intermedios.
+
+Especialmente:
+
+* 320–360 px
+* 375–390 px
+* 414–430 px
+* tablet
+* laptop
+* desktop
+* ultra-wide
+
+No quiero breakpoints arbitrarios que solamente funcionen en un dispositivo específico.
+
+---
+
+## RESPONSIVE TESTING
+
+Antes de terminar, revisa visualmente la aplicación en diferentes tamaños.
+
+Como mínimo:
+
+### Mobile pequeño
+
+320–360 px
+
+### Mobile estándar
+
+375–430 px
+
+### Tablet
+
+768 px aproximadamente
+
+### Laptop
+
+1366 px aproximadamente
+
+### Desktop
+
+1920 px aproximadamente
+
+### Ultra-wide
+
+2560 px o superior
+
+Busca específicamente:
+
+* overflow horizontal
+* textos cortados
+* botones fuera de pantalla
+* elementos superpuestos
+* headers rotos
+* modales incorrectos
+* tablas problemáticas
+* imágenes deformadas
+* espacios excesivos
+* espacios insuficientes
+* typography demasiado grande
+* typography demasiado pequeña
+* elementos imposibles de tocar
+* animaciones que generan problemas
+
+---
+
+## REGLA FINAL DE RESPONSIVE
+
+La pregunta NO es:
+
+"¿Cómo hago que el diseño desktop quepa en un teléfono?"
+
+La pregunta es:
+
+"¿Cuál es la mejor experiencia posible para este usuario en este dispositivo?"
+
+Mantén la misma identidad y funcionalidad del producto, pero permite que la composición, navegación, densidad, interacción y movimiento evolucionen según el dispositivo.
+
+Quiero:
+
+DESKTOP EXPERIENCE
++
+TABLET EXPERIENCE
++
+MOBILE EXPERIENCE
+
+No:
+
+DESKTOP EXPERIENCE comprimida.

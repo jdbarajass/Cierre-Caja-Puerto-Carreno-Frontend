@@ -68,7 +68,7 @@ const ABCAnalysis = () => {
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando análisis ABC...</p>
+          <p className="mt-4 text-gray-600 font-medium">Cargando análisis ABC…</p>
         </div>
       </div>
     );
@@ -86,7 +86,7 @@ const ABCAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -115,7 +115,7 @@ const ABCAnalysis = () => {
         </div>
         <button
           onClick={fetchData}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Actualizar
@@ -175,7 +175,7 @@ const ABCAnalysis = () => {
                 </div>
                 <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${colors.primary} transition-all flex items-center justify-end pr-3`}
+                    className={`h-full ${colors.primary} transition-[width] flex items-center justify-end pr-3`}
                     style={{ width: `${classData.porcentaje_valor}%` }}
                   >
                     <span className="text-white text-sm font-bold">

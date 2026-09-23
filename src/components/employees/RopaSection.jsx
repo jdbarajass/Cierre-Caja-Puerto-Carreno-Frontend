@@ -126,25 +126,25 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha *</label>
-              <input type="date" required value={form.date} max={today()}
+              <input aria-label="Fecha" type="date" required value={form.date} max={today()}
                 onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Producto *</label>
-              <input type="text" required placeholder="Ej: Camiseta básica" value={form.product}
+              <input aria-label="Producto" type="text" required placeholder="Ej: Camiseta básica" value={form.product}
                 onChange={e => setForm(f => ({ ...f, product: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Precio original *</label>
-              <input type="number" required min="0" step="100" placeholder="0" value={form.value}
+              <input aria-label="Precio original" type="number" required min="0" step="100" placeholder="0" value={form.value}
                 onChange={e => setForm(f => ({ ...f, value: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Descuento (%)</label>
-              <input type="number" min="0" max="100" step="0.1" placeholder="0" value={form.discount_pct}
+              <input aria-label="Descuento (%)" type="number" min="0" max="100" step="0.1" placeholder="0" value={form.discount_pct}
                 onChange={e => setForm(f => ({ ...f, discount_pct: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
             </div>
@@ -155,7 +155,7 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Observaciones…" value={form.notes}
+            <textarea aria-label="Notas" rows={2} placeholder="Observaciones…" value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" />
           </div>
@@ -175,7 +175,7 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
       {loading ? (
         <div className="flex justify-center py-10"><div className="w-7 h-7 border-2 border-pink-300 border-t-pink-600 rounded-full animate-spin" /></div>
       ) : items.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
+        <div className="text-center py-10 text-gray-500">
           <Shirt className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm">No hay prendas registradas{filterNombre ? ` para "${filterNombre}"` : ''}</p>
         </div>
@@ -207,8 +207,8 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
                   {isAdmin && (
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 justify-end">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button aria-label="Editar" onClick={() => handleEdit(item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button aria-label="Eliminar" onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   )}

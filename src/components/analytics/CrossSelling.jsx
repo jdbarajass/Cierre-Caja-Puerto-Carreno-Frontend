@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, ShoppingBag, DollarSign, Loader2, AlertCircle } from 'lucide-react';
 import { getCrossSelling } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
+import { useSceneSeries } from '../../experience/store';
 
 const CrossSelling = () => {
   // Inicializar fechas con el mes actual
@@ -40,12 +41,15 @@ const CrossSelling = () => {
     }
   };
 
+  // Escena WebGL (solo lectura): la serie que este módulo ya muestra
+  useSceneSeries('Veces comprados juntos', data?.top_product_pairs, (p) => p.times_bought_together, (p) => `${p.product1} + ${p.product2}`, 'count');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando análisis de cross-selling...</p>
+          <p className="text-gray-600">Cargando análisis de cross-selling…</p>
         </div>
       </div>
     );
@@ -82,6 +86,7 @@ const CrossSelling = () => {
             </div>
             <input
               type="date"
+              aria-label="Fecha inicial"
               value={dateRange.start_date}
               onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -89,13 +94,14 @@ const CrossSelling = () => {
             <span className="text-gray-600">hasta</span>
             <input
               type="date"
+              aria-label="Fecha final"
               value={dateRange.end_date}
               onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-700">Soporte mínimo:</label>
-              <input
+              <input aria-label="Soporte mínimo"
                 type="number"
                 min="1"
                 max="10"
@@ -106,7 +112,7 @@ const CrossSelling = () => {
             </div>
             <button
               onClick={fetchData}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
             >
               Consultar Período
             </button>
@@ -136,6 +142,7 @@ const CrossSelling = () => {
           </div>
           <input
             type="date"
+            aria-label="Fecha inicial"
             value={dateRange.start_date}
             onChange={(e) => setDateRange(prev => ({ ...prev, start_date: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -143,13 +150,14 @@ const CrossSelling = () => {
           <span className="text-gray-600">hasta</span>
           <input
             type="date"
+            aria-label="Fecha final"
             value={dateRange.end_date}
             onChange={(e) => setDateRange(prev => ({ ...prev, end_date: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-700">Soporte mínimo:</label>
-            <input
+            <input aria-label="Soporte mínimo"
               type="number"
               min="1"
               max="10"
@@ -160,7 +168,7 @@ const CrossSelling = () => {
           </div>
           <button
             onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
           >
             Consultar Período
           </button>
@@ -206,7 +214,7 @@ const CrossSelling = () => {
                   <div className="text-sm font-medium text-gray-900 truncate" title={pair.product1}>
                     {pair.product1}
                   </div>
-                  <div className="text-center text-2xl font-bold text-gray-400">+</div>
+                  <div className="text-center text-2xl font-bold text-gray-500">+</div>
                   <div className="text-sm font-medium text-gray-900 truncate" title={pair.product2}>
                     {pair.product2}
                   </div>

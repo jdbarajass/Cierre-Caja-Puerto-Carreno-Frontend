@@ -6,6 +6,8 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/Login';
 import Unauthorized from './components/Unauthorized';
 import MainLayout from './components/layout/MainLayout';
+import AppLoader from './components/common/AppLoader';
+import ExperienceLayer from './experience/ExperienceLayer';
 
 // Lazy loading de componentes existentes
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -28,20 +30,15 @@ const CuentasLayout = lazy(() => import('./pages/CuentasLayout'));
 const NotesTasksLayout = lazy(() => import('./pages/NotesTasksLayout'));
 
 // Componente de carga
-const LoadingFallback = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p className="mt-4 text-gray-600 font-medium">Cargando...</p>
-    </div>
-  </div>
-);
+const LoadingFallback = () => <AppLoader label="Cargando…" />;
 
 const App = () => {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Router>
+          {/* Capa visual WebGL persistente entre rutas (solo presentación) */}
+          <ExperienceLayer />
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               {/* Rutas públicas */}

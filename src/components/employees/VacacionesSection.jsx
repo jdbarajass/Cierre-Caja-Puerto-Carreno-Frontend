@@ -89,12 +89,12 @@ const VacacionesSection = ({ isAdmin, filterNombre }) => {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha inicio *</label>
-              <input type="date" required value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
+              <input aria-label="Fecha inicio" type="date" required value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Fecha fin *</label>
-              <input type="date" required value={form.end_date} min={form.start_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
+              <input aria-label="Fecha fin" type="date" required value={form.end_date} min={form.start_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300" />
             </div>
           </div>
@@ -104,7 +104,7 @@ const VacacionesSection = ({ isAdmin, filterNombre }) => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
-            <textarea rows={2} placeholder="Observaciones…" value={form.notes}
+            <textarea aria-label="Notas" rows={2} placeholder="Observaciones…" value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 resize-none" />
           </div>
@@ -119,7 +119,7 @@ const VacacionesSection = ({ isAdmin, filterNombre }) => {
       )}
 
       {loading ? <div className="flex justify-center py-10"><div className="w-7 h-7 border-2 border-teal-300 border-t-teal-600 rounded-full animate-spin" /></div>
-      : items.length === 0 ? <div className="text-center py-10 text-gray-400"><Sun className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay vacaciones{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
+      : items.length === 0 ? <div className="text-center py-10 text-gray-500"><Sun className="w-10 h-10 mx-auto mb-2 opacity-30" /><p className="text-sm">No hay vacaciones{filterNombre ? ` para "${filterNombre}"` : ''}</p></div>
       : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
@@ -142,8 +142,8 @@ const VacacionesSection = ({ isAdmin, filterNombre }) => {
                   <td className="px-4 py-3 text-center"><span className="px-2 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-bold">{item.days}d</span></td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{item.notes || '—'}</td>
                   {isAdmin && <td className="px-4 py-3"><div className="flex items-center gap-2 justify-end">
-                    <button onClick={() => handleEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button aria-label="Editar" onClick={() => handleEdit(item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button aria-label="Eliminar" onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div></td>}
                 </tr>
               ))}

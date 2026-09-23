@@ -25,7 +25,7 @@ const EmployeeSummaryCards = ({ items, valueFor, formatValue, countLabel, accent
           <div key={key} className="bg-white border border-gray-200 rounded-xl p-3">
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</p>
             <p className={`text-xl font-bold ${accentClass}`}>{formatValue(s.total)}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{s.count} {countLabel}{s.count === 1 ? '' : 's'}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">{s.count} {countLabel}{s.count === 1 ? '' : 's'}</p>
           </div>
         );
       })}

@@ -12,13 +12,13 @@ const Unauthorized = () => {
     useDocumentTitle('Acceso Denegado');
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+        <div className="min-h-[100dvh] flex items-end sm:items-center justify-center p-4">
             <div className="max-w-md w-full">
-                <div className="bg-white rounded-2xl shadow-xl p-8">
+                <div className="bg-white rounded-3xl ring-1 ring-gray-900/[0.06] shadow-xl p-7 sm:p-8 animate-fade-in-scale">
                     {/* Icono de Acceso Denegado */}
                     <div className="flex justify-center mb-6">
-                        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-                            <ShieldOff className="w-12 h-12 text-red-600" />
+                        <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+                            <ShieldOff className="w-7 h-7 text-red-600" strokeWidth={1.75} />
                         </div>
                     </div>
 
@@ -40,7 +40,7 @@ const Unauthorized = () => {
                             </p>
                             <p className="text-sm text-gray-700 text-center mt-1">
                                 <span className="font-medium">Rol:</span>{' '}
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-900 text-white">
                                     {user.role === 'admin' ? 'Administrador' : user.role === 'sales' ? 'Ventas' : user.role}
                                 </span>
                             </p>
@@ -55,7 +55,7 @@ const Unauthorized = () => {
                     <div className="space-y-3">
                         <button
                             onClick={() => navigate(-1)}
-                            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold h-12 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                             <ArrowLeft className="w-5 h-5" />
                             Volver Atrás
@@ -63,7 +63,7 @@ const Unauthorized = () => {
 
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold h-12 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                             <Home className="w-5 h-5" />
                             Ir al Dashboard

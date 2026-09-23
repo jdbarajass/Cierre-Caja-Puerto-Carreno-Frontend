@@ -6,6 +6,7 @@ import { EMPLOYEE_NAMES } from '../../utils/employeeGroups';
 // que impedían agrupar correctamente los totales por persona.
 const EmployeeSelect = ({ value, onChange, focusRing = 'focus:ring-indigo-300', className = '' }) => (
   <select
+    aria-label="Empleada"
     required
     value={value}
     onChange={onChange}

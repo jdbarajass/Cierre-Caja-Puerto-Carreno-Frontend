@@ -1,16 +1,114 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Calendar, DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image, ChevronDown, Wallet, Landmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { submitCashClosing, getPreconsulta } from '../services/api';
 import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useDialog from '../hooks/useDialog';
 import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
 import { saveDraft, loadDraft, clearDraft } from '../utils/cashClosingDraft';
+import { usePublishSceneData } from '../experience/store';
+
+/* --- Presentación del formulario de cierre (sistema "Arqueo") ------------ */
+
+const CLOSING_STEPS = [
+  { id: 'paso-fecha', label: 'Fecha' },
+  { id: 'paso-efectivo', label: 'Efectivo' },
+  { id: 'paso-medios', label: 'Medios de pago' },
+  { id: 'paso-ajustes', label: 'Ajustes' },
+];
+
+// Campo de formulario compartido por todo el cierre
+const FIELD = 'block w-full px-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-300 hover:border-gray-300 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none disabled:bg-gray-50 disabled:text-gray-500';
+const LABEL = 'block text-[13px] font-medium text-gray-600 mb-1.5';
+const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 whitespace-nowrap';
+// Fila del libro de denominaciones: valor | cantidad | subtotal
+const LEDGER_ROW = 'grid grid-cols-[4.75rem_minmax(0,7.5rem)_1fr] sm:grid-cols-[5.5rem_minmax(0,8.5rem)_1fr] items-center gap-3 py-2';
+
+const StepSection = ({ id, number, title, description, reveal, children }) => (
+  <section
+    id={id}
+    aria-labelledby={`${id}-titulo`}
+    className={`scroll-mt-24 bg-white rounded-2xl ring-1 ring-gray-900/[0.06] shadow-sm ${reveal ? 'animate-rise' : ''}`}
+    style={reveal ? { '--i': reveal } : undefined}
+  >
+    <header className="flex items-start gap-3 px-5 sm:px-6 pt-5 sm:pt-6">
+      <span className="mt-0.5 w-7 h-7 flex-shrink-0 rounded-full bg-gray-900 text-white font-display text-[13px] font-bold grid place-items-center">
+        {number}
+      </span>
+      <div className="min-w-0">
+        <h2 id={`${id}-titulo`} className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{title}</h2>
+        {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+      </div>
+    </header>
+    <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-5">{children}</div>
+  </section>
+);
+
+const InvoiceRange = ({ title, from, to, count }) => (
+  <div>
+    <div className="flex items-baseline justify-between gap-3 mb-1.5">
+      <h4 className="text-[13px] font-semibold text-gray-700">{title}</h4>
+      <span className="text-xs text-gray-500">{count}</span>
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div className="bg-white rounded-lg px-3 py-2 ring-1 ring-gray-900/[0.05]">
+        <p className="text-[11px] text-gray-500">Factura Inicial</p>
+        <p className="font-display text-base font-bold text-gray-900 truncate">{from}</p>
+      </div>
+      <div className="bg-white rounded-lg px-3 py-2 ring-1 ring-gray-900/[0.05]">
+        <p className="text-[11px] text-gray-500">Factura Final</p>
+        <p className="font-display text-base font-bold text-gray-900 truncate">{to}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const MethodTotal = ({ label, value, tone }) => (
+  <div className="flex items-center justify-between gap-3">
+    <dt className="flex items-center gap-2.5 text-sm text-gray-600">
+      <span className={`w-1 h-4 rounded-full ${tone}`} aria-hidden="true" />
+      {label}
+    </dt>
+    <dd className="text-[15px] font-semibold text-gray-900">{value}</dd>
+  </div>
+);
+
+// Monto numérico de un total de la preconsulta ({ total, formatted })
+const preTotal = (t) => (t && Number.isFinite(t.total) ? t.total : parseInt(String(t?.formatted || '').replace(/\D/g, ''), 10) || 0);
+
+const ROOM_CAPTIONS = {
+  'paso-fecha': ['Ventas del día en Alegra', 'Por medio de pago'],
+  'paso-efectivo': ['Efectivo contado', 'Billetes y monedas por denominación'],
+  'paso-medios': ['Registrado frente a Alegra', 'Transferencias y datáfono'],
+  'paso-ajustes': ['Ajustes que salen de la caja', 'Excedentes, gastos y préstamos'],
+};
+
+/**
+ * Ventana de la escena 3D del cierre (solo presentación). Es transparente: el
+ * canvas WebGL, que vive detrás de toda la app, dibuja aquí adentro.
+ */
+const CashSceneWindow = ({ step, ready }) => {
+  const [title, hint] = ready ? ROOM_CAPTIONS[step] || ROOM_CAPTIONS['paso-fecha'] : ['Esperando la preconsulta', 'Consulta Alegra para empezar'];
+  return (
+    <aside aria-hidden="true" className="cash-scene-aside self-stretch">
+      <div
+        data-scene-anchor="cash-window"
+        className="sticky top-24 h-[min(calc(100dvh-8rem),720px)] rounded-3xl ring-1 ring-gray-900/[0.06] bg-gradient-to-b from-white/40 to-transparent"
+      >
+        <div key={title} className="absolute top-5 left-6 right-6 animate-fade-in-scale">
+          <p className="text-[13px] font-semibold text-gray-900">{title}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{hint}</p>
+        </div>
+      </div>
+    </aside>
+  );
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -51,6 +149,13 @@ const Dashboard = () => {
   const [draftRestoredNotice, setDraftRestoredNotice] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState('jpeg');
   const [desfaseSugerido, setDesfaseSugerido] = useState(null);
+  // Teclado en los modales: Escape = mismo botón Cerrar/Cancelar, foco atrapado
+  // y devuelto al cerrar. El de carga no se puede cerrar (onClose = null).
+  const successDialogRef = useDialog(showSuccessModal, () => setShowSuccessModal(false));
+  const errorDialogRef = useDialog(Boolean(errorModalMessage), () => setErrorModalMessage(null));
+  const loadingDialogRef = useDialog(loading);
+  const confirmDialogRef = useDialog(showConfirmModal && Boolean(confirmData), () => setShowConfirmModal(false));
+  const warningDialogRef = useDialog(showWarningModal && Boolean(results?.validation), () => setShowWarningModal(false));
   const [showDesfaseSection, setShowDesfaseSection] = useState(false);
 
   // Estados para la preconsulta
@@ -136,6 +241,11 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  // El backend envía 'exacta' (cash_calculator.py / responses.py); se acepta
+  // también 'exacto' por compatibilidad. Antes solo se comparaba con 'exacto' y
+  // la base exacta se mostraba en rojo como si fuera un problema.
+  const isBaseExacta = (status) => status === 'exacta' || status === 'exacto';
+
   const getMensajeCajaBase = (baseData) => {
     if (!baseData || !baseData.base_status) return '';
 
@@ -146,7 +256,7 @@ const Dashboard = () => {
     const match = mensajeOriginal.match(/\$[\d.,]+/);
     const montoStr = match ? match[0] : '';
 
-    if (status === 'exacto') {
+    if (isBaseExacta(status)) {
       return 'Base de caja exacta - $450.000';
     } else if (status === 'sobrante') {
       return `Ajuste de caja realizado - Valor sobrante para consignar: ${montoStr}`;
@@ -650,22 +760,64 @@ const Dashboard = () => {
     }
   };
 
+  // Paso visible del formulario (para la navegación contextual de pasos).
+  // IntersectionObserver: sin listeners de scroll.
+  const [activeStep, setActiveStep] = useState(CLOSING_STEPS[0].id);
+  useEffect(() => {
+    if (!preconsultaRealizada || typeof IntersectionObserver === 'undefined') return;
+    const sections = CLOSING_STEPS.map((s) => document.getElementById(s.id)).filter(Boolean);
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActiveStep(visible[0].target.id);
+      },
+      { rootMargin: '-30% 0px -55% 0px' }
+    );
+    sections.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [preconsultaRealizada]);
+
+  // --- Escena WebGL (solo lectura): valores que la página YA calcula ---
+  const sceneCash = useMemo(() => ({
+    step: activeStep,
+    preconsulta: preconsultaRealizada && preconsultaData?.totales ? {
+      efectivo: preTotal(preconsultaData.totales.efectivo),
+      transferencia: preTotal(preconsultaData.totales.transferencia),
+      debito: preTotal(preconsultaData.totales.tarjeta_debito),
+      credito: preTotal(preconsultaData.totales.tarjeta_credito),
+    } : null,
+    coins,
+    bills,
+    registrado: { transferencias: totalTransferencias, datafono: totalDatafono },
+    ajustes: {
+      excedentes: totalExcedentes,
+      gastos: parseInt(adjustments.gastos_operativos, 10) || 0,
+      prestamos: parseInt(adjustments.prestamos, 10) || 0,
+    },
+    total: totalGeneral,
+    submitting: loading,
+    outcome: results?.validation ? (results.validation.cierre_validado ? 'ok' : 'diff') : null,
+  }), [activeStep, preconsultaRealizada, preconsultaData, coins, bills, totalTransferencias, totalDatafono,
+    totalExcedentes, adjustments.gastos_operativos, adjustments.prestamos, totalGeneral, loading, results]);
+  usePublishSceneData('cash', sceneCash);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-4">
+    <div className="relative">
       {/* Notificación de Validación - Popup Superior */}
       {validationWarning && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-yellow-900">Validación</h3>
-              <p className="text-sm text-yellow-700 mt-1">{validationWarning}</p>
+        <div role="alert" className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md animate-slide-down">
+          <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 pr-2 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-sans text-sm font-semibold tracking-normal">Revisa antes de continuar</h3>
+              <p className="text-sm text-gray-300 mt-1 leading-relaxed">{validationWarning}</p>
             </div>
             <button
               onClick={() => setValidationWarning(null)}
-              className="text-yellow-600 hover:text-yellow-800 transition-colors"
+              className="w-10 h-10 -mt-1.5 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Cerrar aviso"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -673,300 +825,295 @@ const Dashboard = () => {
 
       {/* Notificación de Borrador Recuperado */}
       {draftRestoredNotice && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md animate-slide-down">
-          <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg shadow-lg p-4 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-blue-900">Borrador recuperado</h3>
-              <p className="text-sm text-blue-700 mt-1">
+        <div role="status" className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md animate-slide-down">
+          <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 pr-2 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-sans text-sm font-semibold tracking-normal">Borrador recuperado</h3>
+              <p className="text-sm text-gray-300 mt-1 leading-relaxed">
                 Se restauraron los valores que habías ingresado antes de perder la conexión o recargar la página.
               </p>
             </div>
             <button
               onClick={() => setDraftRestoredNotice(false)}
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="w-10 h-10 -mt-1.5 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Cerrar aviso"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
-            <div className="bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-2xl">
-              <div className="text-white text-4xl sm:text-5xl font-bold tracking-widest" style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '0.3em' }}>
-                KOAJ
-              </div>
-            </div>
+        {/* Encabezado de página */}
+        <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Arqueo y conciliación con Alegra</p>
+            <h1 className="mt-1 text-[2rem] sm:text-4xl lg:text-[2.75rem] font-bold text-gray-900 leading-[1.05]">
+              Cierre diario de caja
+            </h1>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 px-2">Cierre Diario de Caja</h1>
-          <p className="text-lg sm:text-xl text-blue-600 font-semibold mb-1">Puerto Carreño</p>
-          <p className="text-sm sm:text-base text-gray-600">Sistema de arqueo y conciliación</p>
-        </div>
 
-        <div className="space-y-4 sm:space-y-6">
-          {/* Fecha del Cierre */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Fecha del Cierre</h2>
-            </div>
-            <input
-              type="date"
-              value={closingDate}
-              onChange={(e) => {
-                const selectedDate = e.target.value;
-                const today = getColombiaTodayString();
+          {/* Navegación contextual entre pasos (desktop): resalta el paso visible */}
+          {preconsultaRealizada && (
+            <nav aria-label="Pasos del cierre" className="hidden lg:block">
+              <ol className="flex items-center gap-1 p-1 rounded-full bg-white ring-1 ring-gray-900/[0.06] shadow-sm">
+                {CLOSING_STEPS.map((step, index) => {
+                  const current = activeStep === step.id;
+                  return (
+                    <li key={step.id}>
+                      <a
+                        href={`#${step.id}`}
+                        aria-current={current ? 'step' : undefined}
+                        className={`flex items-center gap-2 h-9 pl-1.5 pr-3.5 rounded-full text-[13px] font-medium transition-colors ${
+                          current ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold ${current ? 'bg-white/15' : 'bg-gray-100'}`}>
+                          {index + 1}
+                        </span>
+                        {step.label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
+          )}
+        </header>
 
-                if (selectedDate > today) {
-                  setValidationWarning('No se pueden seleccionar fechas futuras. Se ha establecido la fecha de hoy.');
-                  setClosingDate(today);
-                  setTimeout(() => setValidationWarning(null), 5000);
-                } else {
-                  setClosingDate(selectedDate);
-                  resetPreconsulta(); // Resetear preconsulta al cambiar fecha
-                }
-              }}
-              max={getColombiaTodayString()}
-              aria-label="Fecha del cierre de caja"
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
-              required
-            />
+        <div className="cash-layout">
+        <div className="space-y-4 sm:space-y-5 min-w-0">
+          {/* PASO 1 - Fecha del Cierre + preconsulta */}
+          <StepSection id="paso-fecha" number={1} title="Fecha del cierre" description="Consulta primero lo que Alegra registró ese día.">
+            <div className="grid sm:grid-cols-[minmax(0,1fr)_auto] gap-3">
+              <div>
+                <label htmlFor="closing-date" className="sr-only">Fecha del cierre</label>
+                <input
+                  id="closing-date"
+                  type="date"
+                  value={closingDate}
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+                    const today = getColombiaTodayString();
 
-            {/* Botón de Preconsulta */}
-            {!preconsultaRealizada && (
-              <div className="mt-4">
+                    if (selectedDate > today) {
+                      setValidationWarning('No se pueden seleccionar fechas futuras. Se ha establecido la fecha de hoy.');
+                      setClosingDate(today);
+                      setTimeout(() => setValidationWarning(null), 5000);
+                    } else {
+                      setClosingDate(selectedDate);
+                      resetPreconsulta(); // Resetear preconsulta al cambiar fecha
+                    }
+                  }}
+                  max={getColombiaTodayString()}
+                  aria-label="Fecha del cierre de caja"
+                  className={`${FIELD} h-12 text-base font-medium`}
+                  required
+                />
+              </div>
+
+              {/* Botón de Preconsulta */}
+              {!preconsultaRealizada && (
                 <button
                   onClick={handlePreconsulta}
                   disabled={loadingPreconsulta}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className={`${BTN_PRIMARY} h-12 px-6 text-[15px]`}
                 >
                   {loadingPreconsulta ? (
                     <>
-                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                      Consultando Alegra...
+                      <Loader2 className="w-[18px] h-[18px] animate-spin" />
+                      Consultando Alegra…
                     </>
                   ) : (
                     <>
-                      <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <FileText className="w-[18px] h-[18px]" />
                       Realizar Preconsulta
                     </>
                   )}
                 </button>
+              )}
+            </div>
 
-                {/* Error de preconsulta */}
-                {errorPreconsulta && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-red-700">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <p className="text-sm">{errorPreconsulta}</p>
-                    </div>
-                  </div>
-                )}
+            {/* Carga de la preconsulta: esqueleto con la forma del resultado */}
+            {loadingPreconsulta && (
+              <div className="mt-5 grid md:grid-cols-2 gap-4" aria-hidden="true">
+                <div className="space-y-3"><div className="skeleton h-5 w-1/2" /><div className="skeleton h-12" /><div className="skeleton h-12" /></div>
+                <div className="space-y-3"><div className="skeleton h-5 w-1/3" /><div className="skeleton h-9" /><div className="skeleton h-9" /><div className="skeleton h-12" /></div>
+              </div>
+            )}
+
+            {/* Error de preconsulta */}
+            {!preconsultaRealizada && errorPreconsulta && (
+              <div role="alert" className="mt-4 p-3.5 bg-red-50 ring-1 ring-red-200 rounded-xl flex items-start gap-2.5 text-red-800">
+                <AlertCircle className="w-[18px] h-[18px] flex-shrink-0 mt-px" />
+                <p className="text-sm">{errorPreconsulta}</p>
               </div>
             )}
 
             {/* Datos de la Preconsulta */}
             {preconsultaRealizada && preconsultaData && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <h3 className="text-base font-semibold text-green-800">Datos de Alegra - {preconsultaData.date}</h3>
+              <div className="mt-5 animate-rise rounded-xl bg-gray-50 ring-1 ring-gray-900/[0.05] overflow-hidden">
+                <div className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-gray-200/70">
+                  <CheckCircle2 className="w-[18px] h-[18px] text-emerald-600" />
+                  <h3 className="font-sans text-sm font-semibold text-gray-900 tracking-normal">Datos de Alegra</h3>
+                  <span className="text-sm text-gray-500">{preconsultaData.date}</span>
                 </div>
 
-                {/* Facturación Electrónica */}
-                {preconsultaData.facturacion_electronica && preconsultaData.facturacion_electronica.cantidad > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-indigo-700 mb-2 flex items-center gap-1">
-                      <FileText className="w-4 h-4" />
-                      Facturación Electrónica
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white p-3 rounded-lg border border-indigo-100">
-                        <p className="text-xs text-gray-500 mb-1">Factura Inicial</p>
-                        <p className="text-lg font-bold text-indigo-700">{preconsultaData.facturacion_electronica.factura_inicial || 'N/A'}</p>
-                      </div>
-                      <div className="bg-white p-3 rounded-lg border border-indigo-100">
-                        <p className="text-xs text-gray-500 mb-1">Factura Final</p>
-                        <p className="text-lg font-bold text-indigo-700">{preconsultaData.facturacion_electronica.factura_final || 'N/A'}</p>
-                      </div>
+                <div className="grid md:grid-cols-2 md:divide-x divide-gray-200/70">
+                  {/* Facturación */}
+                  <div className="p-4 sm:p-5 space-y-4">
+                    {preconsultaData.facturacion_electronica && preconsultaData.facturacion_electronica.cantidad > 0 && (
+                      <InvoiceRange
+                        title="Facturación Electrónica"
+                        from={preconsultaData.facturacion_electronica.factura_inicial || 'N/A'}
+                        to={preconsultaData.facturacion_electronica.factura_final || 'N/A'}
+                        count={`${preconsultaData.facturacion_electronica.cantidad} facturas electrónicas`}
+                      />
+                    )}
+                    {preconsultaData.facturacion_principal && preconsultaData.facturacion_principal.cantidad > 0 && (
+                      <InvoiceRange
+                        title="Facturación Principal"
+                        from={preconsultaData.facturacion_principal.factura_inicial || 'N/A'}
+                        to={preconsultaData.facturacion_principal.factura_final || 'N/A'}
+                        count={`${preconsultaData.facturacion_principal.cantidad} facturas principales`}
+                      />
+                    )}
+                    <div className="flex items-baseline justify-between pt-3 border-t border-gray-200/70">
+                      <span className="text-sm text-gray-600">Total facturas activas</span>
+                      <span className="font-display text-xl font-bold text-gray-900">{preconsultaData.cantidad_facturas}</span>
                     </div>
-                    <p className="text-xs text-indigo-600 mt-1 text-right">{preconsultaData.facturacion_electronica.cantidad} facturas electrónicas</p>
-                  </div>
-                )}
-
-                {/* Facturación Principal */}
-                {preconsultaData.facturacion_principal && preconsultaData.facturacion_principal.cantidad > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1">
-                      <FileText className="w-4 h-4" />
-                      Facturación Principal
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white p-3 rounded-lg border border-green-100">
-                        <p className="text-xs text-gray-500 mb-1">Factura Inicial</p>
-                        <p className="text-lg font-bold text-green-700">{preconsultaData.facturacion_principal.factura_inicial || 'N/A'}</p>
+                    {preconsultaData.facturas_anuladas > 0 && (
+                      <div className="flex items-baseline justify-between -mt-2 text-orange-700">
+                        <span className="text-xs">Facturas anuladas</span>
+                        <span className="text-sm font-semibold">{preconsultaData.facturas_anuladas}</span>
                       </div>
-                      <div className="bg-white p-3 rounded-lg border border-green-100">
-                        <p className="text-xs text-gray-500 mb-1">Factura Final</p>
-                        <p className="text-lg font-bold text-green-700">{preconsultaData.facturacion_principal.factura_final || 'N/A'}</p>
-                      </div>
+                    )}
+                  </div>
+
+                  {/* Totales por método de pago */}
+                  <div className="p-4 sm:p-5 border-t md:border-t-0 border-gray-200/70">
+                    <dl className="space-y-2.5">
+                      <MethodTotal label="Efectivo" value={preconsultaData.totales.efectivo.formatted} tone="bg-blue-600" />
+                      <MethodTotal label="Transferencia" value={preconsultaData.totales.transferencia.formatted} tone="bg-purple-600" />
+                      <MethodTotal label="Tarjeta Débito" value={preconsultaData.totales.tarjeta_debito.formatted} tone="bg-orange-500" />
+                      <MethodTotal label="Tarjeta Crédito" value={preconsultaData.totales.tarjeta_credito.formatted} tone="bg-pink-500" />
+                    </dl>
+                    <div className="mt-4 flex items-baseline justify-between gap-3 rounded-xl bg-gray-900 text-white px-4 py-3.5">
+                      <span className="text-sm text-gray-300">Total ventas del día</span>
+                      <span className="font-display text-2xl font-bold">{preconsultaData.total_ventas.formatted}</span>
                     </div>
-                    <p className="text-xs text-green-600 mt-1 text-right">{preconsultaData.facturacion_principal.cantidad} facturas principales</p>
-                  </div>
-                )}
-
-                {/* Cantidad total de facturas */}
-                <div className="bg-white p-3 rounded-lg border border-green-100 mb-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Facturas Activas:</span>
-                    <span className="text-lg font-bold text-green-700">{preconsultaData.cantidad_facturas}</span>
-                  </div>
-                  {preconsultaData.facturas_anuladas > 0 && (
-                    <div className="flex justify-between items-center mt-1 text-orange-600">
-                      <span className="text-xs">Facturas Anuladas:</span>
-                      <span className="text-sm font-semibold">{preconsultaData.facturas_anuladas}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Totales por método de pago */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white p-3 rounded-lg border border-blue-100">
-                    <p className="text-xs text-gray-500 mb-1">Efectivo</p>
-                    <p className="text-base font-bold text-blue-700">{preconsultaData.totales.efectivo.formatted}</p>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-purple-100">
-                    <p className="text-xs text-gray-500 mb-1">Transferencia</p>
-                    <p className="text-base font-bold text-purple-700">{preconsultaData.totales.transferencia.formatted}</p>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-orange-100">
-                    <p className="text-xs text-gray-500 mb-1">Tarjeta Débito</p>
-                    <p className="text-base font-bold text-orange-700">{preconsultaData.totales.tarjeta_debito.formatted}</p>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-pink-100">
-                    <p className="text-xs text-gray-500 mb-1">Tarjeta Crédito</p>
-                    <p className="text-base font-bold text-pink-700">{preconsultaData.totales.tarjeta_credito.formatted}</p>
-                  </div>
-                </div>
-
-                {/* Total de ventas */}
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 rounded-lg text-white">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">TOTAL VENTAS DEL DÍA</span>
-                    <span className="text-xl font-bold">{preconsultaData.total_ventas.formatted}</span>
                   </div>
                 </div>
 
                 {/* Botón para hacer nueva consulta */}
-                <button
-                  onClick={resetPreconsulta}
-                  className="mt-3 w-full text-sm text-gray-600 hover:text-gray-800 underline"
-                >
-                  Cambiar fecha / Nueva consulta
-                </button>
+                <div className="px-4 sm:px-5 py-2.5 border-t border-gray-200/70 flex justify-end">
+                  <button
+                    onClick={resetPreconsulta}
+                    className="min-h-[40px] px-3 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200/60 transition-colors"
+                  >
+                    Cambiar fecha / Nueva consulta
+                  </button>
+                </div>
               </div>
             )}
-          </div>
+          </StepSection>
 
           {/* El resto del formulario solo se muestra si la preconsulta fue realizada */}
           {preconsultaRealizada && (
             <>
-          {/* Monedas y Billetes */}
-          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                Monedas
-              </h2>
-              <div className="space-y-2 sm:space-y-3">
-                {Object.keys(coins).map((denom) => (
-                  <div key={denom} className="flex items-center gap-2 sm:gap-3">
-                    <label htmlFor={`coin-${denom}`} className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
-                      ${parseInt(denom).toLocaleString()}
-                    </label>
-                    <input
-                      id={`coin-${denom}`}
-                      type="text"
-                      inputMode="numeric"
-                      value={coins[denom]}
-                      onChange={(e) => setCoins({ ...coins, [denom]: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      maxLength="9"
-                      aria-label={`Cantidad de monedas de $${parseInt(denom).toLocaleString()}`}
-                      className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="0"
-                    />
-                    <span className="w-20 sm:w-28 text-right text-xs sm:text-sm font-semibold text-gray-900">
-                      {formatCurrency(parseInt(denom) * (parseInt(coins[denom]) || 0))}
-                    </span>
-                  </div>
-                ))}
-                <div className="pt-2 sm:pt-3 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm sm:text-base font-semibold text-gray-700">Total Monedas:</span>
-                    <span className="text-base sm:text-lg font-bold text-yellow-600">{formatCurrency(totalCoins)}</span>
-                  </div>
+          {/* PASO 2 - Monedas y Billetes */}
+          <StepSection id="paso-efectivo" number={2} title="Efectivo contado" description="Cantidad de monedas y billetes por denominación." reveal={1}>
+            <div className="grid lg:grid-cols-2 gap-x-10 gap-y-8">
+              <div>
+                <h3 className="font-sans text-[13px] font-semibold text-gray-500 tracking-normal mb-2">Monedas</h3>
+                <div className="divide-y divide-gray-100">
+                  {Object.keys(coins).map((denom) => (
+                    <div key={denom} className={LEDGER_ROW}>
+                      <label htmlFor={`coin-${denom}`} className="font-display text-[15px] font-semibold text-gray-900">
+                        ${parseInt(denom).toLocaleString()}
+                      </label>
+                      <input
+                        id={`coin-${denom}`}
+                        type="text"
+                        inputMode="numeric"
+                        value={coins[denom]}
+                        onChange={(e) => setCoins({ ...coins, [denom]: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        maxLength="9"
+                        aria-label={`Cantidad de monedas de $${parseInt(denom).toLocaleString()}`}
+                        className={`${FIELD} h-11 text-center text-base font-semibold`}
+                        placeholder="0"
+                      />
+                      <span className={`text-right text-sm font-medium ${(parseInt(coins[denom]) || 0) > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
+                        {formatCurrency(parseInt(denom) * (parseInt(coins[denom]) || 0))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 pt-3 border-t-2 border-gray-900 flex justify-between items-baseline">
+                  <span className="text-sm font-semibold text-gray-700">Total Monedas</span>
+                  <span className="font-display text-xl font-bold text-gray-900">{formatCurrency(totalCoins)}</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-[13px] font-semibold text-gray-500 tracking-normal mb-2">Billetes</h3>
+                <div className="divide-y divide-gray-100">
+                  {Object.keys(bills).map((denom) => (
+                    <div key={denom} className={LEDGER_ROW}>
+                      <label htmlFor={`bill-${denom}`} className="font-display text-[15px] font-semibold text-gray-900">
+                        ${parseInt(denom).toLocaleString()}
+                      </label>
+                      <input
+                        id={`bill-${denom}`}
+                        type="text"
+                        inputMode="numeric"
+                        value={bills[denom]}
+                        onChange={(e) => setBills({ ...bills, [denom]: handleNumericInput(e.target.value) })}
+                        onFocus={(e) => e.target.select()}
+                        maxLength="9"
+                        aria-label={`Cantidad de billetes de $${parseInt(denom).toLocaleString()}`}
+                        className={`${FIELD} h-11 text-center text-base font-semibold`}
+                        placeholder="0"
+                      />
+                      <span className={`text-right text-sm font-medium ${(parseInt(bills[denom]) || 0) > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
+                        {formatCurrency(parseInt(denom) * (parseInt(bills[denom]) || 0))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 pt-3 border-t-2 border-gray-900 flex justify-between items-baseline">
+                  <span className="text-sm font-semibold text-gray-700">Total Billetes</span>
+                  <span className="font-display text-xl font-bold text-gray-900">{formatCurrency(totalBills)}</span>
                 </div>
               </div>
             </div>
+          </StepSection>
 
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                Billetes
-              </h2>
-              <div className="space-y-2 sm:space-y-3">
-                {Object.keys(bills).map((denom) => (
-                  <div key={denom} className="flex items-center gap-2 sm:gap-3">
-                    <label htmlFor={`bill-${denom}`} className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-gray-700">
-                      ${parseInt(denom).toLocaleString()}
-                    </label>
-                    <input
-                      id={`bill-${denom}`}
-                      type="text"
-                      inputMode="numeric"
-                      value={bills[denom]}
-                      onChange={(e) => setBills({ ...bills, [denom]: handleNumericInput(e.target.value) })}
-                      onFocus={(e) => e.target.select()}
-                      maxLength="9"
-                      aria-label={`Cantidad de billetes de $${parseInt(denom).toLocaleString()}`}
-                      className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="0"
-                    />
-                    <span className="w-20 sm:w-28 text-right text-xs sm:text-sm font-semibold text-gray-900">
-                      {formatCurrency(parseInt(denom) * (parseInt(bills[denom]) || 0))}
-                    </span>
-                  </div>
-                ))}
-                <div className="pt-2 sm:pt-3 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm sm:text-base font-semibold text-gray-700">Total Billetes:</span>
-                    <span className="text-base sm:text-lg font-bold text-green-600">{formatCurrency(totalBills)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Vitrina móvil de la escena 3D: las pilas del efectivo contado */}
+          <div
+            aria-hidden="true"
+            data-scene-anchor="cash-window"
+            data-scene-room="1"
+            className="cash-vitrina h-36 -my-1"
+          />
 
-          {/* Grid de 2 columnas: Métodos de Pago y Ajustes */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Columna Izquierda: Métodos de Pago Registrados */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Registro de Métodos de Pago</h2>
-              </div>
-
-              <div className="space-y-4">
+          {/* PASO 3 y 4 - Métodos de Pago y Ajustes (apilados: la columna derecha es la escena) */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 items-start">
+            {/* Métodos de Pago Registrados */}
+            <StepSection id="paso-medios" number={3} title="Registro de Métodos de Pago" description="Lo que entró por transferencias y datáfono." reveal={2}>
+              <div className="space-y-6">
                 {/* Transferencias */}
-                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                  <h3 className="text-sm font-semibold text-purple-900 mb-3">Transferencias (QR)</h3>
+                <fieldset>
+                  <legend className="flex items-center gap-2 text-[13px] font-semibold text-gray-700 mb-3">
+                    <span className="w-1 h-3.5 rounded-full bg-purple-600" aria-hidden="true" />
+                    Transferencias (QR)
+                  </legend>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div>
-                      <label htmlFor="pago-nequi" className="block text-xs font-medium text-gray-700 mb-1">Nequi</label>
+                      <label htmlFor="pago-nequi" className={LABEL}>Nequi</label>
                       <input
                         id="pago-nequi"
                         type="text"
@@ -975,12 +1122,12 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, nequi_luz_helena: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <label htmlFor="pago-daviplata" className="block text-xs font-medium text-gray-700 mb-1">Daviplata</label>
+                      <label htmlFor="pago-daviplata" className={LABEL}>Daviplata</label>
                       <input
                         id="pago-daviplata"
                         type="text"
@@ -989,12 +1136,12 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, daviplata_jose: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <label htmlFor="pago-qr" className="block text-xs font-medium text-gray-700 mb-1">Transferencias (QR)</label>
+                      <label htmlFor="pago-qr" className={LABEL}>Transferencias (QR)</label>
                       <input
                         id="pago-qr"
                         type="text"
@@ -1003,27 +1150,29 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, qr_julieth: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                   </div>
                   {totalTransferencias > 0 && (
-                    <div className="pt-3 mt-3 border-t border-purple-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-semibold text-purple-900">Total Transferencias (QR):</span>
-                        <span className="text-base font-bold text-purple-700">{formatCurrency(totalTransferencias)}</span>
-                      </div>
+                    <div className="mt-3 flex justify-between items-baseline text-sm animate-fade-in-scale">
+                      <span className="text-gray-600">Total Transferencias (QR)</span>
+                      <span className="font-display text-base font-bold text-gray-900">{formatCurrency(totalTransferencias)}</span>
                     </div>
                   )}
-                </div>
+                </fieldset>
 
                 {/* Datafono */}
-                <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
-                  <h3 className="text-sm font-semibold text-orange-900 mb-3">Datafono</h3>
+                <div className="pt-5 border-t border-gray-100">
+                <fieldset>
+                  <legend className="flex items-center gap-2 text-[13px] font-semibold text-gray-700 mb-3">
+                    <span className="w-1 h-3.5 rounded-full bg-orange-500" aria-hidden="true" />
+                    Datafono
+                  </legend>
                   <div className="grid sm:grid-cols-3 gap-3">
                     <div>
-                      <label htmlFor="pago-addi" className="block text-xs font-medium text-gray-700 mb-1">Addi (Datafono)</label>
+                      <label htmlFor="pago-addi" className={LABEL}>Addi (Datafono)</label>
                       <input
                         id="pago-addi"
                         type="text"
@@ -1032,12 +1181,12 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, addi_datafono: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <label htmlFor="pago-debito" className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Débito (Datafono)</label>
+                      <label htmlFor="pago-debito" className={LABEL}>Tarjeta Débito (Datafono)</label>
                       <input
                         id="pago-debito"
                         type="text"
@@ -1046,12 +1195,12 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_debito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                     <div>
-                      <label htmlFor="pago-credito" className="block text-xs font-medium text-gray-700 mb-1">Tarjeta Crédito (Datafono)</label>
+                      <label htmlFor="pago-credito" className={LABEL}>Tarjeta Crédito (Datafono)</label>
                       <input
                         id="pago-credito"
                         type="text"
@@ -1060,57 +1209,51 @@ const Dashboard = () => {
                         onChange={(e) => setMetodosPago({ ...metodosPago, tarjeta_credito: handleNumericInput(e.target.value) })}
                         onFocus={(e) => e.target.select()}
                         maxLength="9"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        className={`${FIELD} h-11 text-right`}
                         placeholder="0"
                       />
                     </div>
                   </div>
                   {totalDatafono > 0 && (
-                    <div className="pt-3 mt-3 border-t border-orange-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-semibold text-orange-900">Total Datafono:</span>
-                        <span className="text-base font-bold text-orange-700">{formatCurrency(totalDatafono)}</span>
-                      </div>
+                    <div className="mt-3 flex justify-between items-baseline text-sm animate-fade-in-scale">
+                      <span className="text-gray-600">Total Datafono</span>
+                      <span className="font-display text-base font-bold text-gray-900">{formatCurrency(totalDatafono)}</span>
                     </div>
                   )}
+                </fieldset>
                 </div>
               </div>
-            </div>
+            </StepSection>
 
-            {/* Columna Derecha: Ajustes y Movimientos */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Ajustes y Movimientos</h2>
-              </div>
-
-              <div className="mb-4 sm:mb-6">
+            {/* Ajustes y Movimientos */}
+            <StepSection id="paso-ajustes" number={4} title="Ajustes y Movimientos" description="Excedentes, gastos, préstamos y desfases del día." reveal={3}>
+              <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm sm:text-base font-medium text-gray-700">
-                    Excedentes (Opcional)
-                  </label>
+                  <span className="text-[13px] font-semibold text-gray-700">
+                    Excedentes <span className="font-normal text-gray-500">(opcional)</span>
+                  </span>
                   {excedentes.length < 3 && (
                     <button
                       type="button"
                       onClick={agregarExcedente}
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-xs sm:text-sm"
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-semibold text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors"
                     >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <Plus className="w-4 h-4" />
                       Agregar
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {excedentes.map((excedente) => (
-                    <div key={excedente.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                    <div key={excedente.id} className="animate-fade-in-scale p-2.5 bg-gray-50 rounded-xl ring-1 ring-gray-900/[0.04]">
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <select
                             value={excedente.tipo}
                             onChange={(e) => actualizarTipoExcedente(excedente.id, e.target.value)}
                             aria-label="Tipo de excedente"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                            className={`${FIELD} h-11`}
                           >
                             {tiposExcedente.map(tipo => (
                               <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -1118,12 +1261,12 @@ const Dashboard = () => {
                           </select>
                         </div>
                         {excedente.tipo === 'qr_transferencias' && (
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <select
                               value={excedente.subtipo}
                               onChange={(e) => actualizarSubtipoExcedente(excedente.id, e.target.value)}
                               aria-label="Subtipo de transferencia del excedente"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                              className={`${FIELD} h-11`}
                             >
                               {subtiposTransferencia.map(sub => (
                                 <option key={sub.value} value={sub.value}>{sub.label}</option>
@@ -1140,14 +1283,15 @@ const Dashboard = () => {
                             onFocus={(e) => e.target.select()}
                             maxLength="9"
                             aria-label="Valor del excedente"
-                            className="flex-1 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                            className={`${FIELD} h-11 flex-1 sm:w-32 text-right`}
                             placeholder="$0"
                           />
                           {excedentes.length > 1 && (
                             <button
                               type="button"
                               onClick={() => eliminarExcedente(excedente.id)}
-                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                              className="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                              aria-label="Quitar excedente"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -1159,18 +1303,16 @@ const Dashboard = () => {
                 </div>
 
                 {totalExcedentes > 0 && (
-                  <div className="mt-3 p-2 bg-purple-50 rounded-lg">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-medium text-gray-700">Total Excedentes:</span>
-                      <span className="font-bold text-purple-600">{formatCurrency(totalExcedentes)}</span>
-                    </div>
+                  <div className="mt-3 flex justify-between items-baseline text-sm">
+                    <span className="text-gray-600">Total Excedentes</span>
+                    <span className="font-display text-base font-bold text-gray-900">{formatCurrency(totalExcedentes)}</span>
                   </div>
                 )}
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid sm:grid-cols-2 gap-4 pt-5 border-t border-gray-100">
                 <div>
-                  <label htmlFor="gastos-operativos" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="gastos-operativos" className={LABEL}>
                     Gastos Operativos
                   </label>
                   <input
@@ -1181,23 +1323,23 @@ const Dashboard = () => {
                     onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos: handleNumericInput(e.target.value) })}
                     onFocus={(e) => e.target.select()}
                     maxLength="9"
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
+                    className={`${FIELD} h-11 text-right mb-2`}
                     placeholder="$0"
                   />
                   <div className="relative">
-                    <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       value={adjustments.gastos_operativos_nota}
                       onChange={(e) => setAdjustments({ ...adjustments, gastos_operativos_nota: e.target.value })}
                       aria-label="Nota explicativa de gastos operativos"
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="Nota: ej. Compra de papelería..."
+                      className={`${FIELD} h-11 pl-9 text-sm`}
+                      placeholder="Nota: ej. Compra de papelería…"
                     />
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="prestamos" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="prestamos" className={LABEL}>
                     Préstamos
                   </label>
                   <input
@@ -1208,45 +1350,51 @@ const Dashboard = () => {
                     onChange={(e) => setAdjustments({ ...adjustments, prestamos: handleNumericInput(e.target.value) })}
                     onFocus={(e) => e.target.select()}
                     maxLength="9"
-                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base mb-2"
+                    className={`${FIELD} h-11 text-right mb-2`}
                     placeholder="$0"
                   />
                   <div className="relative">
-                    <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       value={adjustments.prestamos_nota}
                       onChange={(e) => setAdjustments({ ...adjustments, prestamos_nota: e.target.value })}
                       aria-label="Nota explicativa de préstamos"
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                      placeholder="Nota: ej. Préstamo a María..."
+                      className={`${FIELD} h-11 pl-9 text-sm`}
+                      placeholder="Nota: ej. Préstamo a María…"
                     />
                   </div>
                 </div>
 
                 {/* Botón para mostrar/ocultar sección de desfases manualmente */}
-                <div className="mt-3 text-center">
+                <div className="sm:col-span-2">
                   <button
                     type="button"
                     onClick={() => setShowDesfaseSection(!showDesfaseSection)}
-                    className={`text-sm ${showDesfaseSection ? 'text-gray-600 hover:text-gray-700' : 'text-amber-600 hover:text-amber-700'} underline flex items-center gap-1 mx-auto`}
+                    aria-expanded={showDesfaseSection}
+                    className={`w-full flex items-center justify-between gap-3 min-h-[48px] px-4 rounded-xl text-sm font-medium transition-colors ${
+                      showDesfaseSection ? 'bg-gray-100 text-gray-700 hover:bg-gray-200/70' : 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                    }`}
                   >
-                    <AlertCircle className="w-4 h-4" />
-                    {showDesfaseSection ? '✓ Ocultar sección de desfases' : '¿Necesitas registrar un desfase? Click aquí'}
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      {showDesfaseSection ? 'Ocultar sección de desfases' : '¿Necesitas registrar un desfase?'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDesfaseSection ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
 
                 {/* Sección de Desfases */}
                 {showDesfaseSection && (
-                  <div className="mt-4 border-t pt-4">
+                  <div className="sm:col-span-2 animate-fade-in-scale origin-top rounded-xl ring-1 ring-amber-200 bg-amber-50/40 p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium text-gray-700">
+                      <span className="text-[13px] font-semibold text-gray-800">
                         Desfases en Caja
-                      </label>
-                      <button
+                      </span>
+                      <button aria-label="Limpiar campos de desfases"
                         type="button"
                         onClick={limpiarDesfases}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                        className="flex items-center gap-1 h-9 px-3 text-xs font-semibold text-red-700 rounded-full hover:bg-red-50 transition-colors"
                         title="Limpiar campos de desfases"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -1256,17 +1404,15 @@ const Dashboard = () => {
 
                     {/* Alerta de desfase detectado */}
                     {desfaseSugerido && (
-                      <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
-                        <div className="flex items-start">
-                          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
-                          <div className="flex-1">
-                            <h3 className="text-sm font-semibold text-amber-800 mb-1">
-                              ⚠️ DESFASE DETECTADO
-                            </h3>
-                            <p className="text-sm text-amber-700">
-                              {desfaseSugerido.mensaje}
-                            </p>
-                          </div>
+                      <div role="alert" className="mb-4 p-3.5 bg-amber-100/70 rounded-xl flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-px" />
+                        <div className="flex-1">
+                          <h3 className="font-sans text-sm font-semibold text-amber-900 tracking-normal mb-0.5">
+                            Desfase detectado
+                          </h3>
+                          <p className="text-sm text-amber-900/80">
+                            {desfaseSugerido.mensaje}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -1274,17 +1420,17 @@ const Dashboard = () => {
                     <div className="space-y-3">
                       {/* Tipo de Desfase */}
                       <div>
-                        <label htmlFor="desfase-tipo" className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-tipo" className={LABEL}>
                           Tipo de Desfase
                         </label>
                         <select
                           id="desfase-tipo"
                           value={adjustments.desfase_tipo}
                           onChange={(e) => setAdjustments({ ...adjustments, desfase_tipo: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          className={`${FIELD} h-11`}
                           disabled={desfaseSugerido !== null}
                         >
-                          <option value="">Seleccionar tipo...</option>
+                          <option value="">Seleccionar tipo…</option>
                           <option value="faltante_caja">Faltante en Caja</option>
                           <option value="sobrante_caja">Sobrante en Caja</option>
                         </select>
@@ -1292,7 +1438,7 @@ const Dashboard = () => {
 
                       {/* Valor del Desfase */}
                       <div>
-                        <label htmlFor="desfase-valor" className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-valor" className={LABEL}>
                           Valor del Desfase (COP)
                         </label>
                         <input
@@ -1303,7 +1449,7 @@ const Dashboard = () => {
                           onChange={(e) => setAdjustments({ ...adjustments, desfase_valor: handleNumericInput(e.target.value) })}
                           onFocus={(e) => e.target.select()}
                           maxLength="9"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          className={`${FIELD} h-11 text-right`}
                           placeholder="$0"
                           disabled={desfaseSugerido !== null}
                         />
@@ -1311,22 +1457,20 @@ const Dashboard = () => {
 
                       {/* Nota Explicativa */}
                       <div>
-                        <label htmlFor="desfase-nota" className="block text-xs font-medium text-gray-600 mb-1">
+                        <label htmlFor="desfase-nota" className={LABEL}>
                           Nota Explicativa (Responsable/Causa) *
                         </label>
-                        <div className="relative">
-                          <FileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                          <textarea
-                            id="desfase-nota"
-                            value={adjustments.desfase_nota}
-                            onChange={(e) => setAdjustments({ ...adjustments, desfase_nota: e.target.value })}
-                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
-                            placeholder="Ej: Faltante por error en vueltas - Responsable: María González"
-                            rows="3"
-                            minLength="4"
-                          />
-                        </div>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <textarea
+                          id="desfase-nota"
+                          value={adjustments.desfase_nota}
+                          onChange={(e) => setAdjustments({ ...adjustments, desfase_nota: e.target.value })}
+                          className={`${FIELD} py-2.5 text-sm resize-none`}
+                          placeholder="Ej: Faltante por error en vueltas - Responsable: María González"
+                          rows="3"
+                          minLength="4"
+                          aria-describedby="desfase-nota-ayuda"
+                        />
+                        <p id="desfase-nota-ayuda" className="mt-1.5 text-xs text-gray-500">
                           Mínimo 4 caracteres. Explica la causa y responsable del desfase.
                         </p>
                       </div>
@@ -1334,42 +1478,15 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </StepSection>
           </div>
 
-          {/* Total en Caja */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-              <span className="text-lg sm:text-xl font-semibold">Total en Caja:</span>
-              <span className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalGeneral)}</span>
-            </div>
-          </div>
-
-          {/* Botones de Acción */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 sm:py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Realizar Cierre
-                </>
-              )}
-            </button>
-
-            {/* Campo compacto de Base de Caja */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
-              <label htmlFor="base-caja" className="text-xs sm:text-sm text-gray-600 whitespace-nowrap font-medium">Base Caja:</label>
+          {/* Base de Caja + Limpiar (fuera de la cinta para no saturarla en móvil) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-3">
+              <label htmlFor="base-caja" className="text-sm text-gray-600 whitespace-nowrap font-medium">Base Caja</label>
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">$</span>
                 <input
                   id="base-caja"
                   type="text"
@@ -1392,7 +1509,7 @@ const Dashboard = () => {
                     setBaseCaja(parsedValue);
                     e.target.value = parsedValue.toLocaleString('es-CO');
                   }}
-                  className="w-28 sm:w-32 pl-5 pr-2 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`${FIELD} h-11 w-36 pl-7 text-right font-semibold`}
                   placeholder="450000"
                   title="Base de caja personalizable según temporada"
                 />
@@ -1401,30 +1518,61 @@ const Dashboard = () => {
 
             <button
               onClick={handleReset}
-              className="sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all text-sm sm:text-base"
+              className="h-11 px-5 rounded-xl text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-200/70 transition-colors"
             >
               Limpiar
             </button>
           </div>
+
+          {/* CINTA DE TOTAL: fija abajo mientras se diligencia el formulario */}
+          <div className="sticky bottom-0 z-30 -mx-4 sm:mx-0 pt-2 pb-safe sm:pb-4 px-2 sm:px-0 bg-gradient-to-t from-paper via-paper/90 to-transparent">
+            {/* En teléfonos de 320 px el total NUNCA se corta: se reduce la cifra,
+                el relleno del botón y se oculta su ícono */}
+            <div className="flex items-center gap-2 min-[360px]:gap-3 sm:gap-6 bg-gray-900 text-white rounded-2xl shadow-2xl pl-4 min-[360px]:pl-5 pr-2 py-2 sm:pl-7 sm:py-2.5">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-[13px] text-gray-400 leading-tight">Total en Caja</p>
+                <p className="font-display text-xl min-[360px]:text-2xl sm:text-3xl font-bold leading-tight whitespace-nowrap">{formatCurrency(totalGeneral)}</p>
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 h-12 sm:h-14 px-3.5 min-[360px]:px-5 sm:px-8 rounded-xl bg-white text-gray-900 text-sm min-[360px]:text-[15px] font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-[18px] h-[18px] animate-spin" />
+                    Procesando…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="hidden min-[360px]:block w-[18px] h-[18px]" />
+                    Realizar Cierre
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
             </>
           )}
+        </div>
+        <CashSceneWindow step={activeStep} ready={preconsultaRealizada} />
         </div>
 
         {/* Modal de Éxito */}
         {showSuccessModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-bounce-once">
+          <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="dlg-exito" ref={successDialogRef}>
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-settle pb-sheet">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Cierre Exitoso!</h3>
+                <h3 id="dlg-exito" className="text-2xl font-bold text-gray-900 mb-2 leading-tight">¡Cierre Exitoso!</h3>
                 <p className="text-gray-600 mb-6">
                   Los montos registrados coinciden con los datos de Alegra. El cierre se ha realizado correctamente.
                 </p>
                 <button
                   onClick={() => setShowSuccessModal(false)}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all"
+                  className="w-full bg-emerald-600 text-white h-12 rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
                 >
                   Continuar
                 </button>
@@ -1435,17 +1583,17 @@ const Dashboard = () => {
 
         {/* Modal de Error (descarga de PDF/imagen) */}
         {errorModalMessage && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+          <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="dlg-error" ref={errorDialogRef}>
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-sheet pb-sheet max-h-[92dvh] overflow-y-auto overscroll-contain">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
                   <AlertCircle className="w-10 h-10 text-red-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Ocurrió un error</h3>
+                <h3 id="dlg-error" className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Ocurrió un error</h3>
                 <p className="text-gray-600 mb-6">{errorModalMessage}</p>
                 <button
                   onClick={() => setErrorModalMessage(null)}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all"
+                  className="w-full bg-red-600 text-white h-12 rounded-xl font-semibold hover:bg-red-700 transition-colors"
                 >
                   Cerrar
                 </button>
@@ -1456,13 +1604,13 @@ const Dashboard = () => {
 
         {/* Modal de Carga */}
         {loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+          <div className="fixed inset-0 bg-gray-950/60 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="alertdialog" aria-modal="true" aria-busy="true" aria-labelledby="dlg-carga" ref={loadingDialogRef}>
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-sheet pb-sheet">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
                   <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Procesando...</h3>
+                <h3 id="dlg-carga" className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Procesando…</h3>
                 <p className="text-gray-600">
                   Validando cierre con Alegra y calculando distribución
                 </p>
@@ -1473,13 +1621,13 @@ const Dashboard = () => {
 
         {/* Modal de Confirmación */}
         {showConfirmModal && confirmData && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+          <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="dlg-confirmar" ref={confirmDialogRef}>
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl animate-sheet pb-sheet max-h-[92dvh] overflow-y-auto overscroll-contain">
               <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                   <AlertCircle className="w-10 h-10 text-blue-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Confirmar Cierre de Caja</h3>
+                <h3 id="dlg-confirmar" className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Confirmar Cierre de Caja</h3>
                 <p className="text-sm text-gray-600">
                   Por favor, verifica los datos antes de continuar
                 </p>
@@ -1508,10 +1656,10 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-3 text-white">
+                <div className="bg-gray-900 rounded-xl px-4 py-3.5 text-white">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold">Total en Caja:</span>
-                    <span className="text-xl font-bold">{formatCurrency(confirmData.totalGeneral)}</span>
+                    <span className="text-sm text-gray-300">Total en Caja</span>
+                    <span className="font-display text-2xl font-bold">{formatCurrency(confirmData.totalGeneral)}</span>
                   </div>
                 </div>
 
@@ -1544,13 +1692,13 @@ const Dashboard = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowConfirmModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                  className="flex-1 bg-gray-100 text-gray-800 h-12 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleConfirmSubmit}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                  className="flex-1 bg-gray-900 text-white h-12 rounded-xl font-semibold hover:bg-gray-800 transition-colors"
                 >
                   Confirmar
                 </button>
@@ -1561,13 +1709,13 @@ const Dashboard = () => {
 
         {/* Modal de Advertencia */}
         {showWarningModal && results && results.validation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="dlg-advertencia" ref={warningDialogRef}>
+            <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl max-h-[92dvh] overflow-y-auto overscroll-contain animate-sheet pb-sheet">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
                   <AlertCircle className="w-10 h-10 text-yellow-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Diferencias Detectadas</h3>
+                <h3 id="dlg-advertencia" className="text-2xl font-bold text-gray-900 mb-2 leading-tight">Diferencias Detectadas</h3>
                 <p className="text-gray-600">
                   {results.validation.mensaje_validacion}
                 </p>
@@ -1646,14 +1794,14 @@ const Dashboard = () => {
 
               {/* Sección de Desfase Detectado */}
               {results.validation.desfase_sugerido && results.validation.desfase_sugerido.detectado && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 rounded-xl p-5 mb-6 shadow-md">
+                <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-5 mb-6 shadow-md">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="bg-amber-500 rounded-full p-2 flex-shrink-0">
                       <AlertCircle className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900 text-lg mb-1">
-                        ⚠️ DESFASE DETECTADO EN EFECTIVO
+                        Desfase detectado en efectivo
                       </h4>
                       <p className="text-sm text-gray-700 mb-3">
                         {results.validation.desfase_sugerido.mensaje}
@@ -1676,7 +1824,7 @@ const Dashboard = () => {
                       </div>
                       <div className="mt-3 p-3 bg-amber-100 rounded-lg border border-amber-300">
                         <p className="text-xs font-medium text-amber-900">
-                          📝 Para completar el cierre, registra este desfase en la sección "Desfases en Caja"
+                          Para completar el cierre, registra este desfase en la sección "Desfases en Caja"
                           con una nota explicativa indicando el responsable o la causa del {results.validation.desfase_sugerido.tipo === 'faltante_caja' ? 'faltante' : 'sobrante'}.
                         </p>
                       </div>
@@ -1686,7 +1834,7 @@ const Dashboard = () => {
               )}
 
               {/* Resumen General del Cierre */}
-              <div className="bg-gradient-to-br from-gray-50 to-slate-100 border border-gray-200 rounded-xl p-4 mb-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
                 <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-1 h-5 bg-blue-600 rounded"></span>
                   Resumen General
@@ -1781,7 +1929,7 @@ const Dashboard = () => {
 
               {/* Desfases Registrados */}
               {results.desfases_detalle && results.desfases_detalle.length > 0 && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-4 mb-6">
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 mb-6">
                   <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                     Desfases Registrados
@@ -1807,13 +1955,13 @@ const Dashboard = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowWarningModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                  className="flex-1 bg-gray-100 text-gray-800 h-12 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
                 >
                   Revisar
                 </button>
                 <button
                   onClick={() => setShowWarningModal(false)}
-                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-3 rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition-all"
+                  className="flex-1 bg-gray-900 text-white h-12 rounded-xl font-semibold hover:bg-gray-800 transition-colors"
                 >
                   Entendido
                 </button>
@@ -1942,7 +2090,7 @@ const Dashboard = () => {
               )}
 
               {/* Resumen de Cierre */}
-              <div className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+              <div className="mb-4 sm:mb-6 bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
                 <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-blue-600 rounded"></span>
                   Resumen del Cierre
@@ -1952,7 +2100,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3">
                   {/* Total Venta del Día + Facturas Procesadas (Horizontal) */}
                   {(results.alegra?.total_sale || results.alegra?.invoices_summary) && (
-                    <div className="bg-gradient-to-br from-green-500 to-blue-600 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
+                    <div className="bg-green-600 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
                       <div className="flex gap-3 items-center justify-between">
                         {/* Total Venta */}
                         {results.alegra?.total_sale && (
@@ -1988,7 +2136,7 @@ const Dashboard = () => {
 
                   {/* Efectivo de Ventas (Alegra) */}
                   {results.alegra.results.cash.total > 0 && (
-                    <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
+                    <div className="bg-green-600 rounded-lg p-2.5 border border-green-400 shadow-sm text-white">
                       <div className="text-[10px] font-semibold mb-0.5 opacity-90">EFECTIVO VENTAS (ALEGRA)</div>
                       <div className="text-lg font-bold">
                         {results.alegra.results.cash.formatted}
@@ -1998,7 +2146,7 @@ const Dashboard = () => {
 
                   {/* Valor a Consignar */}
                   {results.cash_count.consignar.efectivo_para_consignar_final > 0 && (
-                    <div className="bg-gradient-to-br from-purple-600 to-violet-700 rounded-lg p-2.5 border border-purple-400 shadow-sm text-white">
+                    <div className="bg-gray-900 rounded-lg p-2.5 border border-purple-400 shadow-sm text-white">
                       <div className="text-[10px] font-semibold mb-0.5 opacity-90">VALOR A CONSIGNAR</div>
                       <div className="text-lg font-bold">
                         {results.detalle_consignacion?.valor_consignar_formatted || results.cash_count.consignar.efectivo_para_consignar_final_formatted}
@@ -2176,7 +2324,7 @@ const Dashboard = () => {
 
                 {/* Desfases Registrados en el Cierre Exitoso */}
                 {results.desfases_detalle && results.desfases_detalle.length > 0 && (
-                  <div className="mt-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-4 shadow-sm">
+                  <div className="mt-4 bg-amber-50 border-2 border-amber-300 rounded-xl p-4 shadow-sm">
                     <h4 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-600" />
                       Desfases Registrados
@@ -2463,7 +2611,7 @@ const Dashboard = () => {
                 {/* Columna Derecha: Totales apilados */}
                 <div className="flex flex-col gap-2 sm:gap-3 h-full">
                   {/* TOTAL VENTA DEL DÍA */}
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
+                  <div className="bg-green-600 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-xs sm:text-sm font-medium opacity-90">TOTAL VENTA DEL DÍA</div>
                       {results.alegra?.invoices_summary?.voided_invoices > 0 && (
@@ -2484,7 +2632,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Total a Consignar */}
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
+                  <div className="bg-gray-900 rounded-xl p-4 sm:p-6 text-white flex-1 flex flex-col justify-center">
                     <div className="text-xs sm:text-sm font-medium opacity-90 mb-1">Total a Consignar</div>
                     <div className="text-2xl sm:text-4xl font-bold">
                       {results.cash_count.consignar.efectivo_para_consignar_final_formatted}
@@ -2509,14 +2657,14 @@ const Dashboard = () => {
                       </span>
                     </div>
                     {results.cash_count.base.mensaje_base && (
-                      <div className={`mt-2 p-2 rounded-lg text-xs ${results.cash_count.base.base_status === 'exacto'
+                      <div className={`mt-2 p-2 rounded-lg text-xs ${isBaseExacta(results.cash_count.base.base_status)
                         ? 'bg-green-100 text-green-800 border border-green-200'
                         : results.cash_count.base.base_status === 'sobrante'
                           ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                           : 'bg-red-100 text-red-800 border border-red-200'
                         }`}>
                         <div className="flex items-start gap-1">
-                          {results.cash_count.base.base_status === 'exacto' ? (
+                          {isBaseExacta(results.cash_count.base.base_status) ? (
                             <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />
                           ) : (
                             <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
@@ -2557,9 +2705,9 @@ const Dashboard = () => {
 
                   <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Caja Base - 450,000 */}
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+                    <div className="bg-blue-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-blue-900">💰 Caja Base (450,000)</h3>
+                        <h3 className="flex items-center gap-2 text-lg font-bold text-blue-900"><Wallet className="w-5 h-5 text-blue-600" aria-hidden="true" />Caja Base (450,000)</h3>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-blue-900">
                             {formatCurrency(results.distribucion_caja.cajaBase.total)}
@@ -2639,9 +2787,9 @@ const Dashboard = () => {
                     </div>
 
                     {/* Para Consignación */}
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 sm:p-6 border-2 border-emerald-200">
+                    <div className="bg-emerald-50 rounded-xl p-4 sm:p-6 border-2 border-emerald-200">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-emerald-900">🏦 Para Consignación</h3>
+                        <h3 className="flex items-center gap-2 text-lg font-bold text-emerald-900"><Landmark className="w-5 h-5 text-emerald-600" aria-hidden="true" />Para Consignación</h3>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-emerald-900">
                             {formatCurrency(results.distribucion_caja.consignacion.total)}
@@ -2734,7 +2882,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Resumen Total */}
-                  <div className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 text-white">
+                  <div className="mt-4 bg-gray-900 rounded-xl p-4 text-white">
                     <div className="grid sm:grid-cols-3 gap-4 text-center">
                       <div>
                         <div className="text-xs font-medium opacity-90 mb-1">Total en Caja Base</div>
@@ -2768,10 +2916,11 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
               <div className="w-full sm:w-auto">
                 <select
+                  aria-label="Formato de descarga"
                   value={downloadFormat}
                   onChange={(e) => setDownloadFormat(e.target.value)}
                   disabled={generatingPDF || generatingImage}
-                  className="w-full px-4 py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base cursor-pointer"
+                  className="w-full px-4 py-3 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base cursor-pointer"
                 >
                   <option value="jpeg">JPEG (Alta Calidad)</option>
                   <option value="png">PNG</option>
@@ -2782,7 +2931,7 @@ const Dashboard = () => {
               <button
                 onClick={handleDownload}
                 disabled={generatingPDF || generatingImage}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {(generatingPDF || generatingImage) ? (
                   <>

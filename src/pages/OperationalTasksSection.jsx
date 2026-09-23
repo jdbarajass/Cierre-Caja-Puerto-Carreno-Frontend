@@ -110,13 +110,13 @@ const OperationalTasksSection = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1">Descripción *</label>
-              <input type="text" required placeholder="Ej: Llamar al proveedor de bolsas" value={form.description}
+              <input aria-label="Descripción" type="text" required placeholder="Ej: Llamar al proveedor de bolsas" value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Prioridad</label>
-              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
+              <select aria-label="Prioridad" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white">
                 {Object.entries(PRIORITY_LABELS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
               </select>
@@ -138,7 +138,7 @@ const OperationalTasksSection = () => {
       {loading ? (
         <div className="flex justify-center py-10"><div className="w-7 h-7 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" /></div>
       ) : items.length === 0 ? (
-        <div className="text-center py-10 text-gray-400">
+        <div className="text-center py-10 text-gray-500">
           <CheckSquare className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm">No hay tareas registradas</p>
         </div>
@@ -153,7 +153,7 @@ const OperationalTasksSection = () => {
                   const cfg = PRIORITY_LABELS[it.priority] || PRIORITY_LABELS.media;
                   return (
                     <div key={it.id} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl hover:border-emerald-300 transition-colors">
-                      <button onClick={() => handleToggle(it)} className="flex-shrink-0">
+                      <button aria-label="Marcar como hecho" onClick={() => handleToggle(it)} className="flex-shrink-0">
                         <Circle className="w-5 h-5 text-gray-300 hover:text-emerald-500 transition-colors" />
                       </button>
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
@@ -161,8 +161,8 @@ const OperationalTasksSection = () => {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
                       {admin && (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleEdit(it)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => handleDelete(it.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button aria-label="Editar" onClick={() => handleEdit(it)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button aria-label="Eliminar" onClick={() => handleDelete(it.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
@@ -173,18 +173,18 @@ const OperationalTasksSection = () => {
 
           {doneItems.length > 0 && (
             <div className="space-y-2 pt-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Completadas</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Completadas</p>
               {doneItems.map(it => {
                 const cfg = PRIORITY_LABELS[it.priority] || PRIORITY_LABELS.media;
                 return (
                   <div key={it.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl opacity-70">
-                    <button onClick={() => handleToggle(it)} className="flex-shrink-0">
+                    <button aria-label="Marcar como pendiente" onClick={() => handleToggle(it)} className="flex-shrink-0">
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
                     </button>
                     <span className="flex-1 text-sm text-gray-500 line-through">{it.description}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${cfg.color} opacity-60`}>{cfg.label}</span>
                     {admin && (
-                      <button onClick={() => handleDelete(it.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button aria-label="Eliminar" onClick={() => handleDelete(it.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     )}
                   </div>
                 );

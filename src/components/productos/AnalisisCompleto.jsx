@@ -72,7 +72,7 @@ const AnalisisCompleto = () => {
           <p className="text-gray-600 text-center">{error}</p>
           <button
             onClick={fetchAnalisis}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+            className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             Reintentar
@@ -86,7 +86,7 @@ const AnalisisCompleto = () => {
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
       <button
         onClick={onToggle}
-        className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-between hover:from-blue-700 hover:to-purple-700 transition-all"
+        className="w-full px-6 py-4 bg-gray-900 text-white flex items-center justify-between hover:bg-gray-800 transition"
       >
         <h2 className="text-xl font-bold flex items-center gap-2">
           <FileBarChart className="w-6 h-6" />
@@ -110,7 +110,7 @@ const AnalisisCompleto = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha Inicio
               </label>
-              <input
+              <input aria-label="Fecha Inicio"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -128,7 +128,7 @@ const AnalisisCompleto = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha Fin
               </label>
-              <input
+              <input aria-label="Fecha Fin"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -147,10 +147,10 @@ const AnalisisCompleto = () => {
           <button
             onClick={fetchAnalisis}
             disabled={loading}
-            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md flex-1 ${
+            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition shadow-md flex-1 ${
               loading
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                : 'bg-gray-900 hover:bg-gray-800 text-white'
             }`}
           >
             {loading ? (
@@ -170,10 +170,10 @@ const AnalisisCompleto = () => {
           <button
             onClick={handleDescargarPDF}
             disabled={downloadingPDF || !data}
-            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition-all shadow-md ${
+            className={`flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl transition shadow-md ${
               downloadingPDF || !data
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
             {downloadingPDF ? (
@@ -210,7 +210,7 @@ const AnalisisCompleto = () => {
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600 font-semibold">Cargando análisis completo...</p>
+            <p className="text-gray-600 font-semibold">Cargando análisis completo…</p>
             <p className="text-sm text-gray-500 mt-2">Este proceso puede tardar unos segundos</p>
           </div>
         </div>

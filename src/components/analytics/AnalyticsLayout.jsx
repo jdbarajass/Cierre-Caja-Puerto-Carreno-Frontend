@@ -69,16 +69,15 @@ const AnalyticsLayout = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header de Sección */}
-      <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-orange-500">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-orange-100 rounded-lg">
-            <TrendingUp className="w-8 h-8 text-orange-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Analytics Avanzado</h2>
-            <p className="text-sm text-gray-600">Análisis inteligente de ventas</p>
-          </div>
+      {/* Encabezado: mismo patrón que el resto de páginas (título + subtítulo,
+          sin tarjeta); el ícono conserva el color de la sección */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-orange-50 rounded-xl ring-1 ring-inset ring-orange-100">
+          <TrendingUp className="w-6 h-6 text-orange-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Analytics Avanzado</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Análisis inteligente de ventas</p>
         </div>
       </div>
 
@@ -93,7 +92,7 @@ const AnalyticsLayout = () => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition ${
                   isActive
                     ? 'bg-orange-600 text-white shadow-md'
                     : 'bg-gray-50 text-gray-700 hover:bg-orange-50 hover:text-orange-700 border border-gray-200'

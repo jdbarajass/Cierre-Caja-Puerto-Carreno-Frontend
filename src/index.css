@@ -2,18 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Sistema visual "Arqueo" - capa global
+   Los tokens de color/radio/sombra viven en tailwind.config.js.
+   ========================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --paper: #F3F4F6;
+  --ink-900: #16171B;
+  --accent: #3341C2;
+  /* Altura del header fijo, usada por scroll-margin de las secciones */
+  --header-h: 4rem;
+  color-scheme: light;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+  /* La cinta de total del cierre es fija abajo: el campo enfocado nunca
+     debe quedar escondido detrás de ella al navegar con Tab */
+  scroll-padding-bottom: 7rem;
+}
+
+/* Sin retardo de doble toque en móvil; resaltado de toque discreto */
+a, button, input, select, textarea, label, [role="button"] {
+  touch-action: manipulation;
+}
+
+* {
+  -webkit-tap-highlight-color: rgb(22 23 27 / 0.06);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  @apply font-sans text-gray-900;
+  background: var(--paper);
+  /* Cifras tabulares en toda la app: los montos se alinean columna a columna */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  @apply font-display;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+h1 {
+  letter-spacing: -0.025em;
+}
+
+/* Cifras grandes (fuente display): proporcionales. Las tabulares de Schibsted
+   Grotesk también ensanchan el punto de miles ("2 . 381 . 400"); las columnas
+   de montos en la fuente de texto siguen siendo tabulares. */
+.font-display {
+  font-variant-numeric: proportional-nums;
+  font-feature-settings: "pnum" 1, "tnum" 0;
+}
+
+::selection {
+  background: #C6CDF7;
+  color: #16171B;
+}
+
+/* --- Foco visible y consistente (solo teclado) --------------------------- */
+:where(a, button, [role="button"], summary, input[type="checkbox"], input[type="radio"]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Campos de texto: la mayoría trae su propio focus:ring-* (a menudo un tono
+   300, por debajo de 3:1). El borde en color de acento garantiza un indicador
+   visible en todos (salvo los que ya definen su focus:border-*, todos fuertes);
+   los campos sin ring reciben además el contorno. Sin :where a propósito: debe
+   ganarle a border-gray-300 y a focus:outline-none. */
+:is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"]):focus-visible:not([class*="focus:border"]) {
+  border-color: var(--accent);
+}
+
+/* Campos de fecha/hora: al recorrer sus segmentos (día, mes, año) con Tab el
+   foco queda en la parte interna del control y el propio input puede dejar de
+   coincidir con :focus, así que su focus:ring-* se apaga. :focus-within cubre
+   ese hueco con el contorno de acento. */
+:is(input[type="date"], input[type="time"], input[type="month"], input[type="datetime-local"]):focus-within:not(:focus) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Los que ya tienen ring no llevan además el contorno del navegador */
+:where(input, select, textarea)[class*="focus:ring"]:focus-visible {
+  outline: none;
+}
+
+:is(input, select, textarea):not([type="checkbox"], [type="radio"], [type="range"]):focus-visible:not([class*="focus:ring"]) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* --- Feedback físico al presionar ---------------------------------------
+   Se usa la propiedad individual `scale` (no `transform`) para no pisar los
+   translate de Tailwind (botones posicionados con -translate-y-1/2, etc.). */
+:where(button:not(:disabled), [role="button"], a[href]) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+}
+
+/* transition-colors de Tailwind no incluye `scale`: se le suma aquí */
+button.transition-colors:not(:disabled) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, scale, transform;
+}
+
+:where(button:not(:disabled), [role="button"]):active {
+  scale: 0.98;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* --- Formularios ---------------------------------------------------------- */
+input, select, textarea {
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9A9DA6;
+  opacity: 1;
+}
+
+/* En celular los campos deben medir >= 16px: por debajo, iOS Safari hace zoom
+   automático al enfocar. La especificidad (elemento + atributo) le gana a las
+   utilidades text-xs/text-sm de Tailwind sin usar !important. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -26,54 +165,274 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Animación de rebote único para el modal de éxito */
-@keyframes bounce-once {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  25% {
-    transform: translateY(-10px);
-  }
-  50% {
-    transform: translateY(0);
-  }
-  75% {
-    transform: translateY(-5px);
+input[type="date"] {
+  min-height: 2.75rem;
+}
+
+/* --- Scrollbars discretas ------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CACCD1 transparent;
+}
+
+/* ==========================================================================
+   Movimiento
+   Regla: solo transform/opacity; entradas con ease-out; UI < 300ms.
+   ========================================================================== */
+
+/* Modal de éxito: asentamiento corto sin rebote (antes: rebote de 0.6s) */
+@keyframes settle {
+  0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-settle {
+  animation: settle 380ms var(--ease-out) both;
+}
+
+@media (max-width: 639px) {
+  .animate-settle {
+    animation: sheet-up 320ms var(--ease-drawer) both;
   }
 }
 
-.animate-bounce-once {
-  animation: bounce-once 0.6s ease-in-out;
-}
-
-/* Animación de entrada suave */
+/* Entrada de modales y paneles */
 @keyframes fade-in-scale {
-  0% {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  0% { opacity: 0; transform: translateY(6px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .animate-fade-in-scale {
-  animation: fade-in-scale 0.3s ease-out;
+  animation: fade-in-scale 220ms var(--ease-out) both;
 }
 
-/* Animación de deslizamiento hacia abajo para notificaciones */
+/* Notificaciones superiores */
 @keyframes slide-down {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -100%);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
+  0% { opacity: 0; transform: translate(-50%, -12px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
 }
 
 .animate-slide-down {
-  animation: slide-down 0.4s ease-out;
+  animation: slide-down 260ms var(--ease-out) both;
+}
+
+/* Fondo de modales */
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-backdrop {
+  animation: backdrop-in 200ms ease both;
+}
+
+/* Hoja inferior (móvil) / diálogo centrado (desktop) */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-sheet {
+  animation: fade-in-scale 240ms var(--ease-out) both;
+}
+
+@media (max-width: 639px) {
+  .animate-sheet {
+    animation: sheet-up 320ms var(--ease-drawer) both;
+  }
+}
+
+/* Menús desplegables: nacen desde su disparador */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-pop {
+  animation: pop-in 180ms var(--ease-out) both;
+  transform-origin: top right;
+}
+
+/* Revelado de secciones al desbloquearse un paso (una sola vez) */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise {
+  /* backwards (no both): al terminar NO queda un transform aplicado; un
+     transform persistente rompería los position: fixed / sticky internos */
+  animation: rise 420ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* Entrada de página al navegar (acompaña la transición de la escena) */
+.page-enter {
+  animation: rise 380ms var(--ease-out) backwards;
+  animation-delay: 60ms;
+}
+
+/* Barras de progreso: crecen una vez al montar */
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.animate-grow-x {
+  transform-origin: left center;
+  animation: grow-x 700ms var(--ease-out) both;
+  animation-delay: 150ms;
+}
+
+/* Barra indeterminada del cargador de la app */
+@keyframes loader-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+/* Skeleton: brillo que recorre el bloque */
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EFEFF1 25%, #F7F7F8 50%, #EFEFF1 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 0.5rem;
+}
+
+/* Capa WebGL inmersiva (src/experience): detrás de todo, nunca intercepta
+   clics ni el foco. z-index negativo dentro del contexto raíz: se pinta sobre
+   el fondo del body pero debajo de cualquier contenido. */
+.experience-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: backdrop-in 900ms ease both;
+}
+
+/* Ambiente del login: fondo tinta detrás de la escena (html.theme-login lo
+   pone la página de login). La transición suaviza el paso al ambiente claro
+   de la app al entrar. */
+body {
+  transition: background-color 700ms var(--ease-out);
+}
+.theme-login body {
+  background: #16171B;
+}
+
+/* Respaldos DOM de las formaciones WebGL: visibles solo sin escena */
+.scene-fallback {
+  transition: opacity 600ms var(--ease-out);
+}
+.has-scene .scene-fallback {
+  opacity: 0;
+}
+
+/* Cierre de caja: la columna/vitrina de la escena 3D solo existe cuando la
+   escena está activa. Sin WebGL el formulario vuelve a ocupar todo el ancho. */
+.cash-scene-aside,
+.cash-vitrina {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .has-scene .cash-vitrina { display: block; }
+}
+@media (min-width: 1024px) {
+  .has-scene .cash-scene-aside { display: block; }
+  .has-scene .cash-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+@media (min-width: 1280px) {
+  .has-scene .cash-layout { grid-template-columns: minmax(0, 1fr) 360px; }
+}
+
+/* Métricas del día/mes: con escena activa la tarjeta deja ver el tanque de
+   partículas (fondo transparente) y la barra DOM se reemplaza por él. */
+.metric-vessel {
+  display: none;
+}
+.has-scene .metric-vessel {
+  display: block;
+  height: 2.25rem;
+}
+.has-scene .metric-bar {
+  display: none;
+}
+.has-scene .metric-card {
+  background-color: transparent;
+  /* ring-1 de Tailwind es un box-shadow: se conserva solo el borde fino */
+  box-shadow: 0 0 0 1px rgb(22 23 27 / 0.09);
+}
+
+/* Estadísticas: la franja de datos solo existe con escena activa */
+.data-horizon { display: none; }
+.has-scene .data-horizon { display: grid; }
+
+/* Gestión → Cuentas: la constelación de saldos solo existe con escena activa */
+.flow-window { display: none; }
+.has-scene .flow-window { display: block; }
+
+/* Franja "escenario" (Códigos KOAJ, Usuarios): solo con escena activa */
+.page-stage { display: none; }
+.has-scene .page-stage { display: block; }
+
+/* Red de seguridad de contraste (Fase 13): dentro de cualquier fondo oscuro
+   el gris de texto pasa a un gris claro (≈7.8:1 sobre #16171B). Evita que un
+   text-gray-400/500 pensado para fondo claro quede ilegible sobre negro. */
+:is(.bg-gray-800, .bg-gray-900, .bg-gray-950) :is(.text-gray-400, .text-gray-500),
+:is(.bg-gray-800, .bg-gray-900, .bg-gray-950):is(.text-gray-400, .text-gray-500) {
+  color: #A6A9B1;
+}
+
+/* Área segura inferior (iPhone con barra de gestos). Solo en móvil: en
+   desktop manda el padding-bottom de las utilidades de Tailwind. */
+@media (max-width: 639px) {
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  /* Hojas inferiores (modales en móvil) con p-6 / p-8 */
+  .pb-sheet {
+    padding-bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+  }
+}
+
+/* Pantallas táctiles: los botones de solo ícono (editar, eliminar, cerrar,
+   mes anterior...) llegan a 44 px, el tamaño recomendado para el dedo. Ocupan
+   ese espacio de verdad (min-width/height), así dos botones vecinos nunca se
+   superponen. Se excluyen los posicionados dentro de un campo (ojo de la
+   contraseña) y los que se ocultan con hidden. En escritorio no cambia nada. */
+@media (pointer: coarse) {
+  button[aria-label]:has(> svg:only-child):not(.absolute, [class*="hidden"]) {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* --- Movimiento reducido: se conservan fundidos, se elimina desplazamiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  :where(button:not(:disabled), [role="button"]):active {
+    scale: 1;
+  }
+  .skeleton {
+    animation: none;
+  }
 }
