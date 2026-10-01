@@ -190,6 +190,7 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Precio</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Desc.</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">A pagar</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Notas</th>
                 {isAdmin && <th className="px-4 py-3" />}
               </tr>
             </thead>
@@ -204,6 +205,8 @@ const RopaSection = ({ isAdmin, filterNombre }) => {
                     <span className="px-2 py-0.5 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">{item.discount_pct}%</span>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-pink-700">{fmt(item.final_value)}</td>
+                  {/* Siempre visibles (antes solo aparecían al editar), igual que en Préstamos */}
+                  <td className="px-4 py-3 text-gray-500 text-xs max-w-[240px] whitespace-pre-line break-words">{item.notes || '—'}</td>
                   {isAdmin && (
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 justify-end">

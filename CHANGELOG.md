@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-01] Control de Empleadas → Ropa: las notas se ven siempre
+
+A pedido del usuario: en la pestaña **Ropa** las notas/observaciones de cada prenda (ej. "54900 xs 36900 xs…") solo se veían al darle Editar. Ahora la tabla tiene una columna **Notas** siempre visible, igual que ya tenía Préstamos ("—" cuando no hay nota; las notas largas hacen salto de línea en vez de estirar la tabla). Permisos, Vacaciones y Pagos ya mostraban sus notas, no se tocaron. Verificado en el navegador contra backend local.
+
+---
+
 ## [2026-10-01] Multi-tienda, Fase 5: Comparativo de tiendas (+ aviso de Alegra no conectado)
 
 - **Nueva página `Estadísticas → Comparativo de Tiendas`** (`/estadisticas-estandar/comparativo-tiendas`, solo admin, `pages/StoreComparison.jsx`), alimentada por `GET /api/stores/comparison` (`services/storesService.js`):
