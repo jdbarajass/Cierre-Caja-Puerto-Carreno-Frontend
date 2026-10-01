@@ -26,7 +26,8 @@ import {
   Wallet,
   Menu,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Store
 } from 'lucide-react';
 import { getColombiaTimeString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -172,6 +173,15 @@ const MainLayout = ({ children }) => {
   ];
 
   const statsSection = [
+    {
+      id: 'comparativo-tiendas',
+      label: 'Comparativo de Tiendas',
+      description: 'Carreño vs Primavera: ventas y operación',
+      path: '/estadisticas-estandar/comparativo-tiendas',
+      icon: Store,
+      color: 'orange',
+      roles: ['admin']
+    },
     {
       id: 'ventas-totales',
       label: 'Totales de Ventas',

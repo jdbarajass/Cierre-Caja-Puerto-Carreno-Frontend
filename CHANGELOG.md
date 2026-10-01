@@ -2,6 +2,21 @@
 
 ---
 
+## [2026-10-01] Multi-tienda, Fase 5: Comparativo de tiendas (+ aviso de Alegra no conectado)
+
+- **Nueva página `Estadísticas → Comparativo de Tiendas`** (`/estadisticas-estandar/comparativo-tiendas`, solo admin, `pages/StoreComparison.jsx`), alimentada por `GET /api/stores/comparison` (`services/storesService.js`):
+  - Filtros en una fila: Este mes, Mes anterior, Últimos 7 / 30 días y rango personalizado (máx. 92 días, igual que el backend). Al recargar se mantiene el render anterior atenuado (sin saltos).
+  - Tarjeta por tienda: ventas del periodo, facturas, ticket promedio, participación y anuladas excluidas. Si una tienda no tiene Alegra conectado, su tarjeta lo dice y el resto del comparativo sale igual.
+  - **Ventas por día**: líneas de 2 px (SVG propio, sin librerías nuevas), eje Y en pasos redondos, etiquetas directas al final de cada línea (en celular solo leyenda), crosshair + tooltip con ambas tiendas, navegable con flechas del teclado, y **vista de tabla**. Con 7 días o menos se dibujan los puntos (un solo día era invisible como línea).
+  - **Medios de pago**: barras horizontales agrupadas con el valor y el % sobre las ventas de cada tienda pegados a cada barra.
+  - **Operación** (datos del sistema, no de Alegra): cierres registrados vs días del periodo, cierres con diferencia y diferencia acumulada vs Alegra, enviado y comprado en recompras, saldo disponible en cuentas hoy.
+  - Colores fijos por tienda (nunca por ranking): tinta `#4A58D6` Carreño, naranja `#C2410C` Primavera. Pasan el validador de paletas (CVD ΔE ≥ 28, contraste ≥ 3:1).
+- **Cierre de Caja**: aviso ámbar cuando la tienda activa todavía no tiene su cuenta de Alegra conectada (en vez de dejar fallar la preconsulta).
+
+**Cómo se probó**: build OK, sin errores de lint nuevos. E2E con Playwright contra backend LOCAL + **Alegra simulado** (servidor de prueba en el puerto 5055 con facturas distintas por cuenta; nunca Alegra real): 13/13 (menú, presets, tarjetas, 2 líneas, tooltip con mouse y teclado, tabla de 30 días, operación, un solo día con puntos, celular 390 px sin scroll horizontal, vendedora sin acceso). Capturas revisadas a ojo en escritorio y celular.
+
+---
+
 ## [2026-10-01] Multi-tienda, Fase 3: selector de tienda (KOAJ Carreño / KOAJ Primavera)
 
 Se abre **KOAJ Primavera**: misma app, mismos módulos, datos 100% separados por tienda (el backend ya los separa, ver su CHANGELOG, Fases 1 y 2).

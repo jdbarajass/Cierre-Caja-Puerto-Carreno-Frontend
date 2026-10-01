@@ -15,6 +15,7 @@ const MonthlySales = lazy(() => import('./components/MonthlySales'));
 const ProductosLayout = lazy(() => import('./components/productos/ProductosLayout'));
 const AnalyticsLayout = lazy(() => import('./components/analytics/AnalyticsLayout'));
 const UnifiedInventoryAnalysis = lazy(() => import('./components/inventory/UnifiedInventoryAnalysis'));
+const StoreComparison = lazy(() => import('./pages/StoreComparison'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -198,6 +199,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <UnifiedInventoryAnalysis />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Multi-tienda: comparativo entre tiendas (solo admin) */}
+              <Route
+                path="/estadisticas-estandar/comparativo-tiendas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <StoreComparison />
                     </MainLayout>
                   </ProtectedRoute>
                 }
