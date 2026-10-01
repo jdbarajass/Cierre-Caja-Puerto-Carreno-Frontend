@@ -7,6 +7,7 @@ import BaseField from './scenes/BaseField';
 import CashScene from './scenes/CashScene';
 import MetricsScene from './scenes/MetricsScene';
 import FlowScene from './scenes/FlowScene';
+import OrbitScene from './scenes/OrbitScene';
 import { SceneDirector, Conductor, StillInvalidator } from './SceneDirector';
 
 /**
@@ -103,6 +104,8 @@ export default function ExperienceCanvas({ initialTier, reducedMotion, route, ty
       {typing && !reducedMotion && <TypingThrottle fps={typingFps} />}
       <SceneDirector route={route} direction={direction} />
       <Conductor still={reducedMotion} />
+      {/* Antes que el campo base: el sistema solar queda DETRÁS de las letras KOAJ */}
+      <OrbitScene active={route === '/login'} still={reducedMotion} />
       <BaseField count={q.count} direction={direction} still={reducedMotion} />
       <CashScene active={route === '/dashboard'} still={reducedMotion} />
       <MetricsScene active={route === '/dashboard'} tier={tier} still={reducedMotion} />

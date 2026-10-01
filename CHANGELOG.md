@@ -2,6 +2,15 @@
 
 ---
 
+## [2026-10-01] Portada (login): sin rayado de cuaderno + sistema solar detrás de KOAJ
+
+A pedido del usuario:
+- **Quitado el "rayado de libro de caja"** (líneas horizontales) del panel oscuro del login: la portada queda como un fondo de universo limpio.
+- **Nuevo `experience/scenes/OrbitScene.jsx`**: un sistema solar pequeño y tenue detrás de la palabra KOAJ, solo en `/login`. Sol con brillo, 8 planetas con su color real (Saturno con anillo), órbitas tenues en un plano inclinado (perspectiva 3D). Velocidades proporcionales a las reales pero comprimidas (ω ∝ 1/√periodo; con las reales Neptuno se vería quieto) y distancias comprimidas (√) para que quepa detrás del logo. Se dibuja antes que las letras y con poca opacidad para no competir con KOAJ ni con el formulario; aparece gradualmente; con "reducir movimiento" queda quieto; 3 llamadas de dibujo, < 600 vértices, geometrías liberadas al salir del login. Para quitarlo basta con borrar su línea en `ExperienceCanvas.jsx`.
+- Verificado en Chromium (escritorio y celular): dos capturas con 4 s de diferencia muestran los planetas avanzando, sin errores en consola.
+
+---
+
 ## [2026-10-01] Despliegue multi-tienda: sesión sin tiendas se completa sola
 
 Vercel publica el frontend apenas se hace push, pero el backend de Render requiere Manual Deploy: en ese intervalo el login viejo no devuelve `stores`. El frontend ya no manda `X-Store` en ese caso (todo sigue como antes), y ahora además, si la sesión quedó sin tiendas, las vuelve a pedir a `/auth/verify` al recargar: el selector aparece solo una vez desplegado el backend, sin obligar a cerrar sesión.

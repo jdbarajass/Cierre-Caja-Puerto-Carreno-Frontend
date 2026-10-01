@@ -65,12 +65,6 @@ const Login = () => {
       {/* Panel de marca: transparente, la escena WebGL se dibuja detrás
           (fondo oscuro del body vía .theme-login) */}
       <aside className="relative overflow-hidden text-white px-6 pt-8 pb-8 sm:px-10 lg:px-14 lg:py-14 flex flex-col lg:min-h-[100dvh]">
-        {/* Rayado de libro de caja: textura sutil, sin imágenes */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0 39px, #ffffff 39px 40px)' }}
-        />
         <p className="relative text-sm text-gray-400">Puerto Carreño · Primavera</p>
 
         {/* Ancla de la escena: aquí las partículas forman la palabra KOAJ.
