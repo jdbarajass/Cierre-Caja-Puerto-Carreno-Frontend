@@ -891,6 +891,19 @@ const Dashboard = () => {
           )}
         </header>
 
+        {/* Multi-tienda: tienda sin cuenta de Alegra configurada todavía. El
+            cierre necesita Alegra para conciliar, así que se avisa de entrada
+            en vez de dejar que falle la preconsulta. */}
+        {activeStore && activeStore.alegra_configured === false && (
+          <div role="status" className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+            <p>
+              <span className="font-semibold">La cuenta de Alegra de KOAJ {storeName} todavía no está conectada.</span>{' '}
+              El cierre de caja y las ventas se activan cuando se configure. Los demás módulos (cuentas, recompras, empleadas, notas) ya funcionan.
+            </p>
+          </div>
+        )}
+
         <div className="cash-layout">
         <div className="space-y-4 sm:space-y-5 min-w-0">
           {/* PASO 1 - Fecha del Cierre + preconsulta */}
