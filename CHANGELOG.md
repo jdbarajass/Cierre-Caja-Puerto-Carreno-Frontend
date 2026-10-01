@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-10-01] Despliegue multi-tienda: sesión sin tiendas se completa sola
+
+Vercel publica el frontend apenas se hace push, pero el backend de Render requiere Manual Deploy: en ese intervalo el login viejo no devuelve `stores`. El frontend ya no manda `X-Store` en ese caso (todo sigue como antes), y ahora además, si la sesión quedó sin tiendas, las vuelve a pedir a `/auth/verify` al recargar: el selector aparece solo una vez desplegado el backend, sin obligar a cerrar sesión.
+
+Push a `main` (ambos repos) hecho el 2026-10-01; ramas `feat/multi-tienda` también en GitHub.
+
+---
+
 ## [2026-10-01] Control de Empleadas → Ropa: las notas se ven siempre
 
 A pedido del usuario: en la pestaña **Ropa** las notas/observaciones de cada prenda (ej. "54900 xs 36900 xs…") solo se veían al darle Editar. Ahora la tabla tiene una columna **Notas** siempre visible, igual que ya tenía Préstamos ("—" cuando no hay nota; las notas largas hacen salto de línea en vez de estirar la tabla). Permisos, Vacaciones y Pagos ya mostraban sus notas, no se tocaron. Verificado en el navegador contra backend local.
