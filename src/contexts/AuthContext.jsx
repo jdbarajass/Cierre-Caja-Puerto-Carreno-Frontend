@@ -41,9 +41,10 @@ export const AuthProvider = ({ children }) => {
             setToken(savedToken);
             setUser(userData);
             setActiveStoreCodeState(getActiveStoreCode(userData));
-            // Sesión iniciada antes del multi-tienda: no trae la lista de
-            // tiendas del usuario. Se completa en segundo plano.
-            if (!userData.stores) {
+            // Sesión sin lista de tiendas (iniciada antes del multi-tienda, o
+            // mientras el backend todavía no estaba actualizado): se completa
+            // en segundo plano.
+            if (!userData.stores?.length) {
               refreshUserStores(userData);
             }
           }
@@ -185,7 +186,7 @@ export const AuthProvider = ({ children }) => {
           name: data.user.name,
           role: data.user.role,
           store_code: data.user.store_code,
-          stores: data.user.stores || [],
+          stores: data.user.stores,
           loginTime: new Date().toISOString()
         };
 
