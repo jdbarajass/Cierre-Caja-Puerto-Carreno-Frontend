@@ -3,16 +3,24 @@
  *
  * Si se pierde la conexión o se recarga la página a mitad del conteo de
  * monedas/billetes, el trabajo ya ingresado no se pierde: se guarda en
- * localStorage (por fecha de cierre) y se ofrece restaurarlo.
+ * localStorage (por tienda y fecha de cierre) y se ofrece restaurarlo.
  *
  * Solo se guardan valores ingresados por el usuario (conteo, métodos de
  * pago, ajustes, base de caja). NUNCA se guardan datos de Alegra
  * (preconsulta): esos siempre deben volver a consultarse al servidor.
  */
+import { getActiveStoreCode, DEFAULT_STORE_CODE } from './activeStore';
+
 const PREFIX = 'koaj_cierre_draft_';
 const MAX_DRAFTS = 5;
 
-const keyFor = (date) => `${PREFIX}${date}`;
+// Multi-tienda: un borrador por tienda y fecha, para que el conteo a medias
+// de una tienda nunca se restaure en la otra. Carreño conserva el formato de
+// clave anterior (sin tienda) para no perder borradores existentes.
+const keyFor = (date) => {
+  const store = getActiveStoreCode();
+  return store && store !== DEFAULT_STORE_CODE ? `${PREFIX}${store}_${date}` : `${PREFIX}${date}`;
+};
 
 const isDraftEmpty = (draft) => {
   if (!draft) return true;

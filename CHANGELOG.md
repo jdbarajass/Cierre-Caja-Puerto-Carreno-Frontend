@@ -2,6 +2,29 @@
 
 ---
 
+## [2026-10-01] Multi-tienda, Fase 3: selector de tienda (KOAJ Carreño / KOAJ Primavera)
+
+Se abre **KOAJ Primavera**: misma app, mismos módulos, datos 100% separados por tienda (el backend ya los separa, ver su CHANGELOG, Fases 1 y 2).
+
+### Qué cambió
+- **Selector de tienda** (`components/layout/StoreSwitcher.jsx`): control segmentado "Carreño | Primavera" en la barra superior (desktop) y filas táctiles grandes al inicio del menú móvil. Solo aparece si el usuario puede operar más de una tienda (hoy: el administrador). Las vendedoras ven solo su tienda, sin selector.
+- **Tienda activa** (`utils/activeStore.js`): se guarda en la sesión y se valida siempre contra las tiendas que el backend devuelve para el usuario (`user.stores` en login y `/auth/verify`). Sobrevive a recargar la página.
+- **`authenticatedFetch` manda `X-Store`** en cada petición de datos (no en `/auth/*`). Es el único punto de la app que habla con el backend, así que todos los módulos quedan separados por tienda sin tocarlos uno por uno.
+- **Cambiar de tienda vuelve a montar layout + página** (`ProtectedRoute` con `key` por tienda): cada módulo recarga sus datos de la tienda nueva, sin recargar el navegador.
+- **Sesiones abiertas antes de esta versión** (sin lista de tiendas) se completan solas en segundo plano con `/auth/verify`; mientras tanto el backend usa la tienda asignada al usuario.
+- **Nombre de la tienda visible**: en la marca del header (ahora también en celular, para que nadie haga un cierre en la tienda equivocada), en el pie de página, en el título de la pestaña y **dentro del reporte del cierre que se exporta a PNG/PDF/JPEG** ("KOAJ Primavera" bajo "Resultados del Cierre"). Los archivos exportados incluyen la tienda: `Cierre_Caja_Primavera_<fecha>.png`.
+- **Cierre de caja**: la base por defecto viene de la tienda activa (configurable por tienda en el backend, $450.000 en ambas); el mensaje "Base de caja exacta" usa el monto real en vez de "$450.000" fijo. El borrador local del conteo es por tienda y fecha (Carreño conserva el formato de clave anterior).
+- **Gestión de Usuarios**: columna "Tienda" ("Todas" para administradores) y campo "Tienda" al crear/editar (deshabilitado para administradores, que operan todas).
+- Textos genéricos donde no se conoce la tienda: login ("Puerto Carreño · Primavera"), `index.html` y manifiesto PWA ("Cierre de Caja KOAJ").
+- Cuentas, Empleadas y Notas ahora tienen título de pestaña propio (antes heredaban el de `index.html`).
+- `dist/` reconstruido; de paso queda sincronizado con `public/sw.js` (cache v2) e `icon-koaj.svg`, que el commit anterior no había llevado a `dist/`.
+
+### Cómo se probó
+- `npm run build` sin errores; `eslint` sobre los archivos tocados: 0 errores nuevos (los 7 que reporta ya existían en `main`).
+- **E2E con Playwright** contra el backend LOCAL con una base SQLite temporal (nunca producción), 23/23 verificaciones, sin errores JS: admin cambia de tienda y ve solo las notas/cuentas de cada una; las peticiones llevan el `X-Store` correcto; la tienda activa persiste al recargar; título de pestaña con la tienda; Gestión de Usuarios muestra/edita la tienda; en celular (390 px) el nombre de la tienda se ve en el header, el selector del menú funciona y no hay scroll horizontal; una vendedora asignada a Primavera no ve selector, todas sus peticiones van a Primavera y nunca cae en `/unauthorized`.
+
+---
+
 ## [2026-09-23] RESUMEN - Transformación visual "Arqueo" + experiencia WebGL (un solo commit)
 
 Resumen de todo lo que entra en este commit. El detalle por etapa está en las entradas de abajo (desde "Rediseño visual y de UX Arqueo" hasta la Fase 15) y el plan completo, con decisiones y mediciones, en `PLAN_EXPERIENCIA_WEBGL.md`.

@@ -71,7 +71,7 @@ const Login = () => {
           className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0 39px, #ffffff 39px 40px)' }}
         />
-        <p className="relative text-sm text-gray-400">Puerto Carreño</p>
+        <p className="relative text-sm text-gray-400">Puerto Carreño · Primavera</p>
 
         {/* Ancla de la escena: aquí las partículas forman la palabra KOAJ.
             Sin WebGL (o antes de que cargue) se ve la marca en DOM. */}

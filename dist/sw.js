@@ -8,7 +8,7 @@
  * interferir con la lógica de auto-discovery/reintentos de src/services/api.js
  * ni con cookies/credenciales.
  */
-const CACHE_NAME = 'koaj-cierre-shell-v1';
+const CACHE_NAME = 'koaj-cierre-shell-v2';
 const SHELL_URLS = ['/', '/index.html', '/manifest.webmanifest', '/icon-koaj.svg'];
 
 self.addEventListener('install', (event) => {

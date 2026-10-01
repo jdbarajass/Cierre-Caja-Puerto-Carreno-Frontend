@@ -34,12 +34,15 @@ import { useSalesComparison } from '../../hooks/useSalesComparison';
 import { getApiDocsUrl, getPendingClosingDates } from '../../services/api';
 import { formatDateStringToColombiaDate } from '../../utils/dateUtils';
 import BrandMark from '../common/BrandMark';
+import StoreSwitcher from './StoreSwitcher';
+import { storeDisplayName } from '../../utils/activeStore';
 import { usePublishSceneData, useSceneValue, experience } from '../../experience/store';
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, activeStore } = useAuth();
+  const storeName = storeDisplayName(activeStore);
   const [currentTime, setCurrentTime] = useState(getColombiaTimeString());
   // Las métricas de este hook solo se muestran en /dashboard (ver "SECCIÓN DE MÉTRICAS"
   // más abajo) — se desactiva en cualquier otra ruta para no disparar ~9 peticiones a
@@ -373,9 +376,11 @@ const MainLayout = ({ children }) => {
               aria-label="Ir al cierre de caja"
             >
               <BrandMark size="sm" />
-              <span className="hidden sm:flex flex-col items-start leading-tight">
-                <span className="text-[13px] font-semibold text-gray-900">Puerto Carreño</span>
-                <span className="text-[11px] text-gray-500">Cierre y gestión</span>
+              {/* Nombre de la tienda activa: visible también en celular, para
+                  que nadie haga un cierre en la tienda equivocada */}
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-[13px] font-semibold text-gray-900">{storeName}</span>
+                <span className="hidden sm:block text-[11px] text-gray-500">Cierre y gestión</span>
               </span>
             </button>
 
@@ -441,6 +446,8 @@ const MainLayout = ({ children }) => {
 
             {/* Reloj + usuario + menú móvil */}
             <div className="flex items-center gap-1 sm:gap-3">
+              <StoreSwitcher />
+
               <div className="hidden md:flex items-center gap-2 px-3 h-9 rounded-full bg-gray-100 text-[13px] text-gray-700" aria-label="Hora de Colombia">
                 <Clock className="w-3.5 h-3.5 text-gray-400" />
                 <span className="font-medium tabular-nums">{currentTime}</span>
@@ -519,6 +526,8 @@ const MainLayout = ({ children }) => {
         {mobileMenuOpen && (
           <div className="lg:hidden animate-fade-in-scale origin-top border-t border-gray-100 bg-white max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
             <div className="px-3 py-3 space-y-0.5">
+              <StoreSwitcher variant="menu" onSwitched={() => setMobileMenuOpen(false)} />
+
               {visibleDashboardItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -848,7 +857,7 @@ const MainLayout = ({ children }) => {
       {/* FOOTER */}
       <footer className="mt-auto border-t border-gray-200/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-1 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} Sistema de Gestión KOAJ Puerto Carreño</p>
+          <p>© {new Date().getFullYear()} Sistema de Gestión KOAJ {storeName}</p>
           <p>Versión 2.0</p>
         </div>
       </footer>

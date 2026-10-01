@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { secureGetItem, secureSetItem, secureRemoveItem } from '../utils/secureStorage';
 import { authenticatedFetch } from '../services/api';
+import { getActiveStoreCode, setActiveStoreCode, clearActiveStore } from '../utils/activeStore';
 import logger from '../utils/logger';
 
 const AuthContext = createContext(null);
@@ -16,6 +17,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState(null);
+  // Multi-tienda: código de la tienda activa (ver utils/activeStore.js)
+  const [activeStoreCode, setActiveStoreCodeState] = useState(null);
 
   // Verificar si hay una sesión guardada al cargar
   useEffect(() => {
@@ -37,6 +40,12 @@ export const AuthProvider = ({ children }) => {
           } else {
             setToken(savedToken);
             setUser(userData);
+            setActiveStoreCodeState(getActiveStoreCode(userData));
+            // Sesión iniciada antes del multi-tienda: no trae la lista de
+            // tiendas del usuario. Se completa en segundo plano.
+            if (!userData.stores) {
+              refreshUserStores(userData);
+            }
           }
         }
       } catch (error) {
@@ -175,6 +184,8 @@ export const AuthProvider = ({ children }) => {
           email: data.user.email,
           name: data.user.name,
           role: data.user.role,
+          store_code: data.user.store_code,
+          stores: data.user.stores || [],
           loginTime: new Date().toISOString()
         };
 
@@ -184,6 +195,7 @@ export const AuthProvider = ({ children }) => {
 
         setToken(jwtToken);
         setUser(userData);
+        setActiveStoreCodeState(getActiveStoreCode(userData));
 
         logger.info('Login exitoso para:', email);
         return { success: true };
@@ -236,11 +248,46 @@ export const AuthProvider = ({ children }) => {
       // Limpiar almacenamiento seguro (por compatibilidad)
       secureRemoveItem('authToken');
       secureRemoveItem('authUser');
+      clearActiveStore();
 
       setToken(null);
       setUser(null);
+      setActiveStoreCodeState(null);
     }
   };
+
+  /**
+   * Trae del backend las tiendas que puede operar el usuario (sesiones
+   * guardadas antes del multi-tienda no las tienen).
+   */
+  const refreshUserStores = async (userData) => {
+    try {
+      const response = await authenticatedFetch('/auth/verify');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!data.user?.stores) return;
+      const updated = { ...userData, store_code: data.user.store_code, stores: data.user.stores };
+      secureSetItem('authUser', updated);
+      setUser(updated);
+      setActiveStoreCodeState(getActiveStoreCode(updated));
+    } catch (error) {
+      logger.warn('No se pudieron cargar las tiendas del usuario:', error);
+    }
+  };
+
+  /**
+   * Cambia la tienda activa. Las páginas protegidas se vuelven a montar
+   * (ver ProtectedRoute) y recargan sus datos desde la tienda nueva.
+   */
+  const switchStore = (code) => {
+    const stores = user?.stores || [];
+    if (!stores.some((s) => s.code === code)) return;
+    setActiveStoreCode(code);
+    setActiveStoreCodeState(code);
+  };
+
+  const stores = user?.stores || [];
+  const activeStore = stores.find((s) => s.code === activeStoreCode) || null;
 
   const isAuthenticated = () => {
     return !!token && !!user;
@@ -252,7 +299,10 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    loading
+    loading,
+    stores,
+    activeStore,
+    switchStore
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

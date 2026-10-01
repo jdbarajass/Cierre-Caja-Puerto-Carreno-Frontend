@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { ChevronRight, ShoppingBag, CheckSquare } from 'lucide-react';
 import RestockSection from './RestockSection';
 import OperationalTasksSection from './OperationalTasksSection';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const NotesTasksLayout = () => {
+  useDocumentTitle('Notas y Pendientes');
   const [activeTab, setActiveTab] = useState('restock');
 
   return (

@@ -2,6 +2,13 @@
 
 Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` para stack, estructura y despliegue.
 
+## Multi-tienda (KOAJ Carreño / KOAJ Primavera)
+
+- Datos 100% separados por tienda; el backend los separa por el header `X-Store` (ver su `app/stores.py`). Usuarios y Códigos KOAJ son compartidos.
+- `src/utils/activeStore.js`: tienda activa (validada contra `user.stores`). `authenticatedFetch` (`src/services/api.js`) manda `X-Store` en cada petición: cualquier llamada nueva al backend debe pasar por ahí.
+- `ProtectedRoute` remonta layout + página al cambiar de tienda (`key` por tienda): las páginas solo tienen que cargar sus datos al montar.
+- Todo lo que se guarde localmente con datos de una tienda debe llevar la tienda en la clave (ver `utils/cashClosingDraft.js`).
+
 ## Sistema visual y capa WebGL
 
 - Diseño "Arqueo": escalas de color reemplazadas en `tailwind.config.js` (gray→grafito, blue/indigo→tinta, purple→ciruela, tonos 600 semánticos desplazados para WCAG AA). Todo en hex: el reporte del cierre se exporta con html2canvas, que no soporta oklch.

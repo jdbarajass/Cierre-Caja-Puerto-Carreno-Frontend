@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getActiveStore, storeDisplayName } from '../utils/activeStore';
 
 /**
  * Hook personalizado para cambiar el título del documento (pestaña del navegador)
@@ -6,7 +7,8 @@ import { useEffect } from 'react';
  */
 const useDocumentTitle = (title) => {
   useEffect(() => {
-    const baseTitle = 'Sistema de Cierre Puerto Carreño';
+    // Multi-tienda: la pestaña dice en qué tienda se está trabajando
+    const baseTitle = `Sistema de Cierre ${storeDisplayName(getActiveStore())}`;
     const fullTitle = title ? `${title} - ${baseTitle}` : baseTitle;
 
     document.title = fullTitle;

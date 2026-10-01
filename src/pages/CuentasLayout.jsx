@@ -10,6 +10,7 @@ import {
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import { usePublishSceneData, experience } from '../experience/store';
 
 const fmt = (v) =>
@@ -214,6 +215,7 @@ const TABS = [
 ];
 
 const CuentasLayout = () => {
+  useDocumentTitle('Cuentas');
   const [tab, setTab] = useState('resumen');
 
   const [accounts, setAccounts] = useState([]);

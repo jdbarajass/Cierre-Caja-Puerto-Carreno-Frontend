@@ -24,11 +24,18 @@ import {
   resetPassword
 } from '../services/usersService';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import { useAuth } from '../contexts/AuthContext';
+import { storeDisplayName } from '../utils/activeStore';
 import useDialog from '../hooks/useDialog';
 import { usePublishSceneData } from '../experience/store';
 
 const UsersManagement = () => {
   useDocumentTitle('Gestionar Usuarios');
+
+  // Multi-tienda: tiendas que se pueden asignar (el admin las ve todas)
+  const { stores } = useAuth();
+  const defaultStoreCode = stores[0]?.code || 'carreno';
+  const storeLabel = (code) => storeDisplayName(stores.find((s) => s.code === code));
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +53,7 @@ const UsersManagement = () => {
     password: '',
     name: '',
     role: 'sales',
+    store_code: 'carreno',
     is_active: true
   });
   const [formError, setFormError] = useState('');
@@ -93,6 +101,7 @@ const UsersManagement = () => {
       password: '',
       name: '',
       role: 'sales',
+      store_code: defaultStoreCode,
       is_active: true
     });
     setFormError('');
@@ -107,6 +116,7 @@ const UsersManagement = () => {
       password: '',
       name: user.name,
       role: user.role,
+      store_code: user.store_code || defaultStoreCode,
       is_active: user.is_active
     });
     setFormError('');
@@ -189,6 +199,7 @@ const UsersManagement = () => {
           email: formData.email,
           name: formData.name,
           role: formData.role,
+          store_code: formData.store_code,
           is_active: formData.is_active
         };
         await updateUser(selectedUser.id, updateData);
@@ -336,6 +347,9 @@ const UsersManagement = () => {
                     Rol
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tienda
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -368,6 +382,10 @@ const UsersManagement = () => {
                         )}
                         {user.role === 'admin' ? 'Administrador' : 'Ventas'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {/* El admin opera todas las tiendas sin importar la asignada */}
+                      {user.role === 'admin' ? 'Todas' : storeLabel(user.store_code)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -520,6 +538,33 @@ const UsersManagement = () => {
                           <option value="partner">Socio (solo recompras)</option>
                         </select>
                       </div>
+
+                      {/* Tienda (multi-tienda) */}
+                      {stores.length > 1 && (
+                        <div>
+                          <label htmlFor="store_code" className="block text-sm font-medium text-gray-700 mb-1">
+                            Tienda
+                          </label>
+                          <select
+                            id="store_code"
+                            name="store_code"
+                            value={formData.store_code}
+                            onChange={handleInputChange}
+                            disabled={formData.role === 'admin'}
+                            aria-describedby="store_code-ayuda"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500"
+                          >
+                            {stores.map((store) => (
+                              <option key={store.code} value={store.code}>{storeDisplayName(store)}</option>
+                            ))}
+                          </select>
+                          <p id="store_code-ayuda" className="mt-1 text-xs text-gray-500">
+                            {formData.role === 'admin'
+                              ? 'El administrador opera todas las tiendas.'
+                              : 'Solo verá y registrará datos de esta tienda. Un cambio aplica en su próximo inicio de sesión.'}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Estado (solo en edicion) */}
                       {modalMode === 'edit' && (

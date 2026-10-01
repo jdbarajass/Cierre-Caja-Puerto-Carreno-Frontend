@@ -1,5 +1,6 @@
 import logger from '../utils/logger';
 import { secureGetItem, secureRemoveItem } from '../utils/secureStorage';
+import { getActiveStoreCode } from '../utils/activeStore';
 
 // URLs de los backends
 const API_LOCALS = [
@@ -129,6 +130,13 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
   // Agregar el token si existe
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Multi-tienda: la tienda activa viaja en cada petición de datos (ver
+  // utils/activeStore.js). Las rutas /auth/* no la necesitan.
+  const storeCode = getActiveStoreCode();
+  if (storeCode && !endpoint.startsWith('/auth/')) {
+    headers['X-Store'] = storeCode;
   }
 
   // Si Content-Type es undefined, eliminarlo

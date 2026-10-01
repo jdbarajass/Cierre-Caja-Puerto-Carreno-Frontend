@@ -1,12 +1,12 @@
 {
-  "name": "Cierre de Caja KOAJ Puerto Carreño",
+  "name": "Cierre de Caja KOAJ",
   "short_name": "Cierre KOAJ",
-  "description": "Sistema de cierre de caja y arqueo diario - KOAJ Puerto Carreño",
+  "description": "Sistema de cierre de caja y arqueo diario - KOAJ Puerto Carreño y KOAJ Primavera",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#eff6ff",
-  "theme_color": "#2563eb",
+  "background_color": "#F3F4F6",
+  "theme_color": "#16171B",
   "orientation": "portrait-primary",
   "icons": [
     {

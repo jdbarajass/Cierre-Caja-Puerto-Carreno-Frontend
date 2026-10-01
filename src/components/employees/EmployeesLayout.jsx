@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { isAdmin } from '../../utils/auth';
 import { Shirt, DollarSign, Clock, Sun, CreditCard, ChevronRight, Search, X } from 'lucide-react';
 import { EMPLOYEE_GROUPS } from '../../utils/employeeGroups';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 import RopaSection from './RopaSection';
 import PrestamosSection from './PrestamosSection';
@@ -26,6 +27,7 @@ const COLOR_MAP = {
 };
 
 const EmployeesLayout = () => {
+  useDocumentTitle('Control de Empleadas');
   const admin = isAdmin();
   const [activeTab, setActiveTab] = useState('ropa');
   const [filterNombre, setFilterNombre] = useState('');

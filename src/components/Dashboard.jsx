@@ -12,6 +12,7 @@ import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
 import { saveDraft, loadDraft, clearDraft } from '../utils/cashClosingDraft';
+import { storeDisplayName } from '../utils/activeStore';
 import { usePublishSceneData } from '../experience/store';
 
 /* --- Presentación del formulario de cierre (sistema "Arqueo") ------------ */
@@ -111,7 +112,14 @@ const CashSceneWindow = ({ step, ready }) => {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, activeStore } = useAuth();
+  // Multi-tienda: base de caja por defecto de la tienda activa (configurable
+  // por tienda en el backend; 450.000 si no se conoce).
+  const defaultBaseCaja = activeStore?.base_objetivo || 450000;
+  const storeName = storeDisplayName(activeStore);
+  // Para el nombre de los archivos exportados (sin tildes ni espacios): "Carreno", "Primavera"
+  const fileStoreTag = (activeStore?.short_name || 'Carreño')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '_');
   const resultsRef = useRef(null);
 
   // Establecer título de la página
@@ -133,7 +141,7 @@ const Dashboard = () => {
 
   const [date, setDate] = useState(getInitialClosingDate());
   const [closingDate, setClosingDate] = useState(getInitialClosingDate());
-  const [baseCaja, setBaseCaja] = useState(450000);
+  const [baseCaja, setBaseCaja] = useState(defaultBaseCaja);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
@@ -257,7 +265,7 @@ const Dashboard = () => {
     const montoStr = match ? match[0] : '';
 
     if (isBaseExacta(status)) {
-      return 'Base de caja exacta - $450.000';
+      return `Base de caja exacta - ${formatCurrency(baseData.total_base || baseCaja)}`;
     } else if (status === 'sobrante') {
       return `Ajuste de caja realizado - Valor sobrante para consignar: ${montoStr}`;
     } else if (status === 'faltante') {
@@ -454,7 +462,7 @@ const Dashboard = () => {
         timezone: 'America/Bogota',
         utc_offset: '-05:00',
         request_timestamp: getColombiaTimestamp(),
-        base_objetivo: parseInt(baseCaja) || 450000,
+        base_objetivo: parseInt(baseCaja) || defaultBaseCaja,
         coins: Object.fromEntries(Object.entries(coins).map(([k, v]) => [k, parseInt(v) || 0])),
         bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
         excedentes: excedentesArray,
@@ -513,7 +521,7 @@ const Dashboard = () => {
             bills: baseData.base_billetes || {},
             totalCoins: baseData.total_base_monedas || 0,
             totalBills: baseData.total_base_billetes || 0,
-            total: baseData.total_base || 450000
+            total: baseData.total_base || defaultBaseCaja
           },
           consignacion: {
             coins: consignarCoins,
@@ -642,7 +650,7 @@ const Dashboard = () => {
       pdf.addImage(imgData, 'PNG', xPos, yPos, finalWidth, finalHeight);
 
       // Generar nombre del archivo con fecha
-      const fileName = `Cierre_Caja_${results.request_date.replace(/\//g, '-')}.pdf`;
+      const fileName = `Cierre_Caja_${fileStoreTag}_${results.request_date.replace(/\//g, '-')}.pdf`;
 
       // Guardar el PDF
       pdf.save(fileName);
@@ -678,7 +686,7 @@ const Dashboard = () => {
 
         // Crear link de descarga
         const link = document.createElement('a');
-        const fileName = `Cierre_Caja_${results.request_date.replace(/\//g, '-')}.png`;
+        const fileName = `Cierre_Caja_${fileStoreTag}_${results.request_date.replace(/\//g, '-')}.png`;
         link.href = url;
         link.download = fileName;
 
@@ -723,7 +731,7 @@ const Dashboard = () => {
 
         // Crear link de descarga
         const link = document.createElement('a');
-        const fileName = `Cierre_Caja_${results.request_date.replace(/\//g, '-')}.jpeg`;
+        const fileName = `Cierre_Caja_${fileStoreTag}_${results.request_date.replace(/\//g, '-')}.jpeg`;
         link.href = url;
         link.download = fileName;
 
@@ -1505,12 +1513,12 @@ const Dashboard = () => {
                   }}
                   onBlur={(e) => {
                     const numericValue = e.target.value.replace(/[^\d]/g, '');
-                    const parsedValue = parseInt(numericValue) || 450000;
+                    const parsedValue = parseInt(numericValue) || defaultBaseCaja;
                     setBaseCaja(parsedValue);
                     e.target.value = parsedValue.toLocaleString('es-CO');
                   }}
                   className={`${FIELD} h-11 w-36 pl-7 text-right font-semibold`}
-                  placeholder="450000"
+                  placeholder={String(defaultBaseCaja)}
                   title="Base de caja personalizable según temporada"
                 />
               </div>
@@ -1986,7 +1994,11 @@ const Dashboard = () => {
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <div ref={resultsRef} className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Resultados del Cierre</h2>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Resultados del Cierre</h2>
+                  {/* Va dentro del PNG/PDF que se comparte: deja claro de qué tienda es */}
+                  <p className="text-sm font-medium text-gray-600">KOAJ {storeName}</p>
+                </div>
                 {results.alegra?.invoices_summary && (
                   <InvoicesSummaryBadge invoicesSummary={results.alegra.invoices_summary} variant="compact" />
                 )}
