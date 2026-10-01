@@ -183,6 +183,15 @@ const MainLayout = ({ children }) => {
       roles: ['admin']
     },
     {
+      id: 'clientes',
+      label: 'Clientes',
+      description: 'Mejores clientes, inactivas y % identificado',
+      path: '/estadisticas-estandar/clientes',
+      icon: Users,
+      color: 'blue',
+      roles: ['admin']
+    },
+    {
       id: 'ventas-totales',
       label: 'Totales de Ventas',
       description: 'Ventas agrupadas por día/mes',

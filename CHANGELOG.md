@@ -2,6 +2,20 @@
 
 ---
 
+## [2026-10-01] Nueva página: Clientes (Estadísticas → Clientes)
+
+`/estadisticas-estandar/clientes` (solo admin, por tienda con el selector de siempre). Usa los endpoints nuevos del backend `/api/analytics/customers/summary` e `/inactive` (reportes agregados de Alegra: un año completo en pocas consultas). Archivos: `src/pages/CustomerInsights.jsx`, `src/services/customerInsightsService.js`, ruta en `App.jsx` y entrada en el menú de Estadísticas (`MainLayout.jsx`).
+
+- **Venta con cliente identificado**: % del dinero y de las facturas con cliente (el resto es "Consumidor final"), con barra parte-todo. Es la meta para las vendedoras.
+- **Por vendedora**: qué % de lo que vendió cada una quedó con cliente. Si Alegra no permite calcularlo para alguna, se dice en vez de inventar el número.
+- **Mejores clientes** por monto, número de compras o descuento (top 25, sin Consumidor final). Las vendedoras que compran siguen en el ranking con la marca "Equipo".
+- **Compras del equipo**: lo que compró cada vendedora como clienta y su descuento, con total.
+- **Clientes nuevos y recurrentes** (nuevo = primera compra registrada en Alegra dentro del periodo).
+- **Clientas que dejaron de venir** (60/90/120/180 días): las 50 que más compraron, con última compra, teléfono y botón de WhatsApp con un mensaje listo (solo celulares colombianos).
+- Periodos rápidos (este año por defecto, este mes, mes anterior, últimos 90 días) o fechas libres hasta 3 años.
+- Tienda sin Alegra configurado (Primavera hasta tener credenciales): aviso, sin errores. Tienda sin ventas en el periodo: aviso de que todavía no hay datos.
+- Visto en Chromium (escritorio 1366 px y celular 390 px) con datos simulados: sin desborde horizontal; en celular se ocultan columnas secundarias (ticket, descuento, teléfono) y la última compra va debajo del nombre.
+
 ## [2026-10-01] Portada (login): sin rayado de cuaderno + sistema solar detrás de KOAJ
 
 A pedido del usuario:

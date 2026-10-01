@@ -16,6 +16,7 @@ const ProductosLayout = lazy(() => import('./components/productos/ProductosLayou
 const AnalyticsLayout = lazy(() => import('./components/analytics/AnalyticsLayout'));
 const UnifiedInventoryAnalysis = lazy(() => import('./components/inventory/UnifiedInventoryAnalysis'));
 const StoreComparison = lazy(() => import('./pages/StoreComparison'));
+const CustomerInsights = lazy(() => import('./pages/CustomerInsights'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -211,6 +212,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <StoreComparison />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Dashboard de clientes (reportes de Alegra, por tienda; solo admin) */}
+              <Route
+                path="/estadisticas-estandar/clientes"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <CustomerInsights />
                     </MainLayout>
                   </ProtectedRoute>
                 }
