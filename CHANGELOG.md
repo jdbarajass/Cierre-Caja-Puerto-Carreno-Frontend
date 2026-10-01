@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-01] Fase 2 del dashboard de clientes: limpieza de lint
+
+- `MainLayout.jsx`: se quitó `previousDay`, que se sacaba de `useSalesComparison` y nunca se usaba. `SalesComparisonYoY` sigue usándolo con su propia llamada al hook: no cambia nada visible.
+- `eslint.config.js`: se ignora `.claude/` (skills de diseño de terceros, no es código de la app). Quitaba 45 avisos que no eran nuestros.
+- `npm run lint` queda con **24 problemas antiguos** en componentes que no se tocaron (variables sin usar, `catch` vacíos, dependencias de hooks). Pendiente para una fase de limpieza aparte, revisando cada uno. Los archivos nuevos o tocados (`CustomerInsights.jsx`, su servicio, `App.jsx`, `MainLayout.jsx`) pasan sin avisos. Build OK.
+
 ## [2026-10-01] Nueva página: Clientes (Estadísticas → Clientes)
 
 `/estadisticas-estandar/clientes` (solo admin, por tienda con el selector de siempre). Usa los endpoints nuevos del backend `/api/analytics/customers/summary` e `/inactive` (reportes agregados de Alegra: un año completo en pocas consultas). Archivos: `src/pages/CustomerInsights.jsx`, `src/services/customerInsightsService.js`, ruta en `App.jsx` y entrada en el menú de Estadísticas (`MainLayout.jsx`).

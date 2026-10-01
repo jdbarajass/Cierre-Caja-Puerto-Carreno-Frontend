@@ -60,7 +60,6 @@ const MainLayout = ({ children }) => {
     dailyComparison,
     monthlyComparison,
     nextDayLastYear,
-    previousDay,
     fullMonthLastYear, // Mes completo del año anterior (para meta mensual)
     loading: salesLoading
   } = useSalesComparison(isDashboardRoute);
