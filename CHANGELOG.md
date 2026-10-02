@@ -2,6 +2,16 @@
 
 ---
 
+## [2026-10-02] Estadísticas, Fase A: errores que cambiaban números
+
+Plan y verificación contra Alegra: `docs/PLAN_ESTADISTICAS.md` del backend (que trae el resto de esta fase).
+- **Totales de Ventas → vendedoras**: se agrupan por `seller.id` y se muestra `seller.name` (antes una sola fila "[object Object]").
+- **Totales y Documentos**: nuevo `components/direct/SalesDataNotice.jsx`. Avisa en ámbar si Alegra no entregó algún día (`metadata.failed_days`: "Faltan N días: los totales están por debajo del real") y en gris cuántas facturas anuladas se excluyeron (`voided`). El backend ahora quita las anuladas.
+- **Inventario**: las pestañas siguen pidiendo `/api/inventory/*`, pero el backend ya entrega el inventario completo (antes 30 productos). Tiempo de espera de esas peticiones a 180 s (`INVENTORY_TIMEOUT_MS`: la primera descarga son ~55 consultas a Alegra; luego caché 5 min). Aviso si el resumen llegó incompleto (`metadata.incomplete`) y aclaración de que, con archivo cargado, las pestañas muestran el inventario actual de Alegra (no el archivo).
+- **Analytics**: Top Clientes sin Consumidor final (se muestra aparte: "No incluye Consumidor final: $X en N facturas"); tarjetas renombradas a "Clientes identificados", "Compras de clientes identificados", "Promedio por cliente". Retención: "Nuevos" → "Una compra" (explica que puede ser clienta antigua) y leyenda de Activo/En riesgo/Inactivo.
+- Limpieza: imports sin uso en 3 archivos de analytics (lint de 24 a 21 avisos viejos).
+- Verificado en Chromium con backend local + Alegra simulado (14 facturas reales del 30-sep, una anulada y un día que falla): Rita $718.200 / 10 y Mónica $323.745 / 5 con nombre; avisos visibles; Alertas de Stock con los 64 productos (= resumen); Top Clientes y Retención correctos. Lint y build OK.
+
 ## [2026-10-02] Cierre de Caja: ver las ventas de otro día
 
 Antes las tarjetas "Venta del día" y "Venta del mes" solo mostraban hoy. Ahora arriba de ellas hay un selector **"Ver ventas del [fecha]"** (hasta hoy) y un botón **"Hoy"**:

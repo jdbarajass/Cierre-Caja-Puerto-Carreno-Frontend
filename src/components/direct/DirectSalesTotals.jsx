@@ -6,6 +6,7 @@ import { getColombiaTodayString } from '../../utils/dateUtils';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { fetchWithRetry } from '../../utils/retryHelper';
 import { useSceneSeries } from '../../experience/store';
+import SalesDataNotice from './SalesDataNotice';
 
 const DirectSalesTotals = () => {
   useDocumentTitle('Totales de Ventas - Estadísticas Avanzadas');
@@ -28,6 +29,7 @@ const DirectSalesTotals = () => {
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [monthlyError, setMonthlyError] = useState(null);
   const [monthlyData, setMonthlyData] = useState(null);
+  const [monthlyNotice, setMonthlyNotice] = useState({ failedDays: [], voided: null });
   const [monthlyFromDate, setMonthlyFromDate] = useState(() => {
     const date = new Date();
     date.setDate(1); // Primer día del mes
@@ -147,18 +149,21 @@ const DirectSalesTotals = () => {
     })).sort((a, b) => b.total - a.total);
 
     // 3. Métricas por vendedor
+    // Alegra manda `seller` como objeto {id, name}: se agrupa por id (antes se
+    // usaba el objeto como texto y todas salían en una fila "[object Object]").
     const vendedores = {};
     documents.forEach(doc => {
-      const vendedor = doc.seller || 'Sin vendedor';
-      if (!vendedores[vendedor]) {
-        vendedores[vendedor] = { total: 0, count: 0 };
+      const sellerId = doc.seller?.id != null ? String(doc.seller.id) : 'sin-vendedor';
+      const sellerName = doc.seller?.name || 'Sin vendedor';
+      if (!vendedores[sellerId]) {
+        vendedores[sellerId] = { nombre: sellerName, total: 0, count: 0 };
       }
-      vendedores[vendedor].total += doc.total || 0;
-      vendedores[vendedor].count += 1;
+      vendedores[sellerId].total += doc.total || 0;
+      vendedores[sellerId].count += 1;
     });
 
-    const vendedoresArray = Object.entries(vendedores).map(([vendedor, data]) => ({
-      vendedor,
+    const vendedoresArray = Object.values(vendedores).map((data) => ({
+      vendedor: data.nombre,
       total: data.total,
       count: data.count,
       ticketPromedio: data.count > 0 ? data.total / data.count : 0,
@@ -354,6 +359,10 @@ const DirectSalesTotals = () => {
       if (response && response.success) {
         const metrics = analyzeMonthlyData(response.data);
         setMonthlyData(metrics);
+        setMonthlyNotice({
+          failedDays: response.metadata?.failed_days || [],
+          voided: response.voided || null,
+        });
         setMonthlyError(null);
       } else {
         throw new Error(response?.error || 'Error al obtener documentos de ventas');
@@ -810,6 +819,8 @@ const DirectSalesTotals = () => {
             {/* Resultados de Métricas */}
             {!monthlyLoading && !monthlyError && monthlyData && (
               <div className="space-y-6">
+                <SalesDataNotice failedDays={monthlyNotice.failedDays} voided={monthlyNotice.voided} />
+
                 {/* 1. Métricas Generales */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">

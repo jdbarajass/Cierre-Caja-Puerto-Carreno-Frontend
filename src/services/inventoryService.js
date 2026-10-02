@@ -1,6 +1,10 @@
 import { authenticatedFetch } from './api';
 import logger from '../utils/logger';
 
+// El backend pagina todo el inventario de Alegra (~55 consultas de 30 productos)
+// la primera vez; luego lo sirve desde caché unos minutos.
+const INVENTORY_TIMEOUT_MS = 180000;
+
 /**
  * Servicio para interactuar con los endpoints de análisis de inventario
  */
@@ -14,7 +18,7 @@ export const getSummary = async () => {
 
   try {
     logger.info('Obteniendo resumen de inventario:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -39,7 +43,7 @@ export const getByDepartment = async () => {
 
   try {
     logger.info('Obteniendo análisis por departamento:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -64,7 +68,7 @@ export const getFullAnalysis = async () => {
 
   try {
     logger.info('Obteniendo análisis completo de inventario:', endpoint);
-    const response = await authenticatedFetch(endpoint, {}, 60000); // Timeout de 60s
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -89,7 +93,7 @@ export const getByCategory = async () => {
 
   try {
     logger.info('Obteniendo análisis por categoría:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -114,7 +118,7 @@ export const getBySize = async () => {
 
   try {
     logger.info('Obteniendo análisis por talla:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -139,7 +143,7 @@ export const getOutOfStock = async () => {
 
   try {
     logger.info('Obteniendo productos sin stock:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -165,7 +169,7 @@ export const getLowStock = async (threshold = 5) => {
 
   try {
     logger.info('Obteniendo productos con bajo stock:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -191,7 +195,7 @@ export const getTopByValue = async (limit = 20) => {
 
   try {
     logger.info('Obteniendo top productos por valor:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -216,7 +220,7 @@ export const getABCAnalysis = async () => {
 
   try {
     logger.info('Obteniendo análisis ABC:', endpoint);
-    const response = await authenticatedFetch(endpoint);
+    const response = await authenticatedFetch(endpoint, {}, INVENTORY_TIMEOUT_MS);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

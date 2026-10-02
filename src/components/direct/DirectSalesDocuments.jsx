@@ -3,6 +3,7 @@ import { FileText, Calendar, Loader2, AlertCircle, ChevronLeft, ChevronRight, Us
 import { getSalesDocuments } from '../../services/directApiService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import SalesDataNotice from './SalesDataNotice';
 
 const DirectSalesDocuments = () => {
   useDocumentTitle('Documentos de Venta - Estadísticas Avanzadas');
@@ -11,6 +12,7 @@ const DirectSalesDocuments = () => {
   const [error, setError] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [metadata, setMetadata] = useState(null);
+  const [voided, setVoided] = useState(null);
 
   // Filtros
   const [fromDate, setFromDate] = useState(getColombiaTodayString());
@@ -35,6 +37,7 @@ const DirectSalesDocuments = () => {
       if (response.success) {
         setDocuments(response.data || []);
         setMetadata(response.metadata || null);
+        setVoided(response.voided || null);
       } else {
         throw new Error(response.error || 'Error al obtener documentos de ventas');
       }
@@ -42,6 +45,7 @@ const DirectSalesDocuments = () => {
       setError(err.message);
       setDocuments([]);
       setMetadata(null);
+      setVoided(null);
     } finally {
       setLoading(false);
     }
@@ -177,6 +181,10 @@ const DirectSalesDocuments = () => {
           </div>
         )}
       </div>
+
+      {!loading && !error && (
+        <SalesDataNotice failedDays={metadata?.failed_days || []} voided={voided} />
+      )}
 
       {/* Error */}
       {error && (

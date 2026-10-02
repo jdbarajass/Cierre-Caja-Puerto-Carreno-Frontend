@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, Users, DollarSign, ShoppingCart, Loader2, AlertCircle } from 'lucide-react';
 import { getTopCustomers } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
@@ -175,7 +175,7 @@ const TopCustomers = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center gap-3 mb-2">
               <Users className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-gray-600">Total Clientes</span>
+              <span className="text-sm text-gray-600">Clientes identificados</span>
             </div>
             <div className="text-2xl font-bold text-gray-900">
               {data.summary.total_unique_customers}
@@ -184,7 +184,7 @@ const TopCustomers = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-gray-600">Total Ingresos</span>
+              <span className="text-sm text-gray-600">Compras de clientes identificados</span>
             </div>
             <div className="text-2xl font-bold text-gray-900">
               {data.summary.total_revenue_formatted}
@@ -193,7 +193,7 @@ const TopCustomers = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center gap-3 mb-2">
               <ShoppingCart className="w-5 h-5 text-purple-600" />
-              <span className="text-sm text-gray-600">Ticket Promedio</span>
+              <span className="text-sm text-gray-600">Promedio por cliente</span>
             </div>
             <div className="text-2xl font-bold text-gray-900">
               {data.summary.average_customer_value_formatted}
@@ -209,6 +209,13 @@ const TopCustomers = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Ventas sin cliente: no entran al ranking */}
+      {data.consumidor_final && data.consumidor_final.invoices > 0 && (
+        <p className="text-sm text-gray-600">
+          No incluye <strong>Consumidor final</strong> (ventas sin cliente): {data.consumidor_final.total_formatted} en {data.consumidor_final.invoices} facturas.
+        </p>
       )}
 
       {/* Tabla de Top Clientes */}

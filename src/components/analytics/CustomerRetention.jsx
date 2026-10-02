@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, RefreshCw, Users, Loader2, AlertCircle } from 'lucide-react';
 import { getCustomerRetention } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
@@ -154,9 +154,9 @@ const CustomerRetention = () => {
           <h3 className="text-xl font-bold text-gray-900 mb-6">Segmentación de Clientes</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 text-center">
-              <h4 className="text-lg font-semibold text-green-800 mb-2">Nuevos</h4>
+              <h4 className="text-lg font-semibold text-green-800 mb-2">Una compra</h4>
               <div className="text-4xl font-bold text-green-600 mb-2">{data.summary.new_customers}</div>
-              <p className="text-sm text-green-700">1 compra</p>
+              <p className="text-sm text-green-700">1 compra en el período (puede ser clienta antigua; nuevas de verdad en Estadísticas → Clientes)</p>
             </div>
             <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 text-center">
               <h4 className="text-lg font-semibold text-blue-800 mb-2">Recurrentes</h4>
@@ -171,6 +171,9 @@ const CustomerRetention = () => {
           </div>
 
           {/* Estados de Actividad */}
+          <p className="text-xs text-gray-500 mb-2">
+            Días desde la última compra hasta la última venta del período: Activo hasta 90 · En riesgo 91 a 180 · Inactivo más de 180.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
               <div className="w-4 h-4 bg-green-500 rounded-full"></div>

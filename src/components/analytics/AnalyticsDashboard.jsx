@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Clock, Users, Trophy, RefreshCw, TrendingUp, ShoppingBag, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { getAnalyticsDashboard } from '../../services/analyticsService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
@@ -193,7 +193,7 @@ const AnalyticsDashboard = () => {
             </div>
             {data.top_customers.summary && (
               <div className="space-y-2">
-                <div className="text-sm text-gray-600">Total clientes:</div>
+                <div className="text-sm text-gray-600">Clientes identificados:</div>
                 <div className="text-2xl font-bold text-green-600">
                   {data.top_customers.summary.total_unique_customers}
                 </div>

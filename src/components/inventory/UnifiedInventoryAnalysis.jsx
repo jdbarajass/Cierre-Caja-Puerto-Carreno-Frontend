@@ -462,6 +462,30 @@ const UnifiedInventoryAnalysis = () => {
             )}
           </div>
 
+          {/* Inventario incompleto: Alegra falló a mitad de la consulta */}
+          {metadata?.incomplete && dataSource === 'api' && (
+            <div role="alert" className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 flex items-start gap-3 text-amber-900">
+              <AlertTriangle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Inventario incompleto</p>
+                <p className="text-sm">
+                  Alegra falló en la página {metadata.failed_page} de la consulta: faltan productos y los totales están por debajo del real.
+                  Vuelva a consultar en unos minutos.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Con archivo: las pestañas siguen leyendo el inventario actual de Alegra */}
+          {dataSource === 'file' && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-start gap-3 text-blue-900">
+              <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+              <p className="text-sm">
+                Las pestañas de análisis muestran el <strong>inventario actual de Alegra</strong>, no el archivo cargado.
+              </p>
+            </div>
+          )}
+
           {/* Resumen Rápido */}
           {inventoryData.resumen && (
             <div className="bg-purple-50 rounded-xl shadow-md p-6 border border-purple-200">
