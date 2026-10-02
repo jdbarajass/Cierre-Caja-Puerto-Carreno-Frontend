@@ -9,6 +9,12 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - `ProtectedRoute` remonta layout + página al cambiar de tienda (`key` por tienda): las páginas solo tienen que cargar sus datos al montar.
 - Todo lo que se guarde localmente con datos de una tienda debe llevar la tienda en la clave (ver `utils/cashClosingDraft.js`).
 
+## Dashboard de clientes (Estadísticas → Clientes)
+
+- `src/pages/CustomerInsights.jsx` (ruta `/estadisticas-estandar/clientes`, solo admin) + `src/services/customerInsightsService.js` + `src/components/customers/InvoiceFactsPanel.jsx` (panel "Facturas guardadas": estado de la copia de facturas y botones para adelantar la carga).
+- El backend responde `data.source`: con `'facts'` hay % por vendedora, descuentos y cédula; con `'report'` la página oculta lo que el reporte de Alegra no trae (`discounts_available: false`, sin % por vendedora) en vez de mostrar ceros.
+- `employee.active === false` = ex vendedora (marca "Ex vendedora"). Detalle e historia: CHANGELOG y el `CLAUDE.md` del backend.
+
 ## Sistema visual y capa WebGL
 
 - Diseño "Arqueo": escalas de color reemplazadas en `tailwind.config.js` (gray→grafito, blue/indigo→tinta, purple→ciruela, tonos 600 semánticos desplazados para WCAG AA). Todo en hex: el reporte del cierre se exporta con html2canvas, que no soporta oklch.
