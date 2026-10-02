@@ -6,6 +6,8 @@ import { getCustomersSummary, getInactiveCustomers } from '../services/customerI
 import { getColombiaTodayString } from '../utils/dateUtils';
 import { storeDisplayName } from '../utils/activeStore';
 import InvoiceFactsPanel from '../components/customers/InvoiceFactsPanel';
+import { Card, Notice, PeriodFilter, StatTile } from '../components/stats/StatsUI';
+import { buildPresets, daysBetween, longDate } from '../utils/statsDates';
 
 /**
  * Dashboard de clientes de la tienda activa (solo admin), con los reportes
@@ -27,25 +29,6 @@ const formatInt = (value) => (value || 0).toLocaleString('es-CO');
 const invoicesLabel = (n) => `${formatInt(n)} ${n === 1 ? 'factura' : 'facturas'}`;
 const formatPct = (value) =>
   value === null || value === undefined ? '—' : `${value.toLocaleString('es-CO', { maximumFractionDigits: 1 })} %`;
-
-// ── Fechas (strings YYYY-MM-DD, aritmética en UTC para no correrse de día) ──
-const toUTC = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
-const toStr = (date) => date.toISOString().slice(0, 10);
-const addDays = (s, n) => { const d = toUTC(s); d.setUTCDate(d.getUTCDate() + n); return toStr(d); };
-const daysBetween = (a, b) => Math.round((toUTC(b) - toUTC(a)) / 86400000) + 1;
-const longDate = (s) =>
-  toUTC(s).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-
-const buildPresets = (today) => {
-  const firstOfMonth = `${today.slice(0, 8)}01`;
-  const lastMonthEnd = addDays(firstOfMonth, -1);
-  return [
-    { id: 'this-year', label: 'Este año', start: `${today.slice(0, 4)}-01-01`, end: today },
-    { id: 'this-month', label: 'Este mes', start: firstOfMonth, end: today },
-    { id: 'last-month', label: 'Mes anterior', start: `${lastMonthEnd.slice(0, 8)}01`, end: lastMonthEnd },
-    { id: 'last-90', label: 'Últimos 90 días', start: addDays(today, -89), end: today },
-  ];
-};
 
 // "MONICA  ALEJANDRA VARGAS" -> "Monica Alejandra Vargas"
 const titleCase = (name) =>
@@ -203,23 +186,6 @@ const CustomerInsights = () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Card = ({ title, subtitle, children }) => (
-  <section className="min-w-0 rounded-2xl bg-white ring-1 ring-gray-900/5 shadow-sm p-4 sm:p-6">
-    <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-    {subtitle && <p className="text-sm text-gray-500 mb-4">{subtitle}</p>}
-    {children}
-  </section>
-);
-
-const Notice = ({ children, tone = 'warning' }) => (
-  <div className={`flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm ${
-    tone === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-700'
-  }`}>
-    <AlertCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${tone === 'warning' ? 'text-amber-600' : 'text-gray-500'}`} />
-    <p>{children}</p>
-  </div>
-);
-
 const EmployeeBadge = ({ employee }) => employee && (
   <span
     className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 align-middle"
@@ -227,50 +193,6 @@ const EmployeeBadge = ({ employee }) => employee && (
   >
     {employee.active === false ? 'Ex vendedora' : 'Equipo'}
   </span>
-);
-
-const PeriodFilter = ({ presets, range, setRange, draft, setDraft, draftError, loading, today }) => (
-  <section aria-label="Periodo" className="flex flex-wrap items-end gap-2">
-    <div role="group" aria-label="Periodos rápidos" className="flex flex-wrap gap-1.5">
-      {presets.map((p) => {
-        const active = range.preset === p.id;
-        return (
-          <button
-            key={p.id}
-            onClick={() => { setRange({ start: p.start, end: p.end, preset: p.id }); setDraft({ start: p.start, end: p.end }); }}
-            aria-pressed={active}
-            className={`h-10 px-3.5 rounded-full text-sm font-medium transition-colors ${
-              active ? 'bg-gray-900 text-white' : 'bg-white ring-1 ring-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            {p.label}
-          </button>
-        );
-      })}
-    </div>
-    <form
-      className="flex flex-wrap items-end gap-2 sm:ml-2"
-      onSubmit={(e) => { e.preventDefault(); if (!draftError) setRange({ ...draft, preset: null }); }}
-    >
-      <label className="text-xs text-gray-500">
-        <span className="block mb-1">Desde</span>
-        <input type="date" value={draft.start} max={today}
-          onChange={(e) => setDraft((d) => ({ ...d, start: e.target.value }))}
-          className="h-10 px-3 rounded-xl border border-gray-300 text-sm text-gray-900 bg-white" />
-      </label>
-      <label className="text-xs text-gray-500">
-        <span className="block mb-1">Hasta</span>
-        <input type="date" value={draft.end} max={today}
-          onChange={(e) => setDraft((d) => ({ ...d, end: e.target.value }))}
-          className="h-10 px-3 rounded-xl border border-gray-300 text-sm text-gray-900 bg-white" />
-      </label>
-      <button type="submit" disabled={!!draftError || loading}
-        className="h-10 px-4 rounded-xl bg-gray-900 text-white text-sm font-medium inline-flex items-center gap-2 disabled:opacity-50">
-        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Consultar
-      </button>
-      {draftError && <p className="w-full text-xs text-red-700" role="alert">{draftError}</p>}
-    </form>
-  </section>
 );
 
 // ── Indicadores ─────────────────────────────────────────────────────────────
@@ -316,14 +238,6 @@ const KpiRow = ({ data }) => {
     </div>
   );
 };
-
-const StatTile = ({ label, value, detail }) => (
-  <section className="rounded-2xl bg-white ring-1 ring-gray-900/5 shadow-sm p-5" aria-label={label}>
-    <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{label}</p>
-    <p className="mt-1 text-3xl font-bold text-gray-900 tabular-nums">{value}</p>
-    {detail && <p className="mt-1 text-sm text-gray-600">{detail}</p>}
-  </section>
-);
 
 // ── Por vendedora: barra de % identificado sobre 0-100 ──────────────────────
 

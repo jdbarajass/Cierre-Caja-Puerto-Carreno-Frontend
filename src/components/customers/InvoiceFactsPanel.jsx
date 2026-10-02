@@ -9,6 +9,10 @@ import { getInvoiceFactsStatus, syncInvoiceFacts } from '../../services/customer
  *
  * "Calidad de los datos" verifica que las facturas de Alegra traen
  * vendedora, cédula y descuento antes de usarlas en el dashboard (fase 4.3).
+ *
+ * La misma carga guarda las prendas de cada factura (Estadísticas → Prendas).
+ * Los días cargados antes de existir las prendas se completan en las
+ * siguientes tandas. `variant="prendas"` muestra el avance de las prendas.
  */
 const INK = '#4A58D6';
 
@@ -23,7 +27,8 @@ const longDate = (s) => {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 };
 
-const InvoiceFactsPanel = () => {
+const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
+  const isGarments = variant === 'prendas';
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(null); // días de la tanda en curso
@@ -66,18 +71,22 @@ const InvoiceFactsPanel = () => {
   };
 
   const q = status?.quality;
-  const done = status && status.missing_days === 0;
-  const progress = status?.total_days ? (status.loaded_days * 100) / status.total_days : 0;
+  const items = status?.items;
+  const done = status && status.missing_days === 0 && (items?.missing_days ?? 0) === 0;
+  const loaded = isGarments ? (items?.loaded_days ?? 0) : status?.loaded_days;
+  const nextMissing = isGarments ? items?.next_missing_day : status?.next_missing_day;
+  const progress = status?.total_days ? (loaded * 100) / status.total_days : 0;
 
   return (
     <section className="min-w-0 rounded-2xl bg-white ring-1 ring-gray-900/5 shadow-sm p-4 sm:p-6" aria-label="Facturas guardadas">
       <div className="flex items-start gap-3">
         <div className="p-2 rounded-xl bg-gray-100"><Database className="w-5 h-5 text-gray-700" /></div>
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Facturas guardadas</h2>
+          <h2 className="text-lg font-bold text-gray-900">{isGarments ? 'Prendas guardadas' : 'Facturas guardadas'}</h2>
           <p className="text-sm text-gray-500">
-            Copia del resumen de cada factura (cliente, cédula, vendedora, descuento) para calcular lo que
-            el reporte de Alegra no trae. Se completa sola cada noche; aquí se puede adelantar.
+            {isGarments
+              ? 'Copia de las prendas de cada factura desde el 1 de enero, para calcular estas cifras sin consultar Alegra día por día. Se completa sola cada noche (31 días); aquí se puede adelantar.'
+              : 'Copia del resumen de cada factura (cliente, cédula, vendedora, descuento) para calcular lo que el reporte de Alegra no trae. Se completa sola cada noche; aquí se puede adelantar.'}
           </p>
         </div>
       </div>
@@ -93,7 +102,7 @@ const InvoiceFactsPanel = () => {
           <div>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
               <span className="font-medium text-gray-900">
-                {formatInt(status.loaded_days)} de {formatInt(status.total_days)} días cargados
+                {formatInt(loaded)} de {formatInt(status.total_days)} días {isGarments ? 'con prendas' : 'cargados'}
               </span>
               <span className="text-xs text-gray-500">
                 {longDate(status.start)} – {longDate(status.end)} · {formatInt(status.invoices)} facturas
@@ -103,12 +112,17 @@ const InvoiceFactsPanel = () => {
               aria-label={`${Math.round(progress)} % de los días cargados`}>
               <div className="h-full rounded-[4px]" style={{ width: `${progress}%`, backgroundColor: INK }} />
             </div>
-            {!done && status.next_missing_day && (
-              <p className="mt-1 text-xs text-gray-500">Siguiente día por cargar: {longDate(status.next_missing_day)}</p>
+            {!done && nextMissing && (
+              <p className="mt-1 text-xs text-gray-500">Siguiente día por cargar: {longDate(nextMissing)}</p>
+            )}
+            {!isGarments && items && items.missing_days > 0 && status.missing_days === 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                Facturas completas. Faltan las prendas de {daysLabel(items.missing_days)} (pestaña Prendas): se cargan con los mismos botones.
+              </p>
             )}
           </div>
 
-          {q && q.active_invoices > 0 && (
+          {!isGarments && q && q.active_invoices > 0 && (
             <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               <div>
                 <dt className="text-gray-500">Con vendedora</dt>

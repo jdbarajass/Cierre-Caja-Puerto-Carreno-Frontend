@@ -199,6 +199,15 @@ const MainLayout = ({ children }) => {
       roles: ['admin']
     },
     {
+      id: 'prendas',
+      label: 'Prendas',
+      description: 'Prendas por factura, agotados, tallas y rotación',
+      path: '/estadisticas-estandar/prendas',
+      icon: Shirt,
+      color: 'purple',
+      roles: ['admin']
+    },
+    {
       id: 'ventas-totales',
       label: 'Totales de Ventas',
       description: 'Ventas agrupadas por día/mes',

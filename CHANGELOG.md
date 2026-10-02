@@ -2,6 +2,17 @@
 
 ---
 
+## [2026-10-02] Estadísticas, Fase C: pestaña Prendas
+
+Nueva página **Estadísticas → Prendas** (`src/pages/Garments.jsx`, ruta `/estadisticas-estandar/prendas`, solo admin, menú de Estadísticas) con `src/services/garmentsService.js`. No cuenta la bolsa de papel. Por defecto, el mes en curso.
+- **Canasta**: prendas vendidas, **prendas por factura**, **precio promedio por prenda** (con descuento) y venta en prendas; tabla por vendedora; lo más vendido por tipo de prenda.
+- **Cruce con el stock actual de Alegra** (se carga aparte; la primera vez hasta ~2 min): más vendidos **agotados** y **por agotarse**; **curva de tallas** venta vs. stock (barras pareadas por talla, vendido #4A58D6 / stock #0E8A6E validados con el validador de dataviz, cada barra con su % escrito); **rotación** por tipo de prenda con días de inventario y estado (ícono + texto).
+- Aviso si faltan días por cargar prendas (las cifras se quedan cortas) y panel **"Prendas guardadas"** con el avance y los botones para adelantar la carga.
+- Solo la consulta más reciente escribe en la página (cambiar el periodo mientras carga el stock no mezcla periodos; error visto en la revisión).
+- `InvoiceFactsPanel` (Clientes) cuenta también los días sin prendas: ya no se da por terminado con las facturas completas; `variant="prendas"` en la página nueva.
+- Refactor: filtro de periodo, tarjetas y avisos de Clientes pasan a `components/stats/StatsUI.jsx` y las fechas a `utils/statsDates.js` (Clientes y Prendas los comparten; Clientes revisada en el navegador).
+- Verificado en Chromium con backend local + Alegra simulado (facturas reales del 30-sep): 12 prendas en 6 facturas sin bolsas; Rita 8/4, Mónica 4/2 con el 45 % de descuento; agotados (medias, camiseta XL), curva y rotación correctas; celular sin desborde. Lint (20 avisos viejos), `npm test` y build OK.
+
 ## [2026-10-02] Estadísticas, Fase B: fechas, medios de pago reales, iPhone, paginación y avisos
 
 Plan: `docs/PLAN_ESTADISTICAS.md` del backend. Cálculos nuevos en `src/utils/salesMetrics.js` (puros) con pruebas en `salesMetrics.test.js`: **`npm test`** (node --test, sin instalar nada; 6/6).
