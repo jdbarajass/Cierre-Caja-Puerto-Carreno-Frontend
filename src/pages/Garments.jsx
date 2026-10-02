@@ -16,7 +16,7 @@ import InvoiceFactsPanel from '../components/customers/InvoiceFactsPanel';
  *   - Más vendidos que están agotados o por agotarse.
  *   - Curva de tallas: % vendido vs. % en stock por talla.
  *   - Rotación: días de inventario por tipo de prenda.
- * La BOLSA PAPEL no cuenta en nada (decisión del usuario).
+ * No cuentan la BOLSA PAPEL ni las tarjetas de regalo (decisiones del usuario).
  *
  * Colores (validados con el validador de dataviz, light): vendido = tinta
  * #4A58D6, stock = #0E8A6E. Cada barra lleva su % escrito (codificación
@@ -40,9 +40,10 @@ const Garments = () => {
 
   const today = getColombiaTodayString();
   const presets = useMemo(() => buildPresets(today), [today]);
-  const monthPreset = presets.find((p) => p.id === 'this-month');
-  const [range, setRange] = useState({ start: monthPreset.start, end: monthPreset.end, preset: 'this-month' });
-  const [draft, setDraft] = useState({ start: monthPreset.start, end: monthPreset.end });
+  // 90 días por defecto: con pocos días la curva de tallas y la rotación no son confiables
+  const defaultPreset = presets.find((p) => p.id === 'last-90');
+  const [range, setRange] = useState({ start: defaultPreset.start, end: defaultPreset.end, preset: 'last-90' });
+  const [draft, setDraft] = useState({ start: defaultPreset.start, end: defaultPreset.end });
   const [summary, setSummary] = useState(null);
   const [stock, setStock] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,6 +91,9 @@ const Garments = () => {
   const data = summary?.data;
   const coverage = data?.coverage;
   const stockData = stock?.data;
+  // Periodo sin ningún día con prendas guardadas: mejor un aviso que ceros
+  const loadedDays = coverage ? (coverage.loaded_days ?? coverage.days - coverage.missing_days) : 0;
+  const nothingLoaded = coverage && loadedDays === 0 && data.totals.units === 0;
 
   return (
     <div className="space-y-6">
@@ -98,7 +102,7 @@ const Garments = () => {
         <h1 className="mt-1 text-[2rem] sm:text-4xl font-bold text-gray-900 leading-[1.05]">Prendas</h1>
         <p className="mt-2 text-sm text-gray-600 max-w-2xl">
           Qué se vende en KOAJ {storeName}, cuántas prendas lleva cada cliente, qué se está agotando y qué
-          tallas faltan. No cuenta la bolsa de papel.
+          tallas faltan. No cuentan la bolsa de papel ni las tarjetas de regalo.
         </p>
       </header>
 
@@ -129,7 +133,15 @@ const Garments = () => {
                 Periodo: <span className="font-medium text-gray-800">{longDate(data.date_range.start)} – {longDate(data.date_range.end)}</span>
               </p>
 
-              {coverage && !coverage.complete && (
+              {nothingLoaded && (
+                <Notice>
+                  Todavía no hay prendas guardadas de este periodo: por eso no se muestran cifras. La carga va del
+                  día más reciente hacia atrás; cárgalas con "Cargar siguiente tanda" abajo o espera las cargas de
+                  cada noche (31 días por noche).
+                </Notice>
+              )}
+
+              {coverage && !coverage.complete && !nothingLoaded && (
                 <Notice>
                   Faltan las prendas de {formatInt(coverage.missing_days)} de {formatInt(coverage.days)} días
                   (desde el {longDate(coverage.first_missing_day)}): las cifras cubren solo los días cargados y se
@@ -137,6 +149,7 @@ const Garments = () => {
                 </Notice>
               )}
 
+              {!nothingLoaded && (<>
               <Basket totals={data.totals} />
 
               <div className="grid gap-6 xl:grid-cols-2">
@@ -149,6 +162,7 @@ const Garments = () => {
               </div>
 
               <StockSection data={stockData} loading={stockLoading} error={stockError} />
+              </>)}
             </div>
           )}
 
@@ -166,7 +180,7 @@ const Basket = ({ totals }) => (
     <StatTile label="Prendas vendidas" value={formatInt(totals.units)} detail={`en ${formatInt(totals.invoices)} facturas`} />
     <StatTile label="Prendas por factura" value={formatDec(totals.units_per_invoice)} detail="Cuántas lleva cada cliente en promedio" />
     <StatTile label="Precio promedio por prenda" value={formatCOP(totals.avg_price_per_unit)} detail="Ya con descuentos" />
-    <StatTile label="Venta en prendas" value={formatCOP(totals.revenue)} detail="Sin la bolsa de papel" />
+    <StatTile label="Venta en prendas" value={formatCOP(totals.revenue)} detail="Sin bolsa ni tarjetas de regalo" />
   </div>
 );
 

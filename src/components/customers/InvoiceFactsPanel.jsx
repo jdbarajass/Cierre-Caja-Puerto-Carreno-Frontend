@@ -85,7 +85,7 @@ const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
           <h2 className="text-lg font-bold text-gray-900">{isGarments ? 'Prendas guardadas' : 'Facturas guardadas'}</h2>
           <p className="text-sm text-gray-500">
             {isGarments
-              ? 'Copia de las prendas de cada factura desde el 1 de enero, para calcular estas cifras sin consultar Alegra día por día. Se completa sola cada noche (31 días); aquí se puede adelantar.'
+              ? 'Copia de las prendas de cada factura desde el 1 de enero, para calcular estas cifras sin consultar Alegra día por día. Se carga del día más reciente hacia atrás; se completa sola cada noche (31 días) y aquí se puede adelantar.'
               : 'Copia del resumen de cada factura (cliente, cédula, vendedora, descuento) para calcular lo que el reporte de Alegra no trae. Se completa sola cada noche; aquí se puede adelantar.'}
           </p>
         </div>

@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-10-02] Prendas: ajustes tras la revisión en producción
+
+- Abre en **"Últimos 90 días"** (con pocos días la curva de tallas y la rotación no son confiables).
+- Si el periodo no tiene ningún día con prendas guardadas, muestra **"Todavía no hay prendas guardadas de este periodo"** y oculta las cifras (antes salía todo en $0 y parecía un error; visto con agosto y septiembre mientras la carga iba en enero).
+- Textos: no cuentan la bolsa de papel **ni las tarjetas de regalo** (el backend ya las excluye); el panel "Prendas guardadas" explica que la carga va del día más reciente hacia atrás.
+- Verificado en Chromium (backend local + Alegra simulado): 90 días por defecto, aviso de agosto sin cifras, rotación por días cargados, "siguiente día por cargar" = el más reciente. Lint (20 avisos viejos), `npm test` y build OK.
+
 ## [2026-10-02] Estadísticas, Fase C: pestaña Prendas
 
 Nueva página **Estadísticas → Prendas** (`src/pages/Garments.jsx`, ruta `/estadisticas-estandar/prendas`, solo admin, menú de Estadísticas) con `src/services/garmentsService.js`. No cuenta la bolsa de papel. Por defecto, el mes en curso.
