@@ -2,6 +2,16 @@
 
 ---
 
+## [2026-10-02] Fase 4 cerrada + ex vendedoras marcadas
+
+Revisado con el usuario en producción (Carreño, "Este año", 2-oct-2026 15:05):
+- Fuente: facturas guardadas + hoy. % con cliente: **Mónica 65,1 %, Rita 46,2 %, Astrid 0 %** (coincide con lo calculado con el conector de Alegra).
+- Descuentos $3.212.176 = $3.184.751 guardados + $27.425 de hoy. Por vendedora: Mónica $2.082.230 + Rita $1.020.046; la diferencia ($109.900) es exactamente la factura 8423 (2-ene) sin vendedora.
+- Equipo por cédula: aparecieron 2 ex vendedoras (Neiby Femayor 12,7 %, Cristhian Muñoz 20 % — esta última facturada a un cliente "Koaj" con su cédula). Mónica 14,4 %, Rita 18,9 %. Total equipo $458.875.
+- Descuentos altos a clientes visibles en "Facturas con descuento" (41,4 % y 50 %): para revisar si fueron autorizados.
+
+Ajustes: la marca dice "Ex vendedora" (en vez de "Equipo") para quien ya no está activa en Alegra, y en "Compras del equipo" sale "(ex vendedora)" junto al nombre. El % de descuento del equipo va debajo del valor (antes se partía en dos líneas).
+
 ## [2026-10-02] Clientes: descuentos, % por vendedora y cédula (fase 4.3)
 
 Con las facturas guardadas (backend `data.source = 'facts'`) la página muestra lo que antes no tenía datos:

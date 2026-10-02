@@ -223,9 +223,9 @@ const Notice = ({ children, tone = 'warning' }) => (
 const EmployeeBadge = ({ employee }) => employee && (
   <span
     className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 align-middle"
-    title={`Vendedora: ${employee.seller_name}`}
+    title={`${employee.active === false ? 'Ex vendedora' : 'Vendedora'}: ${employee.seller_name}`}
   >
-    Equipo
+    {employee.active === false ? 'Ex vendedora' : 'Equipo'}
   </span>
 );
 
@@ -540,13 +540,17 @@ const EmployeesTable = ({ employees, discounts }) => {
             <tr key={c.id} className="border-b border-gray-100">
               <td className="py-2 pr-4 text-gray-900">
                 {titleCase(c.employee.seller_name)}
+                {c.employee.active === false && (
+                  <span className="ml-1.5 text-[11px] text-gray-500">(ex vendedora)</span>
+                )}
                 <span className="block text-xs text-gray-500">Como cliente: {titleCase(c.name)}</span>
               </td>
               <td className="py-2 pr-4 text-right tabular-nums">{formatInt(c.documents)}</td>
               <td className="py-2 pr-4 text-right tabular-nums font-medium text-gray-900">{formatCOP(c.total)}</td>
               {discounts && (
-                <td className="py-2 pr-4 text-right tabular-nums text-gray-700">
-                  {formatCOP(c.discount)} <span className="text-xs text-gray-500">({formatPct(c.discount_pct)})</span>
+                <td className="py-2 pr-4 text-right tabular-nums text-gray-700 whitespace-nowrap">
+                  {formatCOP(c.discount)}
+                  <span className="block text-xs text-gray-500">{formatPct(c.discount_pct)}</span>
                 </td>
               )}
             </tr>
