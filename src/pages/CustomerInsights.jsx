@@ -95,6 +95,7 @@ const CustomerInsights = () => {
   // Por facturas, no por monto: si Alegra cambiara el nombre de un campo y
   // los montos llegaran en 0, se ven los ceros en vez de "no hay ventas".
   const hasSales = data && (data.kpis.total_documents > 0 || data.kpis.total_sales > 0);
+  const sellersWithPct = data?.sellers.some((s) => s.identified_available);
 
   return (
     <div className="space-y-6">
@@ -143,17 +144,19 @@ const CustomerInsights = () => {
                 <>
                   <KpiRow data={data} />
                   <Card
-                    title="Venta con cliente identificado, por vendedora"
-                    subtitle="Qué parte de lo que vendió cada una quedó con el nombre y la cédula del cliente (el resto queda como Consumidor final)."
+                    title={sellersWithPct ? 'Venta con cliente identificado, por vendedora' : 'Ventas por vendedora'}
+                    subtitle={sellersWithPct
+                      ? 'Qué parte de lo que vendió cada una quedó con el nombre y la cédula del cliente (el resto queda como Consumidor final).'
+                      : 'Cuánto vendió cada una en el periodo y qué parte de la venta de la tienda representa.'}
                   >
                     <SellersIdentified sellers={data.sellers} unassigned={data.unassigned_sales} />
                   </Card>
                   <Card title="Mejores clientes" subtitle="Sin Consumidor final. Las vendedoras que compran aparecen marcadas como Equipo.">
-                    <TopClients data={data} />
+                    <TopClients data={data} discounts={data.discounts_available} />
                   </Card>
                   <div className="grid gap-6 lg:grid-cols-2">
                     <Card title="Compras del equipo" subtitle="Vendedoras que también compran como clientas (siguen en el ranking).">
-                      <EmployeesTable employees={data.employees} />
+                      <EmployeesTable employees={data.employees} discounts={data.discounts_available} />
                     </Card>
                     <Card title="Clientes nuevos y recurrentes" subtitle={`Nuevo: su primera compra registrada en Alegra fue en este periodo.`}>
                       <NewVsReturning info={data.new_vs_returning} />
@@ -283,8 +286,15 @@ const KpiRow = ({ data }) => {
       </section>
       <StatTile label="Clientes identificados" value={formatInt(kpis.unique_clients)}
         detail={`Compra promedio por cliente: ${formatCOP(kpis.average_per_client)}`} />
-      <StatTile label="Descuentos del periodo" value={formatCOP(kpis.total_discount)}
-        detail={`Del equipo: ${formatCOP(employees.discount)} (${formatPct(employees.share_of_discount_pct)})`} />
+      {data.discounts_available ? (
+        <StatTile label="Descuentos del periodo" value={formatCOP(kpis.total_discount)}
+          detail={`Del equipo: ${formatCOP(employees.discount)} (${formatPct(employees.share_of_discount_pct)})`} />
+      ) : (
+        // El reporte de Alegra que usa la plataforma no trae descuentos:
+        // mostrar $0 parecería un dato real.
+        <StatTile label="Facturas del periodo" value={formatInt(kpis.total_documents)}
+          detail={`${formatInt(kpis.identified_documents)} con cliente identificado`} />
+      )}
     </div>
   );
 };
@@ -301,6 +311,7 @@ const StatTile = ({ label, value, detail }) => (
 
 const SellersIdentified = ({ sellers, unassigned }) => {
   if (!sellers.length) return <p className="text-sm text-gray-500">No hay ventas con vendedora en este periodo.</p>;
+  if (!sellers.some((s) => s.identified_available)) return <SellersShare sellers={sellers} unassigned={unassigned} />;
   return (
     <div>
       <ul className="space-y-4">
@@ -335,6 +346,45 @@ const SellersIdentified = ({ sellers, unassigned }) => {
   );
 };
 
+// Sin % identificado (el reporte de Alegra no separa clientes por vendedora):
+// barra de participación de cada vendedora en la venta de la tienda.
+const SellersShare = ({ sellers, unassigned }) => {
+  const storeTotal = sellers.reduce((sum, s) => sum + s.total, 0) + (unassigned || 0);
+  return (
+    <div>
+      <ul className="space-y-4">
+        {sellers.map((s) => {
+          const share = storeTotal ? Math.round((s.total * 1000) / storeTotal) / 10 : 0;
+          return (
+            <li key={s.id}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="text-sm font-medium text-gray-900">{titleCase(s.name)}</span>
+                <span className="text-xs text-gray-500 tabular-nums">
+                  {formatCOP(s.total)} en {formatInt(s.documents)} facturas
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-3">
+                <div className="relative h-3 flex-1 rounded-[4px] bg-gray-100" role="img"
+                  aria-label={`${titleCase(s.name)}: ${formatPct(share)} de la venta de la tienda`}>
+                  <div className="absolute inset-y-0 left-0 rounded-[4px]" style={{ width: `${share}%`, backgroundColor: INK }} />
+                </div>
+                <span className="w-16 text-right text-sm font-semibold text-gray-900 tabular-nums">{formatPct(share)}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {unassigned > 0 && (
+        <p className="mt-4 text-xs text-gray-500">{formatCOP(unassigned)} se vendieron sin vendedora asignada.</p>
+      )}
+      <p className="mt-4 text-xs text-gray-500">
+        El % de venta con cliente identificado de cada vendedora necesita el detalle de las facturas
+        (el reporte de Alegra que usa la plataforma no lo separa por vendedora). Llega en la siguiente fase.
+      </p>
+    </div>
+  );
+};
+
 // ── Ranking de clientes ─────────────────────────────────────────────────────
 
 const RANKINGS = [
@@ -343,13 +393,14 @@ const RANKINGS = [
   { id: 'discount', label: 'Por descuento', key: 'top_by_discount' },
 ];
 
-const TopClients = ({ data }) => {
+const TopClients = ({ data, discounts }) => {
   const [ranking, setRanking] = useState('amount');
-  const rows = data[RANKINGS.find((r) => r.id === ranking).key];
+  const rankings = discounts ? RANKINGS : RANKINGS.filter((r) => r.id !== 'discount');
+  const rows = data[rankings.find((r) => r.id === ranking).key];
   return (
     <div>
       <div role="group" aria-label="Ordenar por" className="flex flex-wrap gap-1.5 mb-4">
-        {RANKINGS.map((r) => (
+        {rankings.map((r) => (
           <button key={r.id} onClick={() => setRanking(r.id)} aria-pressed={ranking === r.id}
             className={`h-9 px-3 rounded-full text-sm font-medium transition-colors ${
               ranking === r.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -370,7 +421,7 @@ const TopClients = ({ data }) => {
                 <th className="py-2 pr-4 font-medium text-right">Compras</th>
                 <th className="py-2 pr-4 font-medium text-right">Total</th>
                 <th className="hidden sm:table-cell py-2 pr-4 font-medium text-right">Ticket promedio</th>
-                <th className="hidden sm:table-cell py-2 pr-4 font-medium text-right">Descuento</th>
+                {discounts && <th className="hidden sm:table-cell py-2 pr-4 font-medium text-right">Descuento</th>}
               </tr>
             </thead>
             <tbody>
@@ -379,14 +430,16 @@ const TopClients = ({ data }) => {
                   <td className="py-2 pr-3 text-gray-500 tabular-nums">{i + 1}</td>
                   <td className="py-2 pr-4 text-gray-900">
                     {titleCase(c.name)}<EmployeeBadge employee={c.employee} />
-                    <span className="block text-xs text-gray-500">CC {c.identification}</span>
+                    {c.identification && <span className="block text-xs text-gray-500">CC {c.identification}</span>}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums text-gray-900">{formatInt(c.documents)}</td>
                   <td className="py-2 pr-4 text-right tabular-nums font-medium text-gray-900 whitespace-nowrap">{formatCOP(c.total)}</td>
                   <td className="hidden sm:table-cell py-2 pr-4 text-right tabular-nums text-gray-700">{formatCOP(c.average_ticket)}</td>
-                  <td className="hidden sm:table-cell py-2 pr-4 text-right tabular-nums text-gray-700">
-                    {c.discount ? <>{formatCOP(c.discount)} <span className="text-xs text-gray-500">({formatPct(c.discount_pct)})</span></> : '—'}
-                  </td>
+                  {discounts && (
+                    <td className="hidden sm:table-cell py-2 pr-4 text-right tabular-nums text-gray-700">
+                      {c.discount ? <>{formatCOP(c.discount)} <span className="text-xs text-gray-500">({formatPct(c.discount_pct)})</span></> : '—'}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -399,7 +452,7 @@ const TopClients = ({ data }) => {
 
 // ── Equipo ──────────────────────────────────────────────────────────────────
 
-const EmployeesTable = ({ employees }) => {
+const EmployeesTable = ({ employees, discounts }) => {
   if (!employees.clients.length) {
     return <p className="text-sm text-gray-500">Ninguna vendedora aparece como clienta en este periodo.</p>;
   }
@@ -411,7 +464,7 @@ const EmployeesTable = ({ employees }) => {
             <th className="py-2 pr-4 font-medium">Vendedora</th>
             <th className="py-2 pr-4 font-medium text-right">Compras</th>
             <th className="py-2 pr-4 font-medium text-right">Total</th>
-            <th className="py-2 pr-4 font-medium text-right">Descuento</th>
+            {discounts && <th className="py-2 pr-4 font-medium text-right">Descuento</th>}
           </tr>
         </thead>
         <tbody>
@@ -423,9 +476,11 @@ const EmployeesTable = ({ employees }) => {
               </td>
               <td className="py-2 pr-4 text-right tabular-nums">{formatInt(c.documents)}</td>
               <td className="py-2 pr-4 text-right tabular-nums font-medium text-gray-900">{formatCOP(c.total)}</td>
-              <td className="py-2 pr-4 text-right tabular-nums text-gray-700">
-                {formatCOP(c.discount)} <span className="text-xs text-gray-500">({formatPct(c.discount_pct)})</span>
-              </td>
+              {discounts && (
+                <td className="py-2 pr-4 text-right tabular-nums text-gray-700">
+                  {formatCOP(c.discount)} <span className="text-xs text-gray-500">({formatPct(c.discount_pct)})</span>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -434,7 +489,7 @@ const EmployeesTable = ({ employees }) => {
             <td className="py-2 pr-4">Total equipo</td>
             <td className="py-2 pr-4 text-right tabular-nums">{formatInt(employees.documents)}</td>
             <td className="py-2 pr-4 text-right tabular-nums">{formatCOP(employees.total)}</td>
-            <td className="py-2 pr-4 text-right tabular-nums">{formatCOP(employees.discount)}</td>
+            {discounts && <td className="py-2 pr-4 text-right tabular-nums">{formatCOP(employees.discount)}</td>}
           </tr>
         </tfoot>
       </table>

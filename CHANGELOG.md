@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-10-02] (continuación) - Clientes: no mostrar datos que Alegra no entrega
+
+En producción, el reporte de Alegra que usa la plataforma resultó no traer cédula ni descuento, ni separar clientes por vendedora (ver CHANGELOG del backend). La página ya no muestra ceros que parecen reales:
+- Sin descuentos (`discounts_available: false`): la tarjeta "Descuentos" se reemplaza por "Facturas del periodo" (total y cuántas con cliente); se ocultan la pestaña "Por descuento" y las columnas de descuento del ranking y de "Compras del equipo".
+- La línea "CC" solo aparece si hay cédula.
+- Vendedoras: si ninguna trae % identificado, la tarjeta pasa a "Ventas por vendedora" con la parte de la venta de la tienda de cada una y **una sola** nota explicando que el % por vendedora llega en la siguiente fase (antes: "No se pudo calcular" tres veces).
+- Visto en Chromium con datos simulados copiados del formato real de v1. Lint y build OK.
+
 ## [2026-10-02] Clientes: el aviso "no hay ventas" depende de las facturas
 
 - `CustomerInsights.jsx`: el aviso "Todavía no hay ventas" sale solo si no hay **facturas** en el periodo (antes: si el monto total era 0). En producción el backend leía mal el monto (ya corregido en el backend) y la página escondía todo detrás de ese aviso; ahora, si algo así vuelve a pasar, se ven los ceros y se nota el problema.
