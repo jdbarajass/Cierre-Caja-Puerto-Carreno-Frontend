@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-02] Clientes: el aviso "no hay ventas" depende de las facturas
+
+- `CustomerInsights.jsx`: el aviso "Todavía no hay ventas" sale solo si no hay **facturas** en el periodo (antes: si el monto total era 0). En producción el backend leía mal el monto (ya corregido en el backend) y la página escondía todo detrás de ese aviso; ahora, si algo así vuelve a pasar, se ven los ceros y se nota el problema.
+
 ## [2026-10-01] Fase 2 del dashboard de clientes: limpieza de lint
 
 - `MainLayout.jsx`: se quitó `previousDay`, que se sacaba de `useSalesComparison` y nunca se usaba. `SalesComparisonYoY` sigue usándolo con su propia llamada al hook: no cambia nada visible.

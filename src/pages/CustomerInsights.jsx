@@ -92,7 +92,9 @@ const CustomerInsights = () => {
 
   const notConfigured = error?.code === 'alegra_not_configured';
   const data = summary?.data;
-  const hasSales = data && data.kpis.total_sales > 0;
+  // Por facturas, no por monto: si Alegra cambiara el nombre de un campo y
+  // los montos llegaran en 0, se ven los ceros en vez de "no hay ventas".
+  const hasSales = data && (data.kpis.total_documents > 0 || data.kpis.total_sales > 0);
 
   return (
     <div className="space-y-6">
