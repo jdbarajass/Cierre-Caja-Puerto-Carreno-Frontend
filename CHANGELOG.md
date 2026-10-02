@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-02] Panel "Facturas guardadas": carga en curso y redacción
+
+- Si ya hay una carga de la tienda corriendo (respuesta 409 `sync_in_progress`, ej. se salió de la página y se volvió a dar clic, o el cron de la noche), el panel muestra el aviso y el estado actual en vez de fallar.
+- Mientras carga, avisa que la carga sigue en el servidor aunque se salga de la página.
+- "Se cargaron 1 días" → "Se cargó 1 día".
+
 ## [2026-10-02] Clientes: panel "Facturas guardadas" (fase 4.2)
 
 - Nuevo `src/components/customers/InvoiceFactsPanel.jsx`, al final de la página Clientes (solo admin, tienda activa): días cargados desde el 1-ene-2026 con barra de avance, siguiente día por cargar, **calidad de los datos** (% con vendedora, % con cédula, facturas con descuento, venta guardada y anuladas) y dos botones: "Cargar 1 día (prueba)" y "Cargar siguiente tanda (31 días)".

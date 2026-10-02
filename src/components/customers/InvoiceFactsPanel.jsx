@@ -15,6 +15,7 @@ const INK = '#4A58D6';
 const formatInt = (value) => (value || 0).toLocaleString('es-CO');
 const formatCOP = (value) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
+const daysLabel = (n) => `${formatInt(n)} ${n === 1 ? 'día' : 'días'}`;
 const pctOf = (part, whole) =>
   (whole ? `${(Math.round((part * 1000) / whole) / 10).toLocaleString('es-CO')} %` : '—');
 const longDate = (s) => {
@@ -50,7 +51,13 @@ const InvoiceFactsPanel = () => {
     try {
       const data = await syncInvoiceFacts(maxDays);
       setStatus(data.status);
-      setResult(data);
+      if (data.code === 'sync_in_progress') {
+        // Otra carga de esta tienda sigue corriendo en el servidor (ej. se
+        // salió de la página y se volvió a dar clic, o el cron de la noche).
+        setError(data.message);
+      } else {
+        setResult(data);
+      }
     } catch (e) {
       setError(e.code === 'alegra_not_configured' ? `${e.message}.` : e.message);
     } finally {
@@ -140,6 +147,7 @@ const InvoiceFactsPanel = () => {
               <span className="flex items-center gap-2 text-sm text-gray-600" role="status">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Cargando {running === 1 ? '1 día' : `hasta ${running} días`}… puede tardar hasta 3 minutos.
+                Si sales de la página la carga sigue en el servidor; al volver, espera a que termine.
               </span>
             )}
             {done && <span className="text-sm text-gray-600">Todo el periodo está cargado.</span>}
@@ -148,7 +156,7 @@ const InvoiceFactsPanel = () => {
           {result && (
             <p className={`text-sm ${result.success ? 'text-gray-700' : 'text-amber-800'}`} role="status">
               {result.backfill.synced_days.length
-                ? `Se cargaron ${formatInt(result.backfill.synced_days.length)} días (${formatInt(result.backfill.invoices)} facturas). `
+                ? `Se ${result.backfill.synced_days.length === 1 ? 'cargó' : 'cargaron'} ${daysLabel(result.backfill.synced_days.length)} (${formatInt(result.backfill.invoices)} facturas). `
                 : 'No se cargó ningún día. '}
               {result.backfill.stopped_by_time && 'Se detuvo por tiempo; vuelve a darle para seguir. '}
               {!result.success && `Alegra falló en el ${longDate(result.backfill.failed_day || result.recent.failed_day)}: ${result.message}. Lo cargado se conserva; vuelve a intentar.`}
