@@ -2,6 +2,16 @@
 
 ---
 
+## [2026-10-02] Clientes: descuentos, % por vendedora y cédula (fase 4.3)
+
+Con las facturas guardadas (backend `data.source = 'facts'`) la página muestra lo que antes no tenía datos:
+- **Venta con cliente identificado, por vendedora**: vuelve la barra de % de cada una, y al lado los **descuentos que dio**.
+- **Descuentos**: tarjeta "Descuentos del periodo" (con el del equipo), columna de descuento y ranking "Por descuento" en Mejores clientes, y descuento de cada vendedora en "Compras del equipo".
+- **Tarjeta nueva "Facturas con descuento"**: fecha, número, cliente (marca Equipo), vendedora, descuento en $ y %, y lo que pagó; las 50 con más descuento.
+- **Cédula** de cada cliente en el ranking.
+- Debajo del periodo se indica de dónde salen los datos (facturas guardadas + ventas de hoy, o reporte de Alegra con sus límites).
+- "1 facturas" → "1 factura". Visto en Chromium con datos simulados; lint y build OK.
+
 ## [2026-10-02] Panel "Facturas guardadas": carga en curso y redacción
 
 - Si ya hay una carga de la tienda corriendo (respuesta 409 `sync_in_progress`, ej. se salió de la página y se volvió a dar clic, o el cron de la noche), el panel muestra el aviso y el estado actual en vez de fallar.

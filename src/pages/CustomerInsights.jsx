@@ -24,6 +24,7 @@ const INACTIVE_OPTIONS = [60, 90, 120, 180];
 const formatCOP = (value) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
 const formatInt = (value) => (value || 0).toLocaleString('es-CO');
+const invoicesLabel = (n) => `${formatInt(n)} ${n === 1 ? 'factura' : 'facturas'}`;
 const formatPct = (value) =>
   value === null || value === undefined ? '—' : `${value.toLocaleString('es-CO', { maximumFractionDigits: 1 })} %`;
 
@@ -139,6 +140,11 @@ const CustomerInsights = () => {
                 Periodo: <span className="font-medium text-gray-800">
                   {longDate(summary.date_range.start)} – {longDate(summary.date_range.end)}
                 </span>
+                <span className="block text-xs mt-0.5">
+                  {data.source === 'facts'
+                    ? 'Calculado con las facturas guardadas (con cédula, vendedora y descuento) más las ventas de hoy en vivo.'
+                    : 'Calculado con el reporte de Alegra: sin descuentos ni % por vendedora (las facturas guardadas no cubren todo este periodo).'}
+                </span>
               </p>
 
               {hasSales ? (
@@ -163,6 +169,14 @@ const CustomerInsights = () => {
                       <NewVsReturning info={data.new_vs_returning} />
                     </Card>
                   </div>
+                  {data.discounts_available && (
+                    <Card
+                      title="Facturas con descuento"
+                      subtitle="A quién se le dio descuento, quién lo dio y de cuánto fue, de mayor a menor."
+                    >
+                      <DiscountInvoices invoices={data.discount_invoices || []} total={data.kpis.total_discount} />
+                    </Card>
+                  )}
                 </>
               ) : (
                 <Notice tone="neutral">
@@ -284,7 +298,7 @@ const KpiRow = ({ data }) => {
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden="true" className="inline-block w-3 h-3 rounded-[3px]" style={{ backgroundColor: NEUTRAL }} />
-            Consumidor final: {formatCOP(anonymous.total)} ({formatInt(anonymous.documents)} facturas)
+            Consumidor final: {formatCOP(anonymous.total)} ({invoicesLabel(anonymous.documents)})
           </li>
         </ul>
       </section>
@@ -324,12 +338,13 @@ const SellersIdentified = ({ sellers, unassigned }) => {
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
               <span className="text-sm font-medium text-gray-900">{titleCase(s.name)}</span>
               <span className="text-xs text-gray-500 tabular-nums">
-                Vendió {formatCOP(s.total)} en {formatInt(s.documents)} facturas
+                Vendió {formatCOP(s.total)} en {invoicesLabel(s.documents)}
+                {s.discount > 0 && <> · descuentos dados {formatCOP(s.discount)}</>}
               </span>
             </div>
             {s.identified_available ? (
               <div className="mt-1.5 flex items-center gap-3"
-                title={`${formatCOP(s.identified_sales)} con cliente · ${formatInt(s.identified_documents)} de ${formatInt(s.documents)} facturas`}>
+                title={`${formatCOP(s.identified_sales)} con cliente · ${formatInt(s.identified_documents)} de ${invoicesLabel(s.documents)}`}>
                 <div className="relative h-3 flex-1 rounded-[4px] bg-gray-100" role="img"
                   aria-label={`${titleCase(s.name)}: ${formatPct(s.identified_pct)} de su venta con cliente identificado`}>
                   <div className="absolute inset-y-0 left-0 rounded-[4px]"
@@ -364,7 +379,7 @@ const SellersShare = ({ sellers, unassigned }) => {
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <span className="text-sm font-medium text-gray-900">{titleCase(s.name)}</span>
                 <span className="text-xs text-gray-500 tabular-nums">
-                  {formatCOP(s.total)} en {formatInt(s.documents)} facturas
+                  {formatCOP(s.total)} en {invoicesLabel(s.documents)}
                 </span>
               </div>
               <div className="mt-1.5 flex items-center gap-3">
@@ -449,6 +464,55 @@ const TopClients = ({ data, discounts }) => {
             </tbody>
           </table>
         </div>
+      )}
+    </div>
+  );
+};
+
+// ── Facturas con descuento ──────────────────────────────────────────────────
+
+const DiscountInvoices = ({ invoices, total }) => {
+  if (!invoices.length) return <p className="text-sm text-gray-500">No hubo descuentos en este periodo.</p>;
+  const shown = invoices.reduce((sum, i) => sum + i.discount, 0);
+  return (
+    <div>
+      <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-white">
+            <tr className="border-b border-gray-200 text-left text-gray-500">
+              <th className="py-2 pr-4 font-medium">Fecha</th>
+              <th className="py-2 pr-4 font-medium">Cliente</th>
+              <th className="hidden sm:table-cell py-2 pr-4 font-medium">Vendedora</th>
+              <th className="py-2 pr-4 font-medium text-right">Descuento</th>
+              <th className="hidden sm:table-cell py-2 pr-4 font-medium text-right">Pagó</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoices.map((inv) => (
+              <tr key={`${inv.number}-${inv.date}`} className="border-b border-gray-100">
+                <td className="py-2 pr-4 text-gray-700 whitespace-nowrap">
+                  {longDate(inv.date)}
+                  {inv.number && <span className="block text-xs text-gray-500">{inv.number}</span>}
+                </td>
+                <td className="py-2 pr-4 text-gray-900">
+                  {titleCase(inv.client_name)}<EmployeeBadge employee={inv.employee} />
+                  {inv.seller_name && <span className="block sm:hidden text-xs text-gray-500">Vendió: {titleCase(inv.seller_name)}</span>}
+                </td>
+                <td className="hidden sm:table-cell py-2 pr-4 text-gray-700">{inv.seller_name ? titleCase(inv.seller_name) : '—'}</td>
+                <td className="py-2 pr-4 text-right tabular-nums whitespace-nowrap">
+                  <span className="font-medium text-gray-900">{formatCOP(inv.discount)}</span>
+                  <span className="block text-xs text-gray-500">{formatPct(inv.discount_pct)}</span>
+                </td>
+                <td className="hidden sm:table-cell py-2 pr-4 text-right tabular-nums text-gray-700">{formatCOP(inv.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {total > shown && (
+        <p className="mt-3 text-xs text-gray-500">
+          Se muestran las {invoices.length} facturas con más descuento ({formatCOP(shown)} de {formatCOP(total)} en descuentos del periodo).
+        </p>
       )}
     </div>
   );
