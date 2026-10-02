@@ -253,6 +253,12 @@ const StoreSummaryCard = ({ store, share }) => {
           {sales.voided_invoices > 0 && (
             <p className="mt-3 text-xs text-gray-500">{sales.voided_invoices} factura(s) anulada(s) no se cuentan.</p>
           )}
+          {sales.failed_days?.length > 0 && (
+            <p role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-amber-900">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-600" />
+              Incompleto: Alegra no entregó {sales.failed_days.length === 1 ? '1 día' : `${sales.failed_days.length} días`} ({sales.failed_days.join(', ')}).
+            </p>
+          )}
         </>
       ) : (
         <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-3 text-sm text-amber-900">

@@ -4,6 +4,7 @@ import { getSalesDocuments } from '../../services/directApiService';
 import { getColombiaTodayString } from '../../utils/dateUtils';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import SalesDataNotice from './SalesDataNotice';
+import { formatInvoiceDateTime, invoiceNumber } from '../../utils/salesMetrics';
 
 const DirectSalesDocuments = () => {
   useDocumentTitle('Documentos de Venta - Estadísticas Avanzadas');
@@ -25,17 +26,15 @@ const DirectSalesDocuments = () => {
     setError(null);
 
     try {
-      const params = {
-        from: fromDate,
-        to: toDate,
-        limit,
-        start: currentStart,
-      };
+      // El backend trae todo el rango de una vez (Alegra se consulta día por día);
+      // la paginación de la tabla es local y no vuelve a descargar.
+      const params = { from: fromDate, to: toDate };
 
       const response = await getSalesDocuments(params);
 
       if (response.success) {
         setDocuments(response.data || []);
+        setCurrentStart(0);
         setMetadata(response.metadata || null);
         setVoided(response.voided || null);
       } else {
@@ -51,12 +50,12 @@ const DirectSalesDocuments = () => {
     }
   };
 
-  // Cargar documentos al montar y cuando cambien los filtros
+  // Cargar documentos al montar y cuando cambien las fechas
   useEffect(() => {
     if (fromDate && toDate) {
       fetchDocuments();
     }
-  }, [fromDate, toDate, limit, currentStart]);
+  }, [fromDate, toDate]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -64,21 +63,6 @@ const DirectSalesDocuments = () => {
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(value || 0);
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    // Alegra devuelve `datetime` como "YYYY-MM-DD HH:MM:SS" en hora local de Colombia
-    // (a diferencia de `date`, que es solo la fecha "YYYY-MM-DD" y JS interpreta como
-    // medianoche UTC, corriendo la fecha un dia hacia atras al mostrarla en Colombia UTC-5)
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const handlePreviousPage = () => {
@@ -90,6 +74,8 @@ const DirectSalesDocuments = () => {
   };
 
   const totalSales = documents.reduce((sum, doc) => sum + (doc.total || 0), 0);
+  const pageDocuments = documents.slice(currentStart, currentStart + limit);
+  const pageEnd = Math.min(currentStart + limit, documents.length);
 
   return (
     <div className="space-y-6">
@@ -233,20 +219,15 @@ const DirectSalesDocuments = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {documents.map((doc, index) => (
+                {pageDocuments.map((doc, index) => (
                   <tr key={doc.id || index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        #{doc.number_template?.number || doc.id}
+                        {invoiceNumber(doc)}
                       </div>
-                      {doc.number_template?.id && (
-                        <div className="text-xs text-gray-500">
-                          ID: {doc.id}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(doc.datetime || doc.date)}
+                      {formatInvoiceDateTime(doc)}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -286,7 +267,7 @@ const DirectSalesDocuments = () => {
               <tfoot className="bg-gray-50 border-t-2 border-gray-300">
                 <tr>
                   <td colSpan="4" className="px-6 py-4 text-sm font-bold text-gray-900">
-                    TOTAL ({documents.length} documentos)
+                    TOTAL DEL PERÍODO ({documents.length} documentos)
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600 font-bold">
                     {formatCurrency(totalSales)}
@@ -300,8 +281,7 @@ const DirectSalesDocuments = () => {
           {/* Paginación */}
           <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Mostrando desde el resultado {currentStart + 1}
-              {metadata && metadata.total_items && ` de ${metadata.total_items} totales`}
+              Mostrando {currentStart + 1}–{pageEnd} de {documents.length}
             </div>
             <div className="flex gap-2">
               <button
@@ -314,7 +294,7 @@ const DirectSalesDocuments = () => {
               </button>
               <button
                 onClick={handleNextPage}
-                disabled={documents.length < limit}
+                disabled={pageEnd >= documents.length}
                 className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 Siguiente

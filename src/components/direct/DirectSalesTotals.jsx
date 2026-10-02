@@ -7,6 +7,7 @@ import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { fetchWithRetry } from '../../utils/retryHelper';
 import { useSceneSeries } from '../../experience/store';
 import SalesDataNotice from './SalesDataNotice';
+import { paymentsByMethod, itemRevenue, invoiceHour, firstDayOfMonth } from '../../utils/salesMetrics';
 
 const DirectSalesTotals = () => {
   useDocumentTitle('Totales de Ventas - Estadísticas Avanzadas');
@@ -18,11 +19,7 @@ const DirectSalesTotals = () => {
   const [quickLoading, setQuickLoading] = useState(false);
   const [quickError, setQuickError] = useState(null);
   const [quickData, setQuickData] = useState(null);
-  const [quickFromDate, setQuickFromDate] = useState(() => {
-    const date = new Date();
-    date.setDate(1); // Primer día del mes
-    return date.toISOString().split('T')[0];
-  });
+  const [quickFromDate, setQuickFromDate] = useState(() => firstDayOfMonth(getColombiaTodayString())); // toISOString daba el día 2 después de las 7 pm
   const [quickToDate, setQuickToDate] = useState(getColombiaTodayString());
 
   // Estado para la sección de Ventas Mensuales (Métricas)
@@ -30,11 +27,8 @@ const DirectSalesTotals = () => {
   const [monthlyError, setMonthlyError] = useState(null);
   const [monthlyData, setMonthlyData] = useState(null);
   const [monthlyNotice, setMonthlyNotice] = useState({ failedDays: [], voided: null });
-  const [monthlyFromDate, setMonthlyFromDate] = useState(() => {
-    const date = new Date();
-    date.setDate(1); // Primer día del mes
-    return date.toISOString().split('T')[0];
-  });
+  const [monthlyQueried, setMonthlyQueried] = useState(false); // para distinguir "sin consultar" de "sin facturas"
+  const [monthlyFromDate, setMonthlyFromDate] = useState(() => firstDayOfMonth(getColombiaTodayString())); // toISOString daba el día 2 después de las 7 pm
   const [monthlyToDate, setMonthlyToDate] = useState(getColombiaTodayString());
 
   // Estado para las metas (YoY comparison)
@@ -92,8 +86,9 @@ const DirectSalesTotals = () => {
                      error.message?.includes('network') ||
                      error.message?.includes('fetch');
             }
-            // Reintentar si no es exitoso o ventas en 0 (posible cold start)
-            return !result || !result.success || result.total_sales === 0;
+            // Solo si la respuesta falló: $0 es un resultado válido (día sin ventas),
+            // antes se reintentaba 3 veces (~24 s) creyendo que el servidor dormía.
+            return !result || !result.success;
           },
           onRetry: (retryCount, maxRetries) => {
             setQuickError(`El servidor se está iniciando... Reintento ${retryCount}/${maxRetries}`);
@@ -122,31 +117,15 @@ const DirectSalesTotals = () => {
       return null;
     }
 
-    console.log('📊 Analizando documentos:', documents.length);
-    console.log('📄 Primera factura (muestra):', documents[0]);
-
     // 1. Métricas generales
     const totalVentas = documents.reduce((sum, doc) => sum + (doc.total || 0), 0);
     const numFacturas = documents.length;
     const ticketPromedio = numFacturas > 0 ? totalVentas / numFacturas : 0;
 
-    // 2. Métricas por método de pago
-    const metodosPago = {};
-    documents.forEach(doc => {
-      const metodo = doc.paymentMethod || 'No especificado';
-      if (!metodosPago[metodo]) {
-        metodosPago[metodo] = { total: 0, count: 0 };
-      }
-      metodosPago[metodo].total += doc.total || 0;
-      metodosPago[metodo].count += 1;
-    });
-
-    const metodosPagoArray = Object.entries(metodosPago).map(([metodo, data]) => ({
-      metodo,
-      total: data.total,
-      count: data.count,
-      porcentaje: totalVentas > 0 ? (data.total / totalVentas) * 100 : 0,
-    })).sort((a, b) => b.total - a.total);
+    // 2. Métricas por método de pago: pagos reales (payments[], incluye pagos
+    // mixtos) con las mismas categorías del Cierre de Caja. Antes: el medio
+    // declarado en la factura y en código crudo (ej. DEBIT_TRANSFER).
+    const metodosPagoArray = paymentsByMethod(documents);
 
     // 3. Métricas por vendedor
     // Alegra manda `seller` como objeto {id, name}: se agrupa por id (antes se
@@ -173,25 +152,13 @@ const DirectSalesTotals = () => {
     const productos = {};
     let totalUnidades = 0;
 
-    console.log('🔍 Iniciando análisis de productos...');
-
-    documents.forEach((doc, index) => {
-      console.log(`Factura ${index + 1}:`, {
-        id: doc.id,
-        hasItems: !!doc.items,
-        isArray: Array.isArray(doc.items),
-        itemsCount: doc.items ? doc.items.length : 0,
-        items: doc.items
-      });
-
+    documents.forEach(doc => {
       if (doc.items && Array.isArray(doc.items)) {
         doc.items.forEach(item => {
           const nombreProducto = item.name || 'Sin nombre';
           const cantidad = item.quantity || 0;
-          const precio = item.price || 0;
-          const totalItem = cantidad * precio;
-
-          console.log('  📦 Producto:', { nombreProducto, cantidad, precio, totalItem });
+          // item.total ya trae el descuento (antes: cantidad * precio de lista)
+          const totalItem = itemRevenue(item);
 
           if (!productos[nombreProducto]) {
             productos[nombreProducto] = { cantidad: 0, ingresos: 0 };
@@ -200,14 +167,8 @@ const DirectSalesTotals = () => {
           productos[nombreProducto].ingresos += totalItem;
           totalUnidades += cantidad;
         });
-      } else {
-        console.log(`  ⚠️ Factura ${doc.id} no tiene items o no es array`);
       }
     });
-
-    console.log('📦 Total de productos procesados:', Object.keys(productos).length);
-    console.log('📦 Total de unidades:', totalUnidades);
-    console.log('📦 Productos:', productos);
 
     const productosPorCantidad = Object.entries(productos).map(([nombre, data]) => ({
       nombre,
@@ -249,21 +210,13 @@ const DirectSalesTotals = () => {
     }
 
     documents.forEach(doc => {
-      if (doc.datetime || doc.date) {
-        try {
-          // Preferir `datetime` (hora local real de Colombia, ej. "2026-09-02 15:30:23").
-          // `date` es solo "YYYY-MM-DD" sin hora: new Date() lo interpreta como medianoche
-          // UTC, que en Colombia (UTC-5) cae siempre a las 19:00 del dia anterior, haciendo
-          // que TODAS las ventas se agrupen incorrectamente en la hora 19 si se usa primero.
-          const fecha = new Date(doc.datetime || doc.date);
-          const hora = fecha.getHours();
-          if (hora >= 0 && hora < 24) {
-            ventasPorHora[hora].total += doc.total || 0;
-            ventasPorHora[hora].count += 1;
-          }
-        } catch (e) {
-          // Ignorar fechas inválidas
-        }
+      // Hora leída del texto de `datetime` (hora local de Colombia): new Date()
+      // con "YYYY-MM-DD HH:MM:SS" es inválido en Safari/iPhone y dejaba vacío
+      // este análisis; `date` sola se corría a las 19 h.
+      const hora = invoiceHour(doc);
+      if (hora !== null) {
+        ventasPorHora[hora].total += doc.total || 0;
+        ventasPorHora[hora].count += 1;
       }
     });
 
@@ -346,8 +299,8 @@ const DirectSalesTotals = () => {
                      error.message?.includes('network') ||
                      error.message?.includes('fetch');
             }
-            // Reintentar si no es exitoso o no hay datos (posible cold start)
-            return !result || !result.success || !result.data || result.data.length === 0;
+            // Solo si la respuesta falló: un rango sin facturas es válido.
+            return !result || !result.success;
           },
           onRetry: (retryCount, maxRetries) => {
             setMonthlyError(`El servidor se está iniciando... Reintento ${retryCount}/${maxRetries} (puede tomar hasta 30 segundos)`);
@@ -359,6 +312,7 @@ const DirectSalesTotals = () => {
       if (response && response.success) {
         const metrics = analyzeMonthlyData(response.data);
         setMonthlyData(metrics);
+        setMonthlyQueried(true);
         setMonthlyNotice({
           failedDays: response.metadata?.failed_days || [],
           voided: response.voided || null,
@@ -859,7 +813,7 @@ const DirectSalesTotals = () => {
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Método</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Transacciones</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Facturas</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">% del Total</th>
                         </tr>
                       </thead>
@@ -1089,8 +1043,20 @@ const DirectSalesTotals = () => {
               </div>
             )}
 
+            {/* Consultado, sin facturas en el rango */}
+            {!monthlyLoading && !monthlyError && !monthlyData && monthlyQueried && (
+              <div className="space-y-4">
+                <SalesDataNotice failedDays={monthlyNotice.failedDays} voided={monthlyNotice.voided} />
+                <div className="bg-gray-50 rounded-lg p-12 text-center">
+                  <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay facturas en ese rango</h3>
+                  <p className="text-gray-600">Revise las fechas o consulte otro período.</p>
+                </div>
+              </div>
+            )}
+
             {/* Sin consultar */}
-            {!monthlyLoading && !monthlyError && !monthlyData && (
+            {!monthlyLoading && !monthlyError && !monthlyData && !monthlyQueried && (
               <div className="bg-gray-50 rounded-lg p-12 text-center">
                 <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Analiza tus ventas mensuales</h3>

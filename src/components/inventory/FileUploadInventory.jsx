@@ -2,11 +2,18 @@ import React, { useState, useRef } from 'react';
 import { Upload, Package, DollarSign, TrendingUp, FileText, AlertCircle, CheckCircle, Database, LayoutDashboard, Grid, Award, Ruler, PieChart, List, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getFullAnalysis, uploadFile } from '../../services/inventoryService';
 
-const FileUploadInventory = () => {
+/**
+ * Análisis de un archivo de inventario (CSV/Excel).
+ * Con `initialData` (resultado ya procesado de /api/inventory/upload-file) se usa
+ * embebido en UnifiedInventoryAnalysis: muestra solo el análisis del archivo,
+ * sin sus propios botones de carga.
+ */
+const FileUploadInventory = ({ initialData = null, initialFileName = null }) => {
+  const embedded = initialData != null;
   const [loading, setLoading] = useState(false);
-  const [analysisData, setAnalysisData] = useState(null);
+  const [analysisData, setAnalysisData] = useState(initialData);
   const [error, setError] = useState(null);
-  const [fileName, setFileName] = useState(null);
+  const [fileName, setFileName] = useState(initialFileName);
   const [activeView, setActiveView] = useState('inventario-completo'); // 'inventario-completo', 'resumen', 'departamentos', 'top-productos', 'categorias'
   const fileInputRef = useRef(null);
 
@@ -90,7 +97,8 @@ const FileUploadInventory = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con botones */}
+      {/* Header con botones (no se muestra embebido: la página ya tiene los suyos) */}
+      {!embedded && (
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Análisis de Inventario</h2>
         <p className="text-gray-600 mb-6">
@@ -132,6 +140,7 @@ const FileUploadInventory = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Loading State */}
       {loading && (
@@ -165,12 +174,14 @@ const FileUploadInventory = () => {
       {analysisData && !loading && (
         <div className="space-y-6">
           {/* Success Badge */}
+          {!embedded && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center gap-2 text-green-800">
               <CheckCircle className="w-5 h-5" />
               <p className="font-semibold">Análisis completado exitosamente</p>
             </div>
           </div>
+          )}
 
           {/* Indicador del tipo de archivo */}
           {analysisData.tipo_archivo && (

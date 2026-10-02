@@ -15,6 +15,12 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - El backend responde `data.source`: con `'facts'` hay % por vendedora, descuentos y cédula; con `'report'` la página oculta lo que el reporte de Alegra no trae (`discounts_available: false`, sin % por vendedora) en vez de mostrar ceros.
 - `employee.active === false` = ex vendedora (marca "Ex vendedora"). Detalle e historia: CHANGELOG y el `CLAUDE.md` del backend.
 
+## Estadísticas (Totales, Documentos, Analytics, Productos, Inventario)
+
+- Plan y verificación contra Alegra: `docs/PLAN_ESTADISTICAS.md` del backend.
+- Cálculos sobre facturas de Alegra en `src/utils/salesMetrics.js` (sin `new Date` con textos de Alegra: Safari/iPhone y zona horaria). Pruebas: **`npm test`** (node --test).
+- Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
+
 ## Sistema visual y capa WebGL
 
 - Diseño "Arqueo": escalas de color reemplazadas en `tailwind.config.js` (gray→grafito, blue/indigo→tinta, purple→ciruela, tonos 600 semánticos desplazados para WCAG AA). Todo en hex: el reporte del cierre se exporta con html2canvas, que no soporta oklch.

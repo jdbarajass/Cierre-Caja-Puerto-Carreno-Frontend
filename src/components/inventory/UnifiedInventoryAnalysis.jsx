@@ -15,6 +15,7 @@ import StockAlerts from './StockAlerts';
 import ABCAnalysis from './ABCAnalysis';
 import TopProducts from './TopProducts';
 import CategorySizeAnalysis from './CategorySizeAnalysis';
+import FileUploadInventory from './FileUploadInventory';
 
 const UnifiedInventoryAnalysis = () => {
   useDocumentTitle('Análisis de Inventario');
@@ -476,18 +477,14 @@ const UnifiedInventoryAnalysis = () => {
             </div>
           )}
 
-          {/* Con archivo: las pestañas siguen leyendo el inventario actual de Alegra */}
+          {/* Con archivo: análisis del archivo (antes las pestañas mostraban el
+              inventario actual de Alegra aunque se hubiera cargado un archivo) */}
           {dataSource === 'file' && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-start gap-3 text-blue-900">
-              <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
-              <p className="text-sm">
-                Las pestañas de análisis muestran el <strong>inventario actual de Alegra</strong>, no el archivo cargado.
-              </p>
-            </div>
+            <FileUploadInventory key={fileName} initialData={inventoryData} initialFileName={fileName} />
           )}
 
           {/* Resumen Rápido */}
-          {inventoryData.resumen && (
+          {dataSource === 'api' && inventoryData.resumen && (
             <div className="bg-purple-50 rounded-xl shadow-md p-6 border border-purple-200">
               <h3 className="text-xl font-bold text-purple-900 mb-4">Resumen del Inventario</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -519,7 +516,8 @@ const UnifiedInventoryAnalysis = () => {
             </div>
           )}
 
-          {/* Navegación de Vistas de Análisis */}
+          {/* Navegación de Vistas de Análisis (inventario de Alegra) */}
+          {dataSource === 'api' && (<>
           <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Seleccionar Vista de Análisis</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -556,6 +554,7 @@ const UnifiedInventoryAnalysis = () => {
           <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
             {renderAnalysisView()}
           </div>
+          </>)}
         </div>
       )}
     </div>

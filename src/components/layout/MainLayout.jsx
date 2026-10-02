@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import AlegraFailedDaysBanner from './AlegraFailedDaysBanner';
 import {
   Home,
   Package,
@@ -902,6 +903,7 @@ const MainLayout = ({ children }) => {
       {/* CONTENIDO PRINCIPAL */}
       <main id="contenido" tabIndex={-1} className="flex-1 outline-none">
         <div className="page-enter max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <AlegraFailedDaysBanner />
           {children}
         </div>
       </main>

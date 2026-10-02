@@ -1,6 +1,7 @@
 import logger from '../utils/logger';
 import { secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 import { getActiveStoreCode } from '../utils/activeStore';
+import { reportAlegraFailedDays } from '../utils/dataWarnings';
 
 // URLs de los backends
 const API_LOCALS = [
@@ -112,7 +113,7 @@ const fetchWithTimeout = async (url, options, timeout) => {
  * @param {number} customTimeout - Timeout personalizado en milisegundos (opcional)
  * @returns {Promise} - Promesa con la respuesta de la API
  */
-export const authenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
+const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
   // Obtener el token del almacenamiento seguro
   const token = secureGetItem('authToken');
 
@@ -336,6 +337,16 @@ export const authenticatedFetch = async (endpoint, options = {}, customTimeout =
       'No se pudo conectar con el servidor. Por favor verifica tu conexión a internet.'
     );
   }
+};
+
+/**
+ * Fetch autenticado (con X-Store y descubrimiento de backend). Además avisa si
+ * el backend reporta días que Alegra no entregó (ver utils/dataWarnings.js).
+ */
+export const authenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
+  const response = await rawAuthenticatedFetch(endpoint, options, customTimeout);
+  reportAlegraFailedDays(response);
+  return response;
 };
 
 /**

@@ -27,7 +27,7 @@ const SalesDataNotice = ({ failedDays = [], voided = null }) => {
         <div role="alert" className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 flex items-start gap-3 text-amber-900">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-bold">Faltan {failedDays.length === 1 ? '1 día' : `${failedDays.length} días`}: los totales están por debajo del real</p>
+            <p className="font-bold">{failedDays.length === 1 ? 'Falta 1 día' : `Faltan ${failedDays.length} días`}: los totales están por debajo del real</p>
             <p>Alegra no respondió para: {failedDays.map(formatDay).join(', ')}. Vuelva a consultar en unos minutos.</p>
           </div>
         </div>

@@ -2,6 +2,21 @@
 
 ---
 
+## [2026-10-02] Estadísticas, Fase B: fechas, medios de pago reales, iPhone, paginación y avisos
+
+Plan: `docs/PLAN_ESTADISTICAS.md` del backend. Cálculos nuevos en `src/utils/salesMetrics.js` (puros) con pruebas en `salesMetrics.test.js`: **`npm test`** (node --test, sin instalar nada; 6/6).
+- **Totales de Ventas**
+  - Fecha inicial por defecto = día 1 del mes en hora de Colombia (`firstDayOfMonth(getColombiaTodayString())`); con `toISOString` salía el día 2 después de las 7 pm.
+  - **Medios de pago reales** (`payments[]`), con las mismas categorías del Cierre de Caja (Efectivo, Transferencia, Tarjeta crédito/débito, Otro). Un pago mixto ($100 efectivo + $90.000 transferencia) se reparte; si la factura no trae pagos se usa lo declarado. Columna "Facturas" en vez de "Transacciones". Antes: el medio declarado y en código crudo (`DEBIT_TRANSFER`).
+  - **Ingresos por producto con descuento** (`item.total`; el descuento de Alegra viene en %). Antes cantidad × precio de lista.
+  - **Hora** leída del texto de `datetime` (`invoiceHour`): `new Date("YYYY-MM-DD HH:MM:SS")` es inválido en Safari/iPhone y dejaba vacío el análisis por hora.
+  - **No reintenta** cuando el total es $0 o el rango no tiene facturas (antes ~24-30 s de "El servidor se está iniciando…"); nuevo mensaje "No hay facturas en ese rango". Se quitaron los `console.log` por factura.
+- **Documentos de Venta**: paginación real en el navegador (10/30/50/100 por página, "Mostrando 11–15 de 15") sin volver a descargar; "TOTAL DEL PERÍODO" suma todo el rango. Número impreso de la factura (`numberTemplate.fullNumber`, ej. KPC4446; antes salía el id interno por un nombre de campo equivocado) y fecha "30 sep 2026 · 15:47" sin `new Date` (iPhone).
+- **Aviso global de días faltantes**: `authenticatedFetch` lee el header `X-Alegra-Failed-Days` (`utils/dataWarnings.js`) y `layout/AlegraFailedDaysBanner.jsx` (en `MainLayout`) muestra "Falta 1 día…" en Productos, Analytics, Ventas Mensuales o cualquier pantalla cuya consulta haya quedado sin días. Comparativo de tiendas: "Incompleto: Alegra no entregó N días" por tienda.
+- **Inventario con archivo**: muestra el análisis del archivo (`FileUploadInventory` embebido con `initialData`, que antes no se usaba en ninguna pantalla); las pestañas y el resumen de Alegra solo aparecen con la consulta a Alegra. Antes las pestañas mostraban Alegra aunque se cargara un archivo.
+- `SalesDataNotice`: "Falta 1 día" en singular.
+- Verificado en Chromium (backend local + Alegra simulado): fecha por defecto 2026-10-01; pagos $775.745 efectivo + $266.200 transferencia = total; camiseta con 45 % = $27.445; hora 10 h y 15 h; rango vacío responde en 3 s; Documentos 1–10 / 11–15 de 15 con KPC…; aviso en Analytics y Comparativo; archivo CSV de 3 productos sin pestañas de Alegra. Lint (20 avisos viejos) y build OK.
+
 ## [2026-10-02] Estadísticas, Fase A: errores que cambiaban números
 
 Plan y verificación contra Alegra: `docs/PLAN_ESTADISTICAS.md` del backend (que trae el resto de esta fase).
