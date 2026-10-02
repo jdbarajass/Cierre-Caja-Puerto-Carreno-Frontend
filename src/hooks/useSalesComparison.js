@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { authenticatedFetch } from '../services/api';
 import logger from '../utils/logger';
 import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
@@ -16,8 +16,14 @@ import { getColombiaTodayString, getColombiaDate } from '../utils/dateUtils';
  * @param {boolean} enabled - Si es false, no se realiza ninguna petición (útil para
  * evitar llamadas innecesarias a Alegra cuando los datos no se van a mostrar, ej.
  * en rutas donde el layout que consume este hook no renderiza las métricas)
+ * @param {string|null} referenceDate - Día a consultar (YYYY-MM-DD). null = hoy
+ * (Colombia). Todo se calcula desde ese día: el mes va del 1 hasta ese día y
+ * las comparaciones son contra el mismo día / mes del año anterior.
  */
-export const useSalesComparison = (enabled = true) => {
+export const useSalesComparison = (enabled = true, referenceDate = null) => {
+  // Solo la última consulta escribe el estado: si se cambia de fecha rápido,
+  // una respuesta vieja no pisa la nueva.
+  const requestIdRef = useRef(0);
   const [comparison, setComparison] = useState({
     // Estadísticas actuales
     dailySales: null,
@@ -37,10 +43,15 @@ export const useSalesComparison = (enabled = true) => {
   });
 
   const fetchComparison = async () => {
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
     try {
-      // Obtener fecha actual en Colombia
-      const today = getColombiaTodayString(); // YYYY-MM-DD
-      const colombiaDate = getColombiaDate();
+      // Día de referencia: el elegido o hoy en Colombia. "today" conserva su
+      // nombre de siempre, pero ahora es ese día de referencia.
+      const today = referenceDate || getColombiaTodayString(); // YYYY-MM-DD
+      const colombiaDate = referenceDate
+        ? (() => { const [y, m, d] = referenceDate.split('-').map(Number); return new Date(y, m - 1, d, 12); })()
+        : getColombiaDate();
 
       // Calcular fecha del año anterior (mismo día y mes)
       const previousYearDate = new Date(colombiaDate);
@@ -112,6 +123,7 @@ export const useSalesComparison = (enabled = true) => {
         method: 'GET',
       })
         .then(async res => {
+          if (!isCurrent()) return;
           if (res.ok) {
             const data = await res.json();
             setComparison(prev => ({
@@ -140,6 +152,7 @@ export const useSalesComparison = (enabled = true) => {
         method: 'GET',
       })
         .then(async res => {
+          if (!isCurrent()) return;
           if (res.ok) {
             const data = await res.json();
             setComparison(prev => ({
@@ -197,6 +210,7 @@ export const useSalesComparison = (enabled = true) => {
         }).then(res => res.ok ? res.json() : null).catch(() => null)
       ]);
       logger.info('✅ Grupo 2 completado');
+      if (!isCurrent()) return;
 
       // Procesar datos del día
       const currentDayTotal = currentDayResponse?.total_sales || 0;
@@ -307,6 +321,7 @@ export const useSalesComparison = (enabled = true) => {
 
     } catch (error) {
       logger.error('Error al obtener comparación año sobre año', error);
+      if (!isCurrent()) return;
       setComparison(prev => ({
         ...prev,
         loading: false,
@@ -320,16 +335,19 @@ export const useSalesComparison = (enabled = true) => {
       return;
     }
 
-    // Cargar datos inicialmente
+    // Al cambiar de día se muestra cargando (no las cifras del día anterior)
+    setComparison(prev => ({ ...prev, loading: true, loadingInventory: true, loadingBills: true }));
     fetchComparison();
 
-    // Actualizar cada 13 minutos (igual que useSalesStats)
+    // Un día pasado ya no cambia: solo "hoy" se actualiza cada 13 minutos
+    if (referenceDate) return undefined;
     const interval = setInterval(() => {
       fetchComparison();
     }, 13 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [enabled]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, referenceDate]);
 
   return comparison;
 };

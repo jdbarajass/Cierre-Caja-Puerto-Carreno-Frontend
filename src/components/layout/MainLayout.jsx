@@ -29,7 +29,7 @@ import {
   AlertTriangle,
   Store
 } from 'lucide-react';
-import { getColombiaTimeString } from '../../utils/dateUtils';
+import { getColombiaTimeString, getColombiaTodayString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
 import { useSalesComparison } from '../../hooks/useSalesComparison';
 import { getApiDocsUrl, getPendingClosingDates } from '../../services/api';
@@ -49,6 +49,13 @@ const MainLayout = ({ children }) => {
   // más abajo) — se desactiva en cualquier otra ruta para no disparar ~9 peticiones a
   // Alegra en cada navegación (Estadísticas, Cuentas, etc.) cuando nunca se van a mostrar
   const isDashboardRoute = location.pathname === '/dashboard';
+  // Día que muestran las tarjetas de ventas (null = hoy). Solo cambia lo que se
+  // ve en las tarjetas, NO el día del cierre de caja. Vuelve a hoy al recargar
+  // o al cambiar de tienda (el layout se monta de nuevo).
+  const [salesDate, setSalesDate] = useState(null);
+  const todayStr = getColombiaTodayString();
+  const viewingPast = !!salesDate && salesDate !== todayStr;
+  const salesDateLabel = viewingPast ? longDayLabel(salesDate) : null;
   // Hook consolidado que incluye estadísticas actuales Y comparaciones
   const {
     dailySales,
@@ -62,7 +69,7 @@ const MainLayout = ({ children }) => {
     nextDayLastYear,
     fullMonthLastYear, // Mes completo del año anterior (para meta mensual)
     loading: salesLoading
-  } = useSalesComparison(isDashboardRoute);
+  } = useSalesComparison(isDashboardRoute, salesDate);
 
   // Aviso fijo de cierres de caja pendientes (días pasados sin cierre registrado).
   // Se consulta al montar (MainLayout se remonta en cada navegación) y se
@@ -685,13 +692,36 @@ const MainLayout = ({ children }) => {
           En móvil las dos tarjetas se deslizan en horizontal (scroll-snap)
           para no empujar el formulario del cierre dos pantallas hacia abajo. */}
       {isActive('/dashboard') && (
-        <section aria-label="Ventas de hoy y del mes" className="border-b border-gray-200/70">
+        <section aria-label={viewingPast ? `Ventas del ${salesDateLabel}` : 'Ventas de hoy y del mes'} className="border-b border-gray-200/70">
           <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-5 pb-5 sm:pt-7 sm:pb-7">
+            {/* Ver las ventas de otro día (no cambia el día del cierre de caja) */}
+            <div className="mb-3 px-4 sm:px-0 flex flex-wrap items-center justify-end gap-2 text-[13px]">
+              <label htmlFor="sales-date" className="text-gray-500">Ver ventas del</label>
+              <input
+                id="sales-date"
+                type="date"
+                value={salesDate || todayStr}
+                max={todayStr}
+                onChange={(e) => setSalesDate(e.target.value && e.target.value !== todayStr ? e.target.value : null)}
+                className="h-8 px-2 rounded-lg border border-gray-300 bg-white text-gray-900"
+              />
+              {viewingPast && (
+                <button
+                  type="button"
+                  onClick={() => setSalesDate(null)}
+                  className="h-8 px-3 rounded-full bg-gray-900 text-white font-medium hover:bg-gray-800"
+                >
+                  Hoy
+                </button>
+              )}
+            </div>
             <div className="flex md:grid md:grid-cols-2 gap-3 md:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 px-4 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* Venta del Día */}
               <article className="metric-card snap-start shrink-0 w-[86%] sm:w-[70%] md:w-auto bg-white rounded-2xl ring-1 ring-gray-900/[0.06] shadow-sm p-5 sm:p-6">
                 <header className="flex items-center justify-between gap-3">
-                  <p className="text-[13px] font-medium text-gray-500">Venta del día</p>
+                  <p className="text-[13px] font-medium text-gray-500">
+                    {viewingPast ? `Venta del ${salesDateLabel}` : 'Venta del día'}
+                  </p>
                   <DollarSign className="w-4 h-4 text-gray-300" />
                 </header>
 
@@ -716,6 +746,7 @@ const MainLayout = ({ children }) => {
                           progress={progreso}
                           done={cumplida}
                           missing={!cumplida && faltante > 0 ? formatCurrency(faltante) : null}
+                          past={viewingPast}
                           tone="amber"
                           scene="day"
                         />
@@ -762,7 +793,9 @@ const MainLayout = ({ children }) => {
               {/* Venta del Mes */}
               <article className="metric-card snap-start shrink-0 w-[86%] sm:w-[70%] md:w-auto bg-white rounded-2xl ring-1 ring-gray-900/[0.06] shadow-sm p-5 sm:p-6">
                 <header className="flex items-center justify-between gap-3">
-                  <p className="text-[13px] font-medium text-gray-500">Venta del mes</p>
+                  <p className="text-[13px] font-medium text-gray-500">
+                    {viewingPast ? monthToDateLabel(salesDate) : 'Venta del mes'}
+                  </p>
                   <Calendar className="w-4 h-4 text-gray-300" />
                 </header>
 
@@ -787,6 +820,7 @@ const MainLayout = ({ children }) => {
                           progress={progreso}
                           done={cumplida}
                           missing={!cumplida && faltante > 0 ? formatCurrency(faltante) : null}
+                          past={viewingPast}
                           tone="ink"
                           scene="month"
                         />
@@ -959,12 +993,28 @@ const MetricSkeleton = () => (
   </div>
 );
 
+// "2026-09-15" -> "15 de sep. de 2026" (texto de las tarjetas al ver otro día)
+const longDayLabel = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('es-CO', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
+};
+
+// "2026-09-15" -> "Septiembre hasta el 15"
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+  'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const monthToDateLabel = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y} hasta el ${d}`;
+};
+
 const GOAL_TONES = {
   amber: { track: 'bg-amber-100', fill: 'bg-amber-500', text: 'text-amber-800' },
   ink: { track: 'bg-blue-100', fill: 'bg-blue-600', text: 'text-blue-700' },
 };
 
-const GoalMeter = ({ label, goal, progress, done, missing, tone, scene }) => {
+const GoalMeter = ({ label, goal, progress, done, missing, tone, scene, past = false }) => {
   const t = done
     ? { track: 'bg-emerald-100', fill: 'bg-emerald-500', text: 'text-emerald-700' }
     : GOAL_TONES[tone];
@@ -998,7 +1048,7 @@ const GoalMeter = ({ label, goal, progress, done, missing, tone, scene }) => {
         <span className={`font-semibold ${t.text}`}>
           {Math.round(progress)}%{done && ' · cumplida'}
         </span>
-        {missing && <span className="text-gray-500">Falta {missing}</span>}
+        {missing && <span className="text-gray-500">{past ? 'Faltaba' : 'Falta'} {missing}</span>}
       </div>
     </div>
   );

@@ -2,6 +2,16 @@
 
 ---
 
+## [2026-10-02] Cierre de Caja: ver las ventas de otro día
+
+Antes las tarjetas "Venta del día" y "Venta del mes" solo mostraban hoy. Ahora arriba de ellas hay un selector **"Ver ventas del [fecha]"** (hasta hoy) y un botón **"Hoy"**:
+- Todo se recalcula para el día elegido: venta de ese día y su meta diaria (+25 % sobre el mismo día del año anterior), comparación con ese día y el siguiente del año anterior, y el mes **del 1 hasta ese día** con su meta (mes completo del año anterior +25 %), inventario y cuentas por pagar a esa fecha.
+- Títulos: "Venta del 15 de sept de 2026" / "Septiembre 2026 hasta el 15"; en días pasados la meta dice "Faltaba" en vez de "Falta".
+- **No cambia el día del cierre de caja** que se está registrando: solo lo que muestran las tarjetas. Vuelve a hoy al recargar o al cambiar de tienda.
+- `useSalesComparison(enabled, referenceDate)`: `referenceDate` opcional (null = hoy, como antes; `SalesComparisonYoY` no cambia). Solo la consulta más reciente escribe el estado (cambiar de fecha rápido no mezcla cifras) y solo "hoy" se refresca cada 13 min.
+- Solo frontend: el backend ya aceptaba cualquier rango en `/api/sales/quick-summary`.
+- Verificado en Chromium con respuestas simuladas: para el 15-sep pide exactamente 15-sep, 1..15-sep, 15 y 16-sep-2025, 14-sep, 1..15-sep-2025 y sep-2025 completo; "Hoy" vuelve a las tarjetas normales; sin desborde en celular. Lint y build OK.
+
 ## [2026-10-02] Fase 4 cerrada + ex vendedoras marcadas
 
 Revisado con el usuario en producción (Carreño, "Este año", 2-oct-2026 15:05):
