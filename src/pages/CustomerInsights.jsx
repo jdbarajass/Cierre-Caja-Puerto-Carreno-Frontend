@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCustomersSummary, getInactiveCustomers } from '../services/customerInsightsService';
 import { getColombiaTodayString } from '../utils/dateUtils';
 import { storeDisplayName } from '../utils/activeStore';
+import InvoiceFactsPanel from '../components/customers/InvoiceFactsPanel';
 
 /**
  * Dashboard de clientes de la tienda activa (solo admin), con los reportes
@@ -177,6 +178,9 @@ const CustomerInsights = () => {
           >
             <InactiveClients storeName={storeName} />
           </Card>
+
+          {/* Fase 4: carga del resumen de facturas (prueba controlada) */}
+          <InvoiceFactsPanel />
         </>
       )}
     </div>

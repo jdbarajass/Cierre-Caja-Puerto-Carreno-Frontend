@@ -35,3 +35,28 @@ export const getCustomersSummary = (startDate, endDate, limit = 25) => {
 /** @param {number} days - días sin comprar (30, 60, 90, 120 o 180) */
 export const getInactiveCustomers = (days = 90) =>
   request(`/api/analytics/customers/inactive?days=${days}`, 'No se pudieron cargar las clientas inactivas');
+
+// ── Resumen de facturas guardado por tienda (fase 4) ────────────────────────
+
+/** Días cargados desde el 1-ene-2026 y calidad de los datos (vendedora, cédula, descuento). */
+export const getInvoiceFactsStatus = () =>
+  request('/api/analytics/invoice-facts/status', 'No se pudo consultar la carga de facturas');
+
+/**
+ * Carga la siguiente tanda de días que falten. El backend se detiene solo a
+ * los ~150 s y devuelve hasta dónde llegó.
+ * @param {number} maxDays - días a cargar (1-31)
+ */
+export const syncInvoiceFacts = async (maxDays) => {
+  const response = await authenticatedFetch('/api/analytics/invoice-facts/sync', {
+    method: 'POST',
+    body: JSON.stringify({ max_days: maxDays }),
+  }, 200000);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok && !data.status) {
+    const error = new Error(data.message || 'No se pudieron cargar las facturas');
+    error.code = data.code;
+    throw error;
+  }
+  return data; // con error de Alegra a mitad de tanda: success=false + lo que alcanzó
+};

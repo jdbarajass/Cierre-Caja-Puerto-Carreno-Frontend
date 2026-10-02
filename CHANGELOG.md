@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-02] Clientes: panel "Facturas guardadas" (fase 4.2)
+
+- Nuevo `src/components/customers/InvoiceFactsPanel.jsx`, al final de la página Clientes (solo admin, tienda activa): días cargados desde el 1-ene-2026 con barra de avance, siguiente día por cargar, **calidad de los datos** (% con vendedora, % con cédula, facturas con descuento, venta guardada y anuladas) y dos botones: "Cargar 1 día (prueba)" y "Cargar siguiente tanda (31 días)".
+- `customerInsightsService.js`: `getInvoiceFactsStatus()` y `syncInvoiceFacts(maxDays)` (espera hasta 200 s; si Alegra falla a mitad de tanda devuelve lo que alcanzó).
+- El cron de las 9 pm completa la carga solo; el panel es para la prueba controlada y para adelantarla. Visto en Chromium con datos simulados; lint y build OK.
+
 ## [2026-10-02] Dashboard de clientes: fase 3 cerrada (revisión en producción)
 
 Revisado con el usuario en producción (Carreño, "Este año", 1-ene a 2-oct-2026):
