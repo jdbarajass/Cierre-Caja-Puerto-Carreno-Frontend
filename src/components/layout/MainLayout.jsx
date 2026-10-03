@@ -22,6 +22,7 @@ import {
   Users,
   Tag,
   Shirt,
+  Truck,
   ClipboardList,
   Briefcase,
   Wallet,
@@ -205,6 +206,15 @@ const MainLayout = ({ children }) => {
       path: '/estadisticas-estandar/prendas',
       icon: Shirt,
       color: 'purple',
+      roles: ['admin']
+    },
+    {
+      id: 'llegadas',
+      label: 'Llegadas',
+      description: 'Mercancía que llegó y cuánto se ha vendido',
+      path: '/estadisticas-estandar/llegadas',
+      icon: Truck,
+      color: 'green',
       roles: ['admin']
     },
     {

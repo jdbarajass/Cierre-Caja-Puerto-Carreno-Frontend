@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-03] Estadísticas, Fase D1: pestaña Llegadas
+
+- Nueva **Estadísticas → Llegadas** (`src/pages/Arrivals.jsx`, `/estadisticas-estandar/llegadas`, solo admin; `src/services/arrivalsService.js`): cada llegada de mercancía con prendas que llegaron, vendidas y % vendido (se despliega por prenda y tallas), "Llegó y no se mueve" y panel "Compras guardadas" con botón "Actualizar compras". Mismo filtro de periodo de Prendas (90 días por defecto) y el panel "Prendas guardadas" (las ventas salen de ahí).
+- Lint y build OK.
+
 ## [2026-10-02] Prendas: ajustes tras la revisión en producción
 
 - Abre en **"Últimos 90 días"** (con pocos días la curva de tallas y la rotación no son confiables).

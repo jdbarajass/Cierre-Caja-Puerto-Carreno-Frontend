@@ -18,6 +18,7 @@ const UnifiedInventoryAnalysis = lazy(() => import('./components/inventory/Unifi
 const StoreComparison = lazy(() => import('./pages/StoreComparison'));
 const CustomerInsights = lazy(() => import('./pages/CustomerInsights'));
 const Garments = lazy(() => import('./pages/Garments'));
+const Arrivals = lazy(() => import('./pages/Arrivals'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -237,6 +238,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <Garments />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Llegadas de mercancía y cuánto se vendió de cada una (por tienda; solo admin) */}
+              <Route
+                path="/estadisticas-estandar/llegadas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <Arrivals />
                     </MainLayout>
                   </ProtectedRoute>
                 }
