@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-03] Estadísticas, Fase D3: pestaña Metas
+
+- Nueva **Estadísticas → Metas** (`src/pages/SellerGoals.jsx`, `/estadisticas-estandar/metas`, solo admin; `src/services/sellerGoalsService.js`): selector de mes (2026-01 al mes siguiente), meta de la tienda, vendido, proyección y necesario por día; tarjeta por vendedora con barra de avance y línea de "dónde debería ir", estado (va bien / no llega), ticket, prendas por factura y % con cliente. Botón **Ajustar** (monto) y **Automática** (quitar el ajuste).
+- Lint OK.
+
 ## [2026-10-03] Estadísticas, Fase D2: pestaña Día y hora
 
 - Nueva **Estadísticas → Día y hora** (`src/pages/SalesPatterns.jsx`, `/estadisticas-estandar/dia-hora`, solo admin; `src/services/salesPatternsService.js`): venta promedio por día, mejor día y mejor hora, **mapa de calor día × hora** (un tono, 5 pasos validados con el validador de dataviz; cifra al pasar el mouse o con teclado), tabla por día de la semana y barras por hora. Filtro por vendedora. Periodos rápidos terminan ayer (solo días cerrados).

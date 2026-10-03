@@ -228,6 +228,15 @@ const MainLayout = ({ children }) => {
       roles: ['admin']
     },
     {
+      id: 'metas',
+      label: 'Metas',
+      description: 'Meta del mes de cada vendedora y su avance',
+      path: '/estadisticas-estandar/metas',
+      icon: Target,
+      color: 'pink',
+      roles: ['admin']
+    },
+    {
       id: 'ventas-totales',
       label: 'Totales de Ventas',
       description: 'Ventas agrupadas por día/mes',

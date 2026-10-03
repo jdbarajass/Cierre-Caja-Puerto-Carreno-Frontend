@@ -20,6 +20,7 @@ const CustomerInsights = lazy(() => import('./pages/CustomerInsights'));
 const Garments = lazy(() => import('./pages/Garments'));
 const Arrivals = lazy(() => import('./pages/Arrivals'));
 const SalesPatterns = lazy(() => import('./pages/SalesPatterns'));
+const SellerGoals = lazy(() => import('./pages/SellerGoals'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -263,6 +264,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <SalesPatterns />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Metas del mes por vendedora y su avance (por tienda; solo admin) */}
+              <Route
+                path="/estadisticas-estandar/metas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <SellerGoals />
                     </MainLayout>
                   </ProtectedRoute>
                 }
