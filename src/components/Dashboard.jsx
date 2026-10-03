@@ -14,6 +14,7 @@ import VoidedInvoicesModal from './common/VoidedInvoicesModal';
 import { saveDraft, loadDraft, clearDraft } from '../utils/cashClosingDraft';
 import { storeDisplayName } from '../utils/activeStore';
 import { usePublishSceneData } from '../experience/store';
+import DailyAlertsPanel from './alerts/DailyAlertsPanel';
 
 /* --- Presentación del formulario de cierre (sistema "Arqueo") ------------ */
 
@@ -890,6 +891,9 @@ const Dashboard = () => {
             </nav>
           )}
         </header>
+
+        {/* Alertas diarias para el admin (día flojo, agotados, meta, descuentos) */}
+        {user?.role === 'admin' && <DailyAlertsPanel />}
 
         {/* Multi-tienda: tienda sin cuenta de Alegra configurada todavía. El
             cierre necesita Alegra para conciliar, así que se avisa de entrada

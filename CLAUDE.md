@@ -23,6 +23,7 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Llegadas** (`src/pages/Arrivals.jsx`, `/estadisticas-estandar/llegadas`): mercancía que llegó y cuánto se vendió de cada llegada (Fase D1 del plan del backend).
 - **Día y hora** (`src/pages/SalesPatterns.jsx`, `/estadisticas-estandar/dia-hora`): promedios por día de la semana y hora, mapa de calor (Fase D2).
 - **Metas** (`src/pages/SellerGoals.jsx`, `/estadisticas-estandar/metas`): meta del mes por vendedora (automática +15 % o ajustada) y avance (Fase D3).
+- **Alertas diarias** (`src/components/alerts/DailyAlertsPanel.jsx`): arriba del Dashboard, solo admin (Fase D4).
 - Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
 
 ## Sistema visual y capa WebGL

@@ -196,7 +196,7 @@ const Heatmap = ({ heatmap }) => {
           <caption className="sr-only">Venta promedio por día de la semana y hora</caption>
           <thead>
             <tr>
-              <th scope="col" className="sr-only">Día</th>
+              <th scope="col" className="sticky left-0 z-10 bg-white"><span className="sr-only">Día</span></th>
               {hours.map((h) => (
                 <th key={h} scope="col" className="px-0.5 pb-1 text-[11px] font-medium text-gray-500 whitespace-nowrap">{hourLabel(h)}</th>
               ))}
@@ -205,7 +205,7 @@ const Heatmap = ({ heatmap }) => {
           <tbody>
             {heatmap.map((row) => (
               <tr key={row.weekday}>
-                <th scope="row" className="pr-2 text-left text-xs font-medium text-gray-700 whitespace-nowrap">{row.name.slice(0, 3)}</th>
+                <th scope="row" className="sticky left-0 z-10 bg-white pr-2 text-left text-xs font-medium text-gray-700 whitespace-nowrap">{row.name.slice(0, 3)}</th>
                 {row.cells.map((c) => {
                   const bin = binOf(c.avg_sales, max);
                   const label = `${row.name}, ${hourLabel(c.hour)}: ${formatCOP(c.avg_sales)} en promedio`;

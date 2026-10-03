@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-10-03] Estadísticas, Fase D4: alertas en el Dashboard + ajustes de celular
+
+- `src/components/alerts/DailyAlertsPanel.jsx` (+ `src/services/alertsService.js`) arriba del cierre de caja, **solo admin**: alertas de los últimos 7 días (advertencias en ámbar, informativas en blanco), "Ver detalle" (prendas agotadas, facturas con descuento, vendedoras atrasadas), descartar (×) y "Recalcular". Si no hay alertas no ocupa espacio.
+- `StatTile` (compartido por Clientes, Prendas, Llegadas, Día y hora, Metas): cifra en `text-xl` en celular (`sm:text-3xl`) y `min-w-0`; montos como "$ 10.350.000" se salían de la tarjeta con 2 por fila.
+- Mapa de calor: columna de días fija al desplazar de lado en celular.
+- Verificado en Chromium (escritorio 1366 y celular 390) con backend local y Alegra simulado. Lint (sin avisos nuevos; Dashboard.jsx conserva sus 2 avisos viejos) y build OK.
+
 ## [2026-10-03] Estadísticas, Fase D3: pestaña Metas
 
 - Nueva **Estadísticas → Metas** (`src/pages/SellerGoals.jsx`, `/estadisticas-estandar/metas`, solo admin; `src/services/sellerGoalsService.js`): selector de mes (2026-01 al mes siguiente), meta de la tienda, vendido, proyección y necesario por día; tarjeta por vendedora con barra de avance y línea de "dónde debería ir", estado (va bien / no llega), ticket, prendas por factura y % con cliente. Botón **Ajustar** (monto) y **Automática** (quitar el ajuste).

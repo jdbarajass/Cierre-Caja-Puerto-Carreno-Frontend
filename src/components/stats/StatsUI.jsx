@@ -69,9 +69,10 @@ export const PeriodFilter = ({ presets, range, setRange, draft, setDraft, draftE
 );
 
 export const StatTile = ({ label, value, detail }) => (
-  <section className="rounded-2xl bg-white ring-1 ring-gray-900/5 shadow-sm p-5" aria-label={label}>
+  <section className="min-w-0 rounded-2xl bg-white ring-1 ring-gray-900/5 shadow-sm p-4 sm:p-5" aria-label={label}>
     <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{label}</p>
-    <p className="mt-1 text-3xl font-bold text-gray-900 tabular-nums">{value}</p>
+    {/* En celular van 2 por fila: montos como "$ 10.350.000" no cabían en text-3xl */}
+    <p className="mt-1 text-xl sm:text-3xl font-bold text-gray-900 tabular-nums break-words">{value}</p>
     {detail && <p className="mt-1 text-sm text-gray-600">{detail}</p>}
   </section>
 );
