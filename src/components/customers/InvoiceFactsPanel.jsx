@@ -13,6 +13,10 @@ import { getInvoiceFactsStatus, syncInvoiceFacts } from '../../services/customer
  * La misma carga guarda las prendas de cada factura (Estadísticas → Prendas).
  * Los días cargados antes de existir las prendas se completan en las
  * siguientes tandas. `variant="prendas"` muestra el avance de las prendas.
+ *
+ * Igual con la hora de cada factura (Día y hora, Fase D2): los días cargados
+ * antes se vuelven a cargar con los mismos botones. `variant="horas"` muestra
+ * ese avance. Los botones siguen activos mientras falte cualquiera de los tres.
  */
 const INK = '#4A58D6';
 
@@ -29,6 +33,7 @@ const longDate = (s) => {
 
 const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
   const isGarments = variant === 'prendas';
+  const isHours = variant === 'horas';
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(null); // días de la tanda en curso
@@ -72,9 +77,13 @@ const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
 
   const q = status?.quality;
   const items = status?.items;
-  const done = status && status.missing_days === 0 && (items?.missing_days ?? 0) === 0;
-  const loaded = isGarments ? (items?.loaded_days ?? 0) : status?.loaded_days;
-  const nextMissing = isGarments ? items?.next_missing_day : status?.next_missing_day;
+  const hours = status?.hours;
+  // Antes no miraba la hora: con facturas y prendas completas apagaba los
+  // botones aunque faltara recargar los días para Día y hora.
+  const done = status && status.missing_days === 0 && (items?.missing_days ?? 0) === 0
+    && (hours?.missing_days ?? 0) === 0;
+  const loaded = isHours ? (hours?.loaded_days ?? 0) : isGarments ? (items?.loaded_days ?? 0) : status?.loaded_days;
+  const nextMissing = isHours ? hours?.next_missing_day : isGarments ? items?.next_missing_day : status?.next_missing_day;
   const progress = status?.total_days ? (loaded * 100) / status.total_days : 0;
 
   return (
@@ -82,9 +91,11 @@ const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
       <div className="flex items-start gap-3">
         <div className="p-2 rounded-xl bg-gray-100"><Database className="w-5 h-5 text-gray-700" /></div>
         <div>
-          <h2 className="text-lg font-bold text-gray-900">{isGarments ? 'Prendas guardadas' : 'Facturas guardadas'}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{isHours ? 'Horas guardadas' : isGarments ? 'Prendas guardadas' : 'Facturas guardadas'}</h2>
           <p className="text-sm text-gray-500">
-            {isGarments
+            {isHours
+              ? 'Hora de cada factura desde el 1 de enero. Los días guardados antes de esta pestaña se vuelven a cargar del más reciente hacia atrás; se completa sola cada noche (31 días) y aquí se puede adelantar.'
+              : isGarments
               ? 'Copia de las prendas de cada factura desde el 1 de enero, para calcular estas cifras sin consultar Alegra día por día. Se carga del día más reciente hacia atrás; se completa sola cada noche (31 días) y aquí se puede adelantar.'
               : 'Copia del resumen de cada factura (cliente, cédula, vendedora, descuento) para calcular lo que el reporte de Alegra no trae. Se completa sola cada noche; aquí se puede adelantar.'}
           </p>
@@ -102,7 +113,7 @@ const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
           <div>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
               <span className="font-medium text-gray-900">
-                {formatInt(loaded)} de {formatInt(status.total_days)} días {isGarments ? 'con prendas' : 'cargados'}
+                {formatInt(loaded)} de {formatInt(status.total_days)} días {isHours ? 'con hora' : isGarments ? 'con prendas' : 'cargados'}
               </span>
               <span className="text-xs text-gray-500">
                 {longDate(status.start)} – {longDate(status.end)} · {formatInt(status.invoices)} facturas
@@ -115,14 +126,19 @@ const InvoiceFactsPanel = ({ variant = 'clientes' }) => {
             {!done && nextMissing && (
               <p className="mt-1 text-xs text-gray-500">Siguiente día por cargar: {longDate(nextMissing)}</p>
             )}
-            {!isGarments && items && items.missing_days > 0 && status.missing_days === 0 && (
+            {!isHours && hours && hours.missing_days > 0 && status.missing_days === 0 && (items?.missing_days ?? 0) === 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                {isGarments ? 'Prendas completas' : 'Facturas completas'}. Falta la hora de {daysLabel(hours.missing_days)} (pestaña Día y hora): se cargan con los mismos botones.
+              </p>
+            )}
+            {!isGarments && !isHours && items && items.missing_days > 0 && status.missing_days === 0 && (
               <p className="mt-1 text-xs text-gray-500">
                 Facturas completas. Faltan las prendas de {daysLabel(items.missing_days)} (pestaña Prendas): se cargan con los mismos botones.
               </p>
             )}
           </div>
 
-          {!isGarments && q && q.active_invoices > 0 && (
+          {!isGarments && !isHours && q && q.active_invoices > 0 && (
             <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               <div>
                 <dt className="text-gray-500">Con vendedora</dt>

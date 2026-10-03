@@ -130,7 +130,7 @@ const SalesPatterns = () => {
             <Notice>
               {formatInt(data.coverage.missing_days)} días del periodo todavía no tienen la hora de sus facturas (desde el{' '}
               {longDate(data.coverage.first_missing_day)}) y no se cuentan: los promedios usan solo los días listos. Se completan
-              solos cada noche o con los botones de "Prendas guardadas", abajo.
+              solos cada noche o con los botones de "Horas guardadas", abajo.
             </Notice>
           )}
 
@@ -168,7 +168,7 @@ const SalesPatterns = () => {
         </div>
       )}
 
-      <InvoiceFactsPanel variant="prendas" />
+      <InvoiceFactsPanel variant="horas" />
     </div>
   );
 };

@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-03] Revisión en producción: Día y hora no se podía adelantar
+
+- **Error**: el panel de facturas/prendas guardadas apagaba los botones ("Todo el periodo está cargado") cuando facturas y prendas estaban completas, aunque faltara recargar los 275 días para la **hora** (Día y hora mostraba "0 días con datos"). Ahora `done` también mira `status.hours.missing_days`.
+- Nueva variante `variant="horas"` ("Horas guardadas": días con hora y siguiente día por cargar) en Día y hora; Prendas y Clientes avisan "Falta la hora de N días" con los mismos botones.
+- Lint y build OK.
+
 ## [2026-10-03] Estadísticas, Fase D4: alertas en el Dashboard + ajustes de celular
 
 - `src/components/alerts/DailyAlertsPanel.jsx` (+ `src/services/alertsService.js`) arriba del cierre de caja, **solo admin**: alertas de los últimos 7 días (advertencias en ámbar, informativas en blanco), "Ver detalle" (prendas agotadas, facturas con descuento, vendedoras atrasadas), descartar (×) y "Recalcular". Si no hay alertas no ocupa espacio.
