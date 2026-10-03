@@ -23,6 +23,7 @@ import {
   Tag,
   Shirt,
   Truck,
+  CalendarClock,
   ClipboardList,
   Briefcase,
   Wallet,
@@ -215,6 +216,15 @@ const MainLayout = ({ children }) => {
       path: '/estadisticas-estandar/llegadas',
       icon: Truck,
       color: 'green',
+      roles: ['admin']
+    },
+    {
+      id: 'dia-hora',
+      label: 'Día y hora',
+      description: 'Qué días y a qué horas se vende más',
+      path: '/estadisticas-estandar/dia-hora',
+      icon: CalendarClock,
+      color: 'teal',
       roles: ['admin']
     },
     {

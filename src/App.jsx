@@ -19,6 +19,7 @@ const StoreComparison = lazy(() => import('./pages/StoreComparison'));
 const CustomerInsights = lazy(() => import('./pages/CustomerInsights'));
 const Garments = lazy(() => import('./pages/Garments'));
 const Arrivals = lazy(() => import('./pages/Arrivals'));
+const SalesPatterns = lazy(() => import('./pages/SalesPatterns'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -250,6 +251,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <Arrivals />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Ventas por día de la semana y hora (por tienda; solo admin) */}
+              <Route
+                path="/estadisticas-estandar/dia-hora"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <SalesPatterns />
                     </MainLayout>
                   </ProtectedRoute>
                 }

@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-03] Estadísticas, Fase D2: pestaña Día y hora
+
+- Nueva **Estadísticas → Día y hora** (`src/pages/SalesPatterns.jsx`, `/estadisticas-estandar/dia-hora`, solo admin; `src/services/salesPatternsService.js`): venta promedio por día, mejor día y mejor hora, **mapa de calor día × hora** (un tono, 5 pasos validados con el validador de dataviz; cifra al pasar el mouse o con teclado), tabla por día de la semana y barras por hora. Filtro por vendedora. Periodos rápidos terminan ayer (solo días cerrados).
+- Lint y build OK.
+
 ## [2026-10-03] Estadísticas, Fase D1: pestaña Llegadas
 
 - Nueva **Estadísticas → Llegadas** (`src/pages/Arrivals.jsx`, `/estadisticas-estandar/llegadas`, solo admin; `src/services/arrivalsService.js`): cada llegada de mercancía con prendas que llegaron, vendidas y % vendido (se despliega por prenda y tallas), "Llegó y no se mueve" y panel "Compras guardadas" con botón "Actualizar compras". Mismo filtro de periodo de Prendas (90 días por defecto) y el panel "Prendas guardadas" (las ventas salen de ahí).
