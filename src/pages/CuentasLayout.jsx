@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wallet, History, Plus, Minus, RefreshCw,
-  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays
+  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
@@ -12,6 +12,7 @@ import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
 import CuentasMes from './CuentasMes';
+import CuentasAnual from './CuentasAnual';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { usePublishSceneData, experience } from '../experience/store';
 
@@ -216,6 +217,7 @@ const DateNoteInput = ({ id, value, onSave, disabled }) => {
 const TABS = [
   { id: 'resumen', label: 'Resumen', icon: Wallet },
   { id: 'mes', label: 'Mes', icon: CalendarDays },
+  { id: 'anual', label: 'Año', icon: CalendarRange },
   { id: 'recompras', label: 'Cuentas Recompras', icon: Repeat },
   { id: 'gastos', label: 'Gastos', icon: Receipt },
 ];
@@ -701,6 +703,8 @@ const CuentasLayout = () => {
       {tab === 'gastos' && <CuentasGastos onEntriesChanged={refreshSummary} />}
 
       {tab === 'mes' && <CuentasMes onEntriesChanged={refreshSummary} />}
+
+      {tab === 'anual' && <CuentasAnual />}
 
       {tab === 'movimientos' && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

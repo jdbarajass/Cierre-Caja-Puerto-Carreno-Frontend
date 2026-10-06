@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-06] Cuentas diarias, Fase 3: pestaña Cuentas → Año
+
+- Nueva **Cuentas → Año** (`src/pages/CuentasAnual.jsx`, `src/services/monthlySummaryService.js`): tarjetas (ventas, ganancia real y %, inventario), gráfico de barras ventas vs. ganancia real por mes (un solo eje, colores validados, recuadro al pasar el mouse o con teclado), **cierre general mes a mes** (ventas, recompras, gastos operativos, ganancia bruta/neta/real, %, inventario, subió/bajó, ganancia real + inventario) con **edición a mano** de cada dato del mes (✎ con nota y valor calculado, "volver al calculado"), enero–agosto opcional para comparar con el Excel, **ventas por medio de pago del año** y **plata que salió y no es gasto** (inversiones, retiros, préstamos, fletes, Jhonatan). Botón "Traer inventario de Alegra" y "Traer" por mes. En celular, tarjetas.
+- Verificado en Chromium (1366 y 390) con backend local. Lint, `npm test` y build OK.
+
 ## [2026-10-06] Cuentas diarias, Fase 2: pestaña Cuentas → Mes
 
 - Nueva **Cuentas → Mes** (`src/pages/CuentasMes.jsx`, `src/services/monthSheetService.js`), después de Resumen: venta del mes de Alegra con conteo de días mala/bajita/buena/alta; comisiones del mes (datáfono 3,8 %, Addi 7,735 %) con botón "Registrar en Gastos"; plata por llegar; **ventas diarias por los 10 medios** como el Excel (aviso si un pago cayó en una cuenta rara de Alegra); **plata en cada cuenta** (inicial, ventas, recompras, gastos, ajustes, final, día por día) con **saldo real** y "Cuadra"/diferencia; tabla de plata por llegar con fecha y neto; **cerrar / reabrir el mes**. Botón "Traer ventas de Alegra". En celular, tarjetas.
