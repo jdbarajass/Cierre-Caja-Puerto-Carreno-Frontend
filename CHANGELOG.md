@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-10-06] Cuentas Recompras: saldo del mes anterior automático
+
+- `src/pages/CuentasRecompras.jsx`: Balance disponible = saldo que traía del mes anterior (`saldo_mes_anterior` del backend, desde sep-2026) + recibido del mes + sobrante manual − compras. La tarjeta lo explica ("$X de septiembre + $Y recibido − $Z en compras") y la tabla muestra una fila fija "Saldo de <mes> (automático)" (no editable, en rojo si es negativo); la fila TOTAL la incluye.
+- El campo del formulario pasa a llamarse "Sobrante / ajuste manual", con aviso de que el saldo anterior ya se suma solo (para no contarlo dos veces).
+- `src/pages/CuentasLayout.jsx` (Resumen): "Balance disponible (Jhonatan)" y "Total Recompras" también suman el saldo del mes anterior.
+- Lint y build OK.
+
 ## [2026-10-03] Revisión en producción: Día y hora no se podía adelantar
 
 - **Error**: el panel de facturas/prendas guardadas apagaba los botones ("Todo el periodo está cargado") cuando facturas y prendas estaban completas, aunque faltara recargar los 275 días para la **hora** (Día y hora mostraba "0 días con datos"). Ahora `done` también mira `status.hours.missing_days`.

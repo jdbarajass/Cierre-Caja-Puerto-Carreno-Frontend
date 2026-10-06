@@ -227,7 +227,7 @@ const CuentasLayout = () => {
   // Balance disponible de "Cuentas Recompras" del mes en curso (lo que tiene
   // Jhonatan: recibido del mes − compras del mes), para mostrarlo combinado
   // con el saldo real de las cuentas en la tarjeta superior del Resumen.
-  const [repurchaseBalance, setRepurchaseBalance] = useState({ recibido: 0, compras: 0, balance: 0 });
+  const [repurchaseBalance, setRepurchaseBalance] = useState({ recibido: 0, compras: 0, saldoAnterior: 0, balance: 0 });
   const [loadingRepurchase, setLoadingRepurchase] = useState(false);
 
   const [movements, setMovements] = useState([]);
@@ -307,7 +307,10 @@ const CuentasLayout = () => {
       ]);
       const recibido = (entriesData.totals?.total_enviado || 0) + (entriesData.totals?.sobrante_acumulado || 0);
       const compras = purchasesData.total_compras || 0;
-      setRepurchaseBalance({ recibido, compras, balance: recibido - compras });
+      // Saldo que Jhonatan traía del mes anterior (arrastre automático desde
+      // sep-2026, ver _carryover_before en el backend).
+      const saldoAnterior = entriesData.saldo_mes_anterior || 0;
+      setRepurchaseBalance({ recibido, compras, saldoAnterior, balance: saldoAnterior + recibido - compras });
     } catch {
       // No bloquea el resto del Resumen si esto falla - se deja en 0.
     } finally {
@@ -486,6 +489,7 @@ const CuentasLayout = () => {
                   {loadingRepurchase ? 'Cargando...' : fmt(repurchaseBalance.balance)}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
+                  {repurchaseBalance.saldoAnterior ? `${fmt(repurchaseBalance.saldoAnterior)} del mes anterior + ` : ''}
                   {fmt(repurchaseBalance.recibido)} recibido − {fmt(repurchaseBalance.compras)} en compras (este mes)
                 </p>
               </div>

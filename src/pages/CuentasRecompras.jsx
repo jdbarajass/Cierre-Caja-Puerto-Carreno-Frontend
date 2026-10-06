@@ -115,6 +115,11 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   // Entradas (dinero enviado)
   const [entries, setEntries]     = useState([]);
   const [totals,  setTotals]      = useState({});
+  // Saldo que Jhonatan trae del mes anterior, calculado por el backend
+  // (arrastre automático desde sep-2026). carryoverActive=false en los meses
+  // sin arrastre (sep-2026 y anteriores).
+  const [carryover, setCarryover]             = useState(0);
+  const [carryoverActive, setCarryoverActive] = useState(false);
   // Compras realizadas
   const [purchases, setPurchases]       = useState([]);
   const [totalCompras, setTotalCompras] = useState(0);
@@ -147,6 +152,8 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
       ]);
       setEntries(entriesData.entries || []);
       setTotals(entriesData.totals || {});
+      setCarryover(entriesData.saldo_mes_anterior || 0);
+      setCarryoverActive(!!entriesData.carryover_active);
       setPurchases(purchasesData.purchases || []);
       setTotalCompras(purchasesData.total_compras || 0);
       setTotalRopa(purchasesData.total_ropa || 0);
@@ -189,9 +196,14 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
 
   // Totales del mes (fee_4mil ya viene sumado por el backend respetando
   // las comisiones sobrescritas a mano en cada envío - no se recalcula aquí)
+  // monthTotalRecibido es solo lo del mes (enviado + sobrante manual); el
+  // saldo arrastrado del mes anterior se suma aparte en el balance.
   const monthTotalRecibido = () => (totals.total_enviado || 0) + (totals.sobrante_acumulado || 0);
   const monthFee           = () => totals.fee_4mil || 0;
-  const monthBalance       = () => monthTotalRecibido() - totalCompras;
+  const monthDisponible    = () => carryover + monthTotalRecibido();
+  const monthBalance       = () => monthDisponible() - totalCompras;
+  const prevMonthName      = MONTHS[(month + 10) % 12];
+  const showCarryRow       = carryoverActive && carryover !== 0;
 
   // ── Entradas: submit ──────────────────────────────────────────────────────
   const handleEntrySubmit = async (e) => {
@@ -354,7 +366,12 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <NumberField label="Sobrante mes anterior" fieldKey="sobrante_mes_anterior" value={entryForm.sobrante_mes_anterior} onChange={handleEntryFieldChange} />
+            <div>
+              <NumberField label="Sobrante / ajuste manual" fieldKey="sobrante_mes_anterior" value={entryForm.sobrante_mes_anterior} onChange={handleEntryFieldChange} />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Solo para sumar algo extra. El saldo del mes anterior ya se suma solo (desde septiembre 2026).
+              </p>
+            </div>
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Montos enviados por medio de pago</p>
@@ -451,6 +468,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
               {fmtForce(monthBalance())}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
+              {carryoverActive && `${fmtForce(carryover)} de ${prevMonthName.toLowerCase()} + `}
               {fmtForce(monthTotalRecibido())} recibido − {fmtForce(totalCompras)} en compras
             </p>
           </div>
@@ -462,7 +480,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
         <div className="flex justify-center py-16">
           <div className="w-8 h-8 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
         </div>
-      ) : entries.length === 0 && purchases.length === 0 ? (
+      ) : entries.length === 0 && purchases.length === 0 && !showCarryRow ? (
         <div className="bg-white border border-gray-200 rounded-xl text-center py-14 text-gray-500">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-25" />
           <p className="font-medium">No hay registros para {MONTHS[month - 1]} {year}</p>
@@ -470,7 +488,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
         </div>
       ) : (
         <>
-          {entries.length > 0 && (
+          {(entries.length > 0 || showCarryRow) && (
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
                 <ArrowDownCircle className="w-4 h-4 text-indigo-500" />
@@ -508,6 +526,24 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
+                    {showCarryRow && (
+                      // Fila automática (no editable): lo que le quedó a
+                      // Jhonatan al cerrar el mes anterior. No sale de ninguna
+                      // cuenta ni cobra comisión.
+                      <tr className="bg-violet-50/60" title="Calculado solo: enviado + sobrante manual − compras, acumulado desde septiembre 2026">
+                        <td className="px-3 py-2.5 font-medium text-violet-800 whitespace-nowrap">Saldo de {prevMonthName.toLowerCase()} (automático)</td>
+                        <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">{`${year}-${String(month).padStart(2, '0')}-01`}</td>
+                        {PAYMENT_COLS.map(({ key }) => (
+                          <td key={key} className="px-3 py-2.5" />
+                        ))}
+                        <td className={`px-3 py-2.5 text-right font-semibold bg-violet-50 whitespace-nowrap ${carryover < 0 ? 'text-red-600' : 'text-violet-700'}`}>{fmtForce(carryover)}</td>
+                        <td className={`px-3 py-2.5 text-right font-bold bg-indigo-50 whitespace-nowrap ${carryover < 0 ? 'text-red-600' : 'text-indigo-800'}`}>{fmtForce(carryover)}</td>
+                        <td className="px-3 py-2.5 text-center text-gray-400 text-xs bg-orange-50">—</td>
+                        <td className="px-3 py-2.5 text-right text-gray-400 bg-orange-50">—</td>
+                        <td className="px-3 py-2.5 text-right text-gray-400 bg-orange-50">—</td>
+                        <td className="px-2 py-2.5" />
+                      </tr>
+                    )}
                     {entries.map((row, idx) => {
                       const total = rowTotal(row);
                       // fee_4mil/total_a_descontar ya vienen resueltos del backend
@@ -543,8 +579,8 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                       {PAYMENT_COLS.map(({ key }) => (
                         <td key={key} className="px-3 py-3 text-right whitespace-nowrap">{totals[key] ? fmtForce(totals[key]) : '—'}</td>
                       ))}
-                      <td className="px-3 py-3 text-right whitespace-nowrap bg-violet-700">{(totals.sobrante_acumulado || 0) > 0 ? fmtForce(totals.sobrante_acumulado) : '—'}</td>
-                      <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">{fmtForce(monthTotalRecibido())}</td>
+                      <td className="px-3 py-3 text-right whitespace-nowrap bg-violet-700">{((totals.sobrante_acumulado || 0) + (showCarryRow ? carryover : 0)) !== 0 ? fmtForce((totals.sobrante_acumulado || 0) + (showCarryRow ? carryover : 0)) : '—'}</td>
+                      <td className="px-3 py-3 text-right whitespace-nowrap bg-indigo-700 text-base">{fmtForce(monthDisponible())}</td>
                       <td className="px-3 py-3 text-center bg-orange-700 text-xs">Total Facturas</td>
                       <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce(monthFee()) : '—'}</td>
                       <td className="px-3 py-3 text-right bg-orange-700 whitespace-nowrap">{monthTotalRecibido() > 0 ? fmtForce((totals.total_enviado || 0) + monthFee()) : '—'}</td>
