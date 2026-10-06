@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wallet, History, Plus, Minus, RefreshCw,
-  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat
+  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
@@ -10,6 +10,7 @@ import {
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
+import CuentasGastos from './CuentasGastos';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import { usePublishSceneData, experience } from '../experience/store';
 
@@ -152,6 +153,8 @@ const MOVEMENT_TYPE_LABELS = {
   transfer_in: 'Transferencia (entrada)',
   cash_closing: 'Cierre de caja',
   repurchase_send: 'Envío a socio (recompra)',
+  expense: 'Gasto (salida)',
+  expense_in: 'Entrada (no venta)',
 };
 
 // Input de monto con separador de miles: muestra el número plano mientras se
@@ -212,6 +215,7 @@ const DateNoteInput = ({ id, value, onSave, disabled }) => {
 const TABS = [
   { id: 'resumen', label: 'Resumen', icon: Wallet },
   { id: 'recompras', label: 'Cuentas Recompras', icon: Repeat },
+  { id: 'gastos', label: 'Gastos', icon: Receipt },
 ];
 
 const CuentasLayout = () => {
@@ -426,7 +430,7 @@ const CuentasLayout = () => {
         <p className="text-sm text-gray-500">Saldo por medio de pago, movimientos y ajustes</p>
       </div>
 
-      <div className="flex items-center gap-1 border-b border-gray-200 mb-6">
+      <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -434,7 +438,7 @@ const CuentasLayout = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 active ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -691,6 +695,8 @@ const CuentasLayout = () => {
       )}
 
       {tab === 'recompras' && <CuentasRecompras onEntriesChanged={refreshSummary} />}
+
+      {tab === 'gastos' && <CuentasGastos onEntriesChanged={refreshSummary} />}
 
       {tab === 'movimientos' && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-10-06] Cuentas diarias, Fase 1: pestaña Cuentas → Gastos
+
+Plan completo en `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
+- Nueva **Cuentas → Gastos** (`src/pages/CuentasGastos.jsx`, `src/services/expensesService.js`): registrar gasto o entrada (concepto, fecha, mes al que corresponde, categoría, empleada u otra tienda según la categoría, gasto fijo, "¿de dónde sale la plata?": cuentas / caja del día / no mover, valor por medio, 4x1000 automático editable, notas); tarjetas del mes; **gastos fijos del mes** con estado (pagado / pendiente / vencido), "Registrar pago" que llena el formulario y botón para cargar los del Excel; tabla de movimientos editable; resumen por categoría (mes al que corresponde) y por medio (lo que movió Resumen); **préstamos entre tiendas** (prestado, devuelto, saldo). En celular las tablas pasan a tarjetas.
+- `CuentasLayout.jsx`: pestaña Gastos (refresca Resumen al guardar), etiquetas de movimientos `expense` / `expense_in`, barra de pestañas con desplazamiento en celular.
+- `LiveMoneyInput` sale de `CuentasRecompras.jsx` a `src/components/common/LiveMoneyInput.jsx` (compartido, sin cambios de comportamiento).
+- Verificado en Chromium (1366 y 390) con backend local. Lint, `npm test` (6/6) y build OK.
+
 ## [2026-10-06] Cuentas Recompras: saldo del mes anterior automático
 
 - `src/pages/CuentasRecompras.jsx`: Balance disponible = saldo que traía del mes anterior (`saldo_mes_anterior` del backend, desde sep-2026) + recibido del mes + sobrante manual − compras. La tarjeta lo explica ("$X de septiembre + $Y recibido − $Z en compras") y la tabla muestra una fila fija "Saldo de <mes> (automático)" (no editable, en rojo si es negativo); la fila TOTAL la incluye.
