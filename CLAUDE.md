@@ -26,9 +26,10 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Alertas diarias** (`src/components/alerts/DailyAlertsPanel.jsx`): arriba del Dashboard, solo admin (Fase D4).
 - Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
 
-## Cuentas → Gastos (cuentas diarias, Fase 1)
+## Cuentas → Gastos y Mes (cuentas diarias, Fases 1 y 2)
 
-- `src/pages/CuentasGastos.jsx` + `src/services/expensesService.js`, dentro de `CuentasLayout` (pestaña Gastos). Plan y fases: `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
+- **Mes** (Fase 2): `src/pages/CuentasMes.jsx` + `src/services/monthSheetService.js` (hoja del mes por medio de pago, saldo real, por llegar, cerrar mes).
+- **Gastos** (Fase 1): `src/pages/CuentasGastos.jsx` + `src/services/expensesService.js`, dentro de `CuentasLayout` (pestaña Gastos). Plan y fases: `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
 - `src/components/common/LiveMoneyInput.jsx`: input de dinero con miles en vivo (Recompras y Gastos).
 
 ## Sistema visual y capa WebGL

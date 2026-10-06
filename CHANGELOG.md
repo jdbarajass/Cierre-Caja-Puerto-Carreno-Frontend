@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-06] Cuentas diarias, Fase 2: pestaña Cuentas → Mes
+
+- Nueva **Cuentas → Mes** (`src/pages/CuentasMes.jsx`, `src/services/monthSheetService.js`), después de Resumen: venta del mes de Alegra con conteo de días mala/bajita/buena/alta; comisiones del mes (datáfono 3,8 %, Addi 7,735 %) con botón "Registrar en Gastos"; plata por llegar; **ventas diarias por los 10 medios** como el Excel (aviso si un pago cayó en una cuenta rara de Alegra); **plata en cada cuenta** (inicial, ventas, recompras, gastos, ajustes, final, día por día) con **saldo real** y "Cuadra"/diferencia; tabla de plata por llegar con fecha y neto; **cerrar / reabrir el mes**. Botón "Traer ventas de Alegra". En celular, tarjetas.
+- Ojo: `lucide-react` de este proyecto no tiene `CloudDownload` (es `DownloadCloud`); el lint no lo detecta y la página se rompe en ejecución.
+- Verificado en Chromium (1366 y 390) con backend local y las ventas del 1-5 oct del Excel. Lint, `npm test` y build OK.
+
 ## [2026-10-06] Cuentas diarias, Fase 1: pestaña Cuentas → Gastos
 
 Plan completo en `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
