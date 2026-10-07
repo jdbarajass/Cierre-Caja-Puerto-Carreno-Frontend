@@ -21,6 +21,7 @@ const Garments = lazy(() => import('./pages/Garments'));
 const Arrivals = lazy(() => import('./pages/Arrivals'));
 const SalesPatterns = lazy(() => import('./pages/SalesPatterns'));
 const SellerGoals = lazy(() => import('./pages/SellerGoals'));
+const History2025 = lazy(() => import('./pages/History2025'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -276,6 +277,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <SellerGoals />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Reconstrucción 2025 tras la anulación masiva de POS (por tienda; solo admin) */}
+              <Route
+                path="/estadisticas-estandar/reconstruccion-2025"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <History2025 />
                     </MainLayout>
                   </ProtectedRoute>
                 }

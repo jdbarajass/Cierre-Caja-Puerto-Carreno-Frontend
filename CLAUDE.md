@@ -24,6 +24,7 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Día y hora** (`src/pages/SalesPatterns.jsx`, `/estadisticas-estandar/dia-hora`): promedios por día de la semana y hora, mapa de calor (Fase D2).
 - **Metas** (`src/pages/SellerGoals.jsx`, `/estadisticas-estandar/metas`): meta del mes por vendedora (automática +15 % o ajustada) y avance (Fase D3).
 - **Alertas diarias** (`src/components/alerts/DailyAlertsPanel.jsx`): arriba del Dashboard, solo admin (Fase D4).
+- **Reconstrucción 2025** (`src/pages/History2025.jsx`, `/estadisticas-estandar/reconstruccion-2025`): anulación masiva de POS de 2025, venta real e inventario antes de la anulación (plan: `docs/PLAN_RECONSTRUCCION_2025.md` del backend).
 - Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
 
 ## Cuentas → Gastos, Mes y Año (cuentas diarias, Fases 1 a 3)

@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-07] Estadísticas → Reconstrucción 2025
+
+- Nueva página (`src/pages/History2025.jsx`, `/estadisticas-estandar/reconstruccion-2025`, solo admin; `src/services/history2025Service.js`; entrada en el menú de Estadísticas): traer 2025 de Alegra por tandas ("Traer todo 2025", se puede detener), venta real vs. la que muestra Alegra, revisión de las anulaciones reales (marcar "Fue de la anulación masiva" o por número) e inventario antes de la anulación masiva con descarga en Excel. Plan en `docs/PLAN_RECONSTRUCCION_2025.md` del backend.
+- Verificado en Chromium (1366 y 390) con Alegra simulado. Lint, `npm test` y build OK.
+
 ## [2026-10-06] Cuentas diarias, Fase 3: pestaña Cuentas → Año
 
 - Nueva **Cuentas → Año** (`src/pages/CuentasAnual.jsx`, `src/services/monthlySummaryService.js`): tarjetas (ventas, ganancia real y %, inventario), gráfico de barras ventas vs. ganancia real por mes (un solo eje, colores validados, recuadro al pasar el mouse o con teclado), **cierre general mes a mes** (ventas, recompras, gastos operativos, ganancia bruta/neta/real, %, inventario, subió/bajó, ganancia real + inventario) con **edición a mano** de cada dato del mes (✎ con nota y valor calculado, "volver al calculado"), enero–agosto opcional para comparar con el Excel, **ventas por medio de pago del año** y **plata que salió y no es gasto** (inversiones, retiros, préstamos, fletes, Jhonatan). Botón "Traer inventario de Alegra" y "Traer" por mes. En celular, tarjetas.

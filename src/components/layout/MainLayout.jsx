@@ -30,7 +30,8 @@ import {
   Menu,
   X,
   AlertTriangle,
-  Store
+  Store,
+  History
 } from 'lucide-react';
 import { getColombiaTimeString, getColombiaTodayString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -234,6 +235,15 @@ const MainLayout = ({ children }) => {
       path: '/estadisticas-estandar/metas',
       icon: Target,
       color: 'pink',
+      roles: ['admin']
+    },
+    {
+      id: 'reconstruccion-2025',
+      label: 'Reconstrucción 2025',
+      description: 'Ventas POS anuladas en masa e inventario antes de la anulación',
+      path: '/estadisticas-estandar/reconstruccion-2025',
+      icon: History,
+      color: 'amber',
       roles: ['admin']
     },
     {
