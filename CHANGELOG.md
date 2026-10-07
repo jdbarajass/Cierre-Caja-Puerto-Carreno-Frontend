@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 6) Analytics: clientes únicos con nombre
+
+- `TopSellers.jsx`: la columna dice "Clientes Únicos (con nombre)": el backend ya no cuenta Consumidor final (ver CHANGELOG del backend, continuación 7: % de participación sin bolsa, recurrencia y productos que se compran juntos corregidos).
+
 ## [2026-10-07] (continuación 5) Reconstrucción 2025 en Documentos de Venta
 
 - El backend ahora devuelve como vigentes (marca `mass_voided`) las POS de la anulación masiva de 2025 en Totales, Documentos, Ventas Mensuales, Analytics, Productos, Clientes, Prendas, Día y hora y Comparativo. `DirectSalesDocuments.jsx` las marca "Anulada 2025 (venta real)" y avisa cuántas hay en el rango. 2026 no cambia.
