@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 5) Reconstrucción 2025 en Documentos de Venta
+
+- El backend ahora devuelve como vigentes (marca `mass_voided`) las POS de la anulación masiva de 2025 en Totales, Documentos, Ventas Mensuales, Analytics, Productos, Clientes, Prendas, Día y hora y Comparativo. `DirectSalesDocuments.jsx` las marca "Anulada 2025 (venta real)" y avisa cuántas hay en el rango. 2026 no cambia.
+
 ## [2026-10-07] (continuación 4) Incentivos por empleada
 
 - `IncentivesPanel.jsx`: campo "Empleada (opcional)" (mismos nombres de Control de Empleadas, solo con categoría sueldo); la lista muestra "para <empleada>". Al registrar el pago queda también en Empleadas → Pagos como comisión.

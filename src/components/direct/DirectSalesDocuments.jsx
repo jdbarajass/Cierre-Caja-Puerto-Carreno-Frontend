@@ -171,6 +171,12 @@ const DirectSalesDocuments = () => {
       {!loading && !error && (
         <SalesDataNotice failedDays={metadata?.failed_days || []} voided={voided} />
       )}
+      {!loading && !error && documents.some(d => d.mass_voided) && (
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Incluye {documents.filter(d => d.mass_voided).length} facturas POS que se anularon en la anulación masiva de 2025:
+          sí fueron ventas, por eso cuentan en los totales (Reconstrucción 2025).
+        </p>
+      )}
 
       {/* Error */}
       {error && (
@@ -260,6 +266,12 @@ const DirectSalesDocuments = () => {
                       }`}>
                         {doc.status === 'open' ? 'Abierto' : doc.status === 'closed' ? 'Cerrado' : doc.status}
                       </span>
+                      {doc.mass_voided && (
+                        <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800"
+                          title="Anulada en la anulación masiva de 2025: sí fue venta y cuenta en los totales">
+                          Anulada 2025 (venta real)
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
