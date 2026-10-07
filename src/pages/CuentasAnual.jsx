@@ -8,6 +8,7 @@ import {
   RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Check, Pencil, X, Boxes, Table2, Wallet, Info,
 } from 'lucide-react';
 import { getMonthlySummary, saveSummaryOverride, loadInventory } from '../services/monthlySummaryService';
+import { saveFinanceSettings } from '../services/financeService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import { getColombiaDate } from '../utils/dateUtils';
 
@@ -105,6 +106,7 @@ const CuentasAnual = () => {
   const [success, setSuccess] = useState('');
   const [showEarly, setShowEarly] = useState(false);
   const [editing, setEditing] = useState(null); // { period, label, fields: {f: {value, note}} }
+  const [ruleForm, setRuleForm] = useState(null); // regla 70/30: { resurtido_pct, margin_pct }
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3500); };
 
@@ -193,6 +195,23 @@ const CuentasAnual = () => {
   const counted = months.filter(m => !m.before_start);
   const lastInv = [...months].reverse().find(m => m.inventario != null);
   const t = data?.totals;
+  const rs = data?.settings;
+
+  const saveRule = async (e) => {
+    e.preventDefault();
+    setBusy('rule');
+    setError('');
+    try {
+      await saveFinanceSettings({ resurtido_pct: Number(ruleForm.resurtido_pct), margin_pct: Number(ruleForm.margin_pct) });
+      setRuleForm(null);
+      flash('Regla guardada');
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy('');
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -391,6 +410,83 @@ const CuentasAnual = () => {
               </table>
             </div>
           </div>
+
+          {/* ── Regla 70/30 (Fase 4) ───────────────────────────────────── */}
+          {rs && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-start justify-between gap-2 flex-wrap">
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">Regla {rs.resurtido_pct}/{100 - rs.resurtido_pct}: resurtido y utilidad</span>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    De cada venta, el {rs.resurtido_pct} % debería ir a recompras y el {100 - rs.resurtido_pct} % queda de utilidad. "En ropa" es lo que esa plata representa a precio de venta con un margen del {rs.margin_pct} % (como la fórmula del Excel).
+                  </p>
+                </div>
+                <button onClick={() => setRuleForm({ resurtido_pct: rs.resurtido_pct, margin_pct: rs.margin_pct })} className="text-xs text-indigo-700 underline">Configurar</button>
+              </div>
+              {ruleForm && (
+                <form onSubmit={saveRule} className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-end gap-3 flex-wrap">
+                  <div>
+                    <label className="block text-[11px] text-gray-600 mb-0.5">% para resurtido</label>
+                    <input aria-label="Porcentaje para resurtido" type="number" min="0" max="100" value={ruleForm.resurtido_pct}
+                      onChange={e => setRuleForm(f => ({ ...f, resurtido_pct: e.target.value }))} className="w-24 border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-600 mb-0.5">Margen (%)</label>
+                    <input aria-label="Margen" type="number" min="0" max="95" value={ruleForm.margin_pct}
+                      onChange={e => setRuleForm(f => ({ ...f, margin_pct: e.target.value }))} className="w-24 border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm" />
+                  </div>
+                  <button type="submit" disabled={!!busy} className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50"><Check className="w-4 h-4" /> Guardar</button>
+                  <button type="button" onClick={() => setRuleForm(null)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                </form>
+              )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[860px]">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                      <th className="text-left px-3 py-2">Mes</th>
+                      <th className="text-right px-3 py-2">Ventas</th>
+                      <th className="text-right px-3 py-2">Para resurtido ({rs.resurtido_pct} %)</th>
+                      <th className="text-right px-3 py-2">Recomprado</th>
+                      <th className="text-right px-3 py-2">Diferencia</th>
+                      <th className="text-right px-3 py-2">En ropa</th>
+                      <th className="text-right px-3 py-2">Utilidad ({100 - rs.resurtido_pct} %)</th>
+                      <th className="text-right px-3 py-2">Ganancia real</th>
+                      <th className="text-right px-3 py-2">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {counted.map(m => (
+                      <tr key={m.period}>
+                        <td className="px-3 py-2 font-medium">{m.label}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.ventas)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.resurtido_esperado)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.recompras)}</td>
+                        <td className={`px-3 py-2 text-right whitespace-nowrap ${m.resurtido_diferencia < 0 ? 'text-amber-700' : 'text-emerald-700'}`}
+                          title={m.resurtido_diferencia < 0 ? 'Se recompró menos de lo que tocaba' : 'Se recompró más de lo que tocaba'}>{signed(m.resurtido_diferencia)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap text-gray-600">{fmt(m.resurtido_en_ropa)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.utilidad_esperada)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.ganancia_real)}</td>
+                        <td className={`px-3 py-2 text-right whitespace-nowrap ${m.utilidad_diferencia < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{signed(m.utilidad_diferencia)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-50 font-bold">
+                      <td className="px-3 py-2">Total</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(t.ventas)}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(t.resurtido_esperado)}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(t.recompras)}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{signed(t.resurtido_diferencia)}</td>
+                      <td />
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(t.utilidad_esperada)}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(t.ganancia_real)}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{signed(t.utilidad_diferencia)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* ── Ventas por medio de pago ───────────────────────────────── */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

@@ -7,11 +7,13 @@ import { getColombiaTodayString } from '../utils/dateUtils';
 import { storeDisplayName } from '../utils/activeStore';
 import { longDate } from '../utils/statsDates';
 import { Card, Notice, StatTile } from '../components/stats/StatsUI';
+import IncentivesPanel from '../components/goals/IncentivesPanel';
 
 /**
  * Estadísticas → Metas (solo admin, por tienda). Fase D3 de
  * docs/PLAN_ESTADISTICAS.md del backend: meta mensual de cada vendedora
- * (automática: mismo mes del año anterior +15 % repartido por la venta de
+ * (automática: mismo mes del año anterior + el % configurado por tienda,
+ * por defecto 15 %, repartido por la venta de
  * los 3 meses anteriores; el admin la puede ajustar) y su avance: venta,
  * proyección al cierre, cuánto necesita por día, prendas por factura y % de
  * la venta con cliente.
@@ -141,6 +143,10 @@ const SellerGoals = () => {
               <p className="mt-4 text-xs text-gray-500">{formatCOP(data.store.unassigned_sales)} en facturas sin vendedora (cuentan en la tienda, no en ninguna vendedora).</p>
             )}
           </Card>
+
+          {/* META 1 / META 2 e incentivos (Fase 4 de PLAN_CUENTAS_DIARIAS) */}
+          <IncentivesPanel month={data.month} storeGoal={data.store.goal} storeSales={data.store.sales}
+            isCurrent={pace.is_current} isPast={data.month < currentMonth} onSettingsChanged={() => load(month)} />
         </div>
       )}
     </div>

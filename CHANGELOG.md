@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-10-07] (continuación 3) Cuentas diarias, Fase 4
+
+- Estadísticas → Metas: panel **"Metas de la tienda e incentivos"** (`src/components/goals/IncentivesPanel.jsx`, `src/services/financeService.js`): META 1 / META 2 / vendido, "Configurar metas" (% de crecimiento y extra de la META 2), incentivos con estado y "Registrar pago" (medio y de dónde sale la plata), plantilla del Excel.
+- Cuentas → Año: tabla **"Regla 70/30"** con "Configurar" (% de resurtido y margen).
+- Comparativo de tiendas: gastos operativos, inversiones/préstamos/retiros y ganancia real (ventas − recompras − gastos).
+- Verificado en Chromium (1366 y 390) con Alegra simulado. Lint, `npm test` y build OK.
+
 ## [2026-10-07] (continuación 2) Reconstrucción 2025: revisar en vez de excluir
 
 - Paso 2: "Revisar las anulaciones" lista las POS con otra factura igual poco después (cuentan como venta) con el botón "Sí se anuló de verdad"; aparte, las que no cuentan como venta (electrónicas anuladas o marcadas a mano) con "Quitar marca". La marca por número propone "Sí se anuló de verdad".

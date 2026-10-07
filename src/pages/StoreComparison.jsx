@@ -540,6 +540,19 @@ const OPERATION_ROWS = [
     value: (o) => formatCOP(o.repurchase_purchases),
   },
   {
+    label: 'Gastos operativos (Cuentas → Gastos, con 4x1000)',
+    value: (o) => formatCOP(o.expenses_operating),
+  },
+  {
+    label: 'Inversiones, préstamos y retiros de socios',
+    value: (o) => formatCOP(o.expenses_other),
+  },
+  {
+    // Ventas de Alegra − recompras − gastos operativos (como Cuentas → Año)
+    label: 'Ganancia real (ventas − recompras − gastos)',
+    value: (o, s) => (s.sales ? formatCOP(s.sales.total - o.repurchase_sent - (o.expenses_operating || 0)) : '—'),
+  },
+  {
     label: 'Saldo disponible en cuentas (hoy)',
     value: (o) => formatCOP(o.accounts_balance),
   },
@@ -564,7 +577,7 @@ const OperationsTable = ({ stores }) => (
             <td className="py-2.5 pr-4 text-gray-700">{row.label}</td>
             {stores.map((s) => (
               <td key={s.code} className="py-2.5 pr-4 text-right tabular-nums font-medium text-gray-900">
-                {row.value(s.operations)}
+                {row.value(s.operations, s)}
               </td>
             ))}
           </tr>

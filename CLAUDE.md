@@ -27,8 +27,9 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Reconstrucción 2025** (`src/pages/History2025.jsx`, `/estadisticas-estandar/reconstruccion-2025`): anulación masiva de POS de 2025, venta real e inventario antes de la anulación (plan: `docs/PLAN_RECONSTRUCCION_2025.md` del backend).
 - Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
 
-## Cuentas → Gastos, Mes y Año (cuentas diarias, Fases 1 a 3)
+## Cuentas → Gastos, Mes y Año (cuentas diarias, Fases 1 a 4)
 
+- **Fase 4**: `src/components/goals/IncentivesPanel.jsx` (en Metas: META 1/2, configuración e incentivos) + `src/services/financeService.js`; tabla "Regla 70/30" en `CuentasAnual.jsx`; filas de gastos en `StoreComparison.jsx`.
 - **Año** (Fase 3): `src/pages/CuentasAnual.jsx` + `src/services/monthlySummaryService.js` (resumen mensual/anual, edición a mano, inventario de fin de mes).
 - **Mes** (Fase 2): `src/pages/CuentasMes.jsx` + `src/services/monthSheetService.js` (hoja del mes por medio de pago, saldo real, por llegar, cerrar mes).
 - **Gastos** (Fase 1): `src/pages/CuentasGastos.jsx` + `src/services/expensesService.js`, dentro de `CuentasLayout` (pestaña Gastos). Plan y fases: `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
