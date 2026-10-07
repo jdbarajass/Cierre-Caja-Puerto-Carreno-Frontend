@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 4) Incentivos por empleada
+
+- `IncentivesPanel.jsx`: campo "Empleada (opcional)" (mismos nombres de Control de Empleadas, solo con categoría sueldo); la lista muestra "para <empleada>". Al registrar el pago queda también en Empleadas → Pagos como comisión.
+
 ## [2026-10-07] (continuación 3) Cuentas diarias, Fase 4
 
 - Estadísticas → Metas: panel **"Metas de la tienda e incentivos"** (`src/components/goals/IncentivesPanel.jsx`, `src/services/financeService.js`): META 1 / META 2 / vendido, "Configurar metas" (% de crecimiento y extra de la META 2), incentivos con estado y "Registrar pago" (medio y de dónde sale la plata), plantilla del Excel.

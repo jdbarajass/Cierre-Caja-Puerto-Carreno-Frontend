@@ -9,6 +9,7 @@ import {
   loadIncentivesTemplate, payIncentive, saveFinanceSettings,
 } from '../../services/financeService';
 import LiveMoneyInput from '../common/LiveMoneyInput';
+import { EMPLOYEE_NAMES } from '../../utils/employeeGroups';
 
 const formatCOP = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.round(v || 0));
@@ -56,7 +57,10 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
 
   const saveRule = (e) => {
     e.preventDefault();
-    const payload = { name: form.name, amount: Number(form.amount) || 0, threshold: form.threshold, category: form.category };
+    const payload = {
+      name: form.name, amount: Number(form.amount) || 0, threshold: form.threshold, category: form.category,
+      employee_name: form.category === 'sueldo' ? (form.employee_name || '') : '',
+    };
     run('rule', () => (form.id ? updateIncentiveRule(form.id, payload) : createIncentiveRule(payload))).then(ok => ok && setForm(null));
   };
 
@@ -86,7 +90,7 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
         <div className="flex items-center gap-2">
           <button onClick={() => setSettingsForm({ goal_growth_pct: settings?.goal_growth_pct ?? 15, meta2_extra: String(settings?.meta2_extra ?? 300000) })}
             className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"><Settings2 className="w-3.5 h-3.5" /> Configurar metas</button>
-          <button onClick={() => setForm({ name: '', amount: '', threshold: 'meta1', category: 'sueldo' })}
+          <button onClick={() => setForm({ name: '', amount: '', threshold: 'meta1', category: 'sueldo', employee_name: '' })}
             className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"><Plus className="w-3.5 h-3.5" /> Incentivo</button>
         </div>
       </div>
@@ -128,7 +132,7 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
       </div>
 
       {form && (
-        <form onSubmit={saveRule} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end bg-gray-50 rounded-xl p-3">
+        <form onSubmit={saveRule} className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-end bg-gray-50 rounded-xl p-3">
           <div className="sm:col-span-2">
             <label className="block text-xs text-gray-600 mb-1">Nombre</label>
             <input aria-label="Nombre del incentivo" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputCls} placeholder="Ej.: Incentivo empleadas" />
@@ -149,7 +153,16 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
               {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
-          <div className="sm:col-span-5 flex gap-2">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Empleada (opcional)</label>
+            <select aria-label="Empleada" value={form.employee_name || ''} disabled={form.category !== 'sueldo'}
+              onChange={e => setForm(f => ({ ...f, employee_name: e.target.value }))} className={`${inputCls} disabled:opacity-50`}>
+              <option value="">Ninguna</option>
+              {EMPLOYEE_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <p className="sm:col-span-6 text-[11px] text-gray-500 -mt-1">Con empleada, al registrar el pago también queda en Empleadas → Pagos de esa persona (como comisión).</p>
+          <div className="sm:col-span-6 flex gap-2">
             <button type="submit" disabled={!!busy} className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50"><Check className="w-4 h-4" /> Guardar</button>
             <button type="button" onClick={() => setForm(null)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">Cancelar</button>
           </div>
@@ -178,6 +191,7 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-800">{r.name}</p>
                   <p className="text-[11px] text-gray-500">{formatCOP(r.amount)} si se pasa la {r.threshold === 'meta1' ? 'META 1' : 'META 2'}
+                    {r.employee_name && <> · para {r.employee_name}</>}
                     {r.paid && <> · pagado el {r.paid.date}</>}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -186,7 +200,7 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
                     <button onClick={() => setPayForm({ rule: r, method: 'efectivo', account_mode: 'cuentas' })}
                       className="px-2.5 py-1 text-xs font-medium bg-gray-900 text-white rounded-lg">Registrar pago</button>
                   )}
-                  <button aria-label="Editar incentivo" onClick={() => setForm({ ...r, amount: String(Math.round(r.amount)) })} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button aria-label="Editar incentivo" onClick={() => setForm({ ...r, amount: String(Math.round(r.amount)), employee_name: r.employee_name || '' })} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
                   <button aria-label="Eliminar incentivo" onClick={() => window.confirm(`¿Eliminar "${r.name}"? Los pagos ya registrados se conservan en Gastos.`) && run('del', () => deleteIncentiveRule(r.id))}
                     className="p-1.5 text-gray-500 hover:text-red-600 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
