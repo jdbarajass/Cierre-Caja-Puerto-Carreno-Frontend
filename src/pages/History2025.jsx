@@ -34,7 +34,7 @@ const History2025 = () => {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [mark, setMark] = useState({ number: '', counts_as_sale: 'true', note: '' });
+  const [mark, setMark] = useState({ number: '', counts_as_sale: 'false', note: '' });
   const stopRef = useRef(false);
   const [approve, setApprove] = useState({ accountant: false, text: '' });
 
@@ -198,9 +198,9 @@ const History2025 = () => {
               <p className="text-2xl font-bold text-indigo-800">{num(s.masiva_count)} facturas</p>
               <p className="text-xs text-gray-600">{fmt(s.masiva_total)}</p>
             </Card>
-            <Card title="Anulaciones reales (se quedan así)">
+            <Card title="No cuentan como venta">
               <p className="text-2xl font-bold text-gray-900">{num(s.real_count)}</p>
-              <p className="text-xs text-gray-600">{fmt(s.real_total)} · revísalas abajo</p>
+              <p className="text-xs text-gray-600">{fmt(s.real_total)} · electrónicas anuladas o marcadas a mano</p>
             </Card>
             <Card title="Venta 2025 que hoy muestra Alegra">
               <p className="text-2xl font-bold text-gray-900">{fmt(s.active_total)}</p>
@@ -241,13 +241,13 @@ const History2025 = () => {
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
-              <p className="font-semibold text-gray-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-indigo-500" /> 2. Revisar las anulaciones reales</p>
+              <p className="font-semibold text-gray-800 flex items-center gap-2"><ListChecks className="w-4 h-4 text-indigo-500" /> 2. Revisar las anulaciones</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                Se toman como anulación real (no se cuentan como venta): las electrónicas anuladas y las POS que se volvieron a facturar con las mismas prendas y el mismo total hasta 60 minutos después. Si alguna sí fue de la anulación masiva, márcala.
+                Todas las POS anuladas de 2025 cuentan como venta real (comprobado: octubre de 2025 cuadra al peso con lo que decía Alegra antes de la anulación masiva). Abajo están las que tienen otra factura igual poco después: casi siempre es otra clienta comprando lo mismo. Márcalas solo si sabes que esa venta sí se anuló de verdad (por ejemplo, una devolución).
               </p>
             </div>
-            {s.real_voids.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-gray-500 text-center">No hay anulaciones reales en lo cargado.</p>
+            {(s.review || []).length === 0 ? (
+              <p className="px-4 py-6 text-sm text-gray-500 text-center">No hay facturas para revisar.</p>
             ) : (
               <div className="overflow-x-auto max-h-[420px]">
                 <table className="w-full text-sm min-w-[720px]">
@@ -256,26 +256,42 @@ const History2025 = () => {
                       <th className="text-left px-4 py-2">Factura</th>
                       <th className="text-left px-3 py-2">Fecha y hora</th>
                       <th className="text-right px-3 py-2">Total</th>
-                      <th className="text-left px-3 py-2">Por qué</th>
+                      <th className="text-left px-3 py-2">Por qué revisarla</th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {s.real_voids.map(r => (
+                    {s.review.map(r => (
                       <tr key={r.alegra_id}>
                         <td className="px-4 py-2 font-medium whitespace-nowrap">{r.number}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-gray-600">{r.issued_at || r.date}</td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(r.total)}</td>
                         <td className="px-3 py-2 text-xs text-gray-600">{r.reason}</td>
                         <td className="px-3 py-2 text-right">
-                          {r.manual
-                            ? <button disabled={!!busy} onClick={() => setOverride({ number: r.number, counts_as_sale: null }, `Factura ${r.number}: vuelve a la regla automática`)} className="text-xs text-gray-600 underline whitespace-nowrap">Quitar marca</button>
-                            : <button disabled={!!busy} onClick={() => setOverride({ number: r.number, counts_as_sale: true }, `Factura ${r.number}: cuenta como venta (anulación masiva)`)} className="px-2.5 py-1 text-xs font-medium border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50 whitespace-nowrap">Fue de la anulación masiva</button>}
+                          <button disabled={!!busy} onClick={() => setOverride({ number: r.number, counts_as_sale: false }, `Factura ${r.number}: anulación real (no cuenta como venta)`)} className="px-2.5 py-1 text-xs font-medium border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 whitespace-nowrap">Sí se anuló de verdad</button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {s.real_voids.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-600 mb-1.5">No cuentan como venta ({s.real_voids.length})</p>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  {s.real_voids.map(r => (
+                    <li key={r.alegra_id} className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-gray-800">{r.number}</span>
+                      <span>{r.issued_at || r.date}</span>
+                      <span>{fmt(r.total)}</span>
+                      <span className="text-gray-500">{r.reason}</span>
+                      {r.manual && (
+                        <button disabled={!!busy} onClick={() => setOverride({ number: r.number, counts_as_sale: null }, `Factura ${r.number}: vuelve a contar como venta`)} className="text-indigo-700 underline">Quitar marca</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
             <form onSubmit={e => { e.preventDefault(); setOverride({ number: mark.number.trim(), counts_as_sale: mark.counts_as_sale === 'true', note: mark.note }, `Factura ${mark.number} marcada`); }}
@@ -286,8 +302,8 @@ const History2025 = () => {
                   className="w-32 border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm" />
               </div>
               <select aria-label="Tipo" value={mark.counts_as_sale} onChange={e => setMark(m => ({ ...m, counts_as_sale: e.target.value }))} className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm bg-white">
+                <option value="false">Sí se anuló de verdad (no cuenta como venta)</option>
                 <option value="true">Fue de la anulación masiva (venta real)</option>
-                <option value="false">Anulación real (no cuenta)</option>
               </select>
               <input aria-label="Nota" value={mark.note} onChange={e => setMark(m => ({ ...m, note: e.target.value }))} placeholder="Nota (opcional)"
                 className="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm" />

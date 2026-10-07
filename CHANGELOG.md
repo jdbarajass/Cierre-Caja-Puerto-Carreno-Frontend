@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 2) Reconstrucción 2025: revisar en vez de excluir
+
+- Paso 2: "Revisar las anulaciones" lista las POS con otra factura igual poco después (cuentan como venta) con el botón "Sí se anuló de verdad"; aparte, las que no cuentan como venta (electrónicas anuladas o marcadas a mano) con "Quitar marca". La marca por número propone "Sí se anuló de verdad".
+
 ## [2026-10-07] (continuación) Reconstrucción 2025: paso 4, crear el ajuste en Alegra
 
 - `History2025.jsx`: paso 4 con casilla de aprobación del contador, escribir AJUSTAR y botón "Crear ajuste (N unidades)"; muestra los números de ajuste creados, o el estado a medias con "Seguir con lo que falta". Aviso en el paso 3 cuando el ajuste ya se hizo. `createInventoryAdjustment` en `history2025Service.js`.
