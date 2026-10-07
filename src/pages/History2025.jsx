@@ -5,10 +5,11 @@
 // y se calcula el inventario antes de ella (con Excel para el contador).
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  RefreshCw, AlertCircle, Check, DownloadCloud, History, Boxes, ListChecks, Info, Square,
+  RefreshCw, AlertCircle, Check, DownloadCloud, History, Boxes, ListChecks, Info, Square, ShieldCheck,
 } from 'lucide-react';
 import {
   getHistoryStatus, syncHistory, saveVoidOverride, getInventoryReport, downloadInventoryExcel,
+  createInventoryAdjustment,
 } from '../services/history2025Service';
 import { getActiveStoreCode } from '../utils/activeStore';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -35,6 +36,7 @@ const History2025 = () => {
   const [success, setSuccess] = useState('');
   const [mark, setMark] = useState({ number: '', counts_as_sale: 'true', note: '' });
   const stopRef = useRef(false);
+  const [approve, setApprove] = useState({ accountant: false, text: '' });
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 4000); };
 
@@ -112,7 +114,29 @@ const History2025 = () => {
     }
   };
 
+  const runAdjustment = async () => {
+    setBusy('adj');
+    setError('');
+    try {
+      const r = await createInventoryAdjustment({
+        confirm: approve.text, accountant_ok: approve.accountant,
+        expected_units: report ? report.units_to_remove : undefined,
+      });
+      flash(`Ajuste creado en Alegra: ${r.adjustment.units} unidades en ${r.adjustment.parts} ajuste(s)`);
+      setApprove({ accountant: false, text: '' });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+      await load();
+    }
+  };
+
   const cov = data?.coverage;
+  const adj = data?.adjustment;
+  const adjPending = adj && !adj.completed;
+  const canAdjust = approve.accountant && approve.text.trim().toUpperCase() === 'AJUSTAR' && !busy
+    && (adjPending || (report && cov?.complete && report.units_to_remove > 0));
   const s = data?.summary;
   const pct = cov ? Math.round((cov.loaded_days / cov.total_days) * 100) : 0;
 
@@ -291,6 +315,11 @@ const History2025 = () => {
                 </button>
               </div>
             </div>
+            {adj?.completed && (
+              <p className="text-xs text-emerald-900 bg-emerald-50 rounded-lg px-3 py-2">
+                El ajuste ya se hizo en Alegra el {adj.date}. Si vuelves a calcular, estas cifras ya no sirven: la existencia de hoy ya está ajustada.
+              </p>
+            )}
             {cov && !cov.complete && (
               <p className="text-xs text-amber-800 bg-amber-50 rounded-lg px-3 py-2">Todavía falta cargar parte de 2025: el informe solo tendrá en cuenta los días ya cargados.</p>
             )}
@@ -341,9 +370,47 @@ const History2025 = () => {
                   </table>
                 </div>
                 {report.rows.length > 200 && <p className="text-xs text-gray-500">Se muestran las 200 de mayor valor; el Excel tiene las {num(report.rows.length)}.</p>}
-                <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
-                  Siguiente paso (cuando tú y tu contador aprueben el Excel): crear en Alegra el ajuste de inventario de salida con estas unidades. Alegra no permite cargar ajustes desde Excel; se hará desde la plataforma con un botón y confirmación.
+              </>
+            )}
+          </div>
+
+          {/* ── Paso 4: ajuste en Alegra ─────────────────────────────── */}
+          <div className={`rounded-xl shadow-sm p-5 space-y-3 border ${adj?.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-red-200'}`}>
+            <p className="font-semibold text-gray-800 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-red-600" /> 4. Crear el ajuste de inventario en Alegra</p>
+            {adj?.completed ? (
+              <div className="text-sm text-emerald-900 space-y-1">
+                <p className="font-semibold">✓ Ajuste creado en Alegra el {adj.date}: {num(adj.units)} unidades retiradas ({fmt(adj.value)} a costo), en {adj.parts} ajuste(s).</p>
+                <p className="text-xs">Números de ajuste en Alegra: {adj.done.map(d => d.number || d.alegra_id).join(', ')}. Si algo quedó mal, se corrige en Alegra (Inventario → Ajustes de inventario).</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-gray-600 max-w-3xl">
+                  Esto <b>sí cambia Alegra</b>: crea un ajuste de <b>salida</b> en la bodega Principal con las unidades del paso 3 (por partes de 200 prendas). Hazlo solo cuando tu contador haya revisado y aprobado el Excel. Se crea una sola vez.
                 </p>
+                {adjPending && (
+                  <p className="text-xs text-amber-900 bg-amber-50 rounded-lg px-3 py-2">
+                    El ajuste quedó a medias: se crearon {adj.done.length} de {adj.parts} partes ({adj.done.map(d => d.number || d.alegra_id).join(', ') || 'ninguna'}). Confirma otra vez para seguir con lo que falta (se usa la misma lista aprobada, sin duplicar).
+                  </p>
+                )}
+                {!adjPending && !report && <p className="text-xs text-gray-500">Primero toca "Calcular" en el paso 3 y revisa el Excel.</p>}
+                {!adjPending && report && !cov?.complete && <p className="text-xs text-amber-800">Falta traer todo 2025 (paso 1): el ajuste solo se crea con el año completo.</p>}
+                {(adjPending || report) && (
+                  <div className="flex items-end gap-3 flex-wrap">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={approve.accountant} onChange={e => setApprove(a => ({ ...a, accountant: e.target.checked }))} />
+                      Mi contador revisó y aprobó el Excel
+                    </label>
+                    <div>
+                      <label className="block text-[11px] text-gray-500 mb-0.5">Escribe AJUSTAR para confirmar</label>
+                      <input aria-label="Confirmación" value={approve.text} onChange={e => setApprove(a => ({ ...a, text: e.target.value }))}
+                        className="w-36 border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm" />
+                    </div>
+                    <button onClick={runAdjustment} disabled={!canAdjust}
+                      className="px-4 py-2 bg-red-700 text-white rounded-lg text-sm font-medium hover:bg-red-800 disabled:opacity-40">
+                      {busy === 'adj' ? 'Creando en Alegra…' : adjPending ? 'Seguir con lo que falta' : `Crear ajuste (${num(report?.units_to_remove)} unidades)`}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

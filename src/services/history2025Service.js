@@ -35,6 +35,8 @@ export const getHistoryStatus = () => call('getHistoryStatus', `${BASE}/status`)
 export const syncHistory = (maxDays = 31) => call('syncHistory', `${BASE}/sync`, json('POST', { max_days: maxDays }), 240000);
 export const saveVoidOverride = (payload) => call('saveVoidOverride', `${BASE}/override`, json('PUT', payload));
 export const getInventoryReport = () => call('getInventoryReport', `${BASE}/inventory`, undefined, 180000);
+// ESCRIBE en Alegra: crea el ajuste de inventario de salida (fase R3), con confirmación
+export const createInventoryAdjustment = (payload) => call('createInventoryAdjustment', `${BASE}/inventory-adjustment`, json('POST', payload), 300000);
 
 export const downloadInventoryExcel = async (store) => {
   const res = await authenticatedFetch(`${BASE}/inventory.xlsx`, {}, 180000);

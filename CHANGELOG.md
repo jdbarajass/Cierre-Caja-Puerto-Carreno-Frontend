@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-07] (continuación) Reconstrucción 2025: paso 4, crear el ajuste en Alegra
+
+- `History2025.jsx`: paso 4 con casilla de aprobación del contador, escribir AJUSTAR y botón "Crear ajuste (N unidades)"; muestra los números de ajuste creados, o el estado a medias con "Seguir con lo que falta". Aviso en el paso 3 cuando el ajuste ya se hizo. `createInventoryAdjustment` en `history2025Service.js`.
+- Verificado en Chromium con Alegra simulado (traer todo 2025 → calcular → aprobar → crear). Lint, `npm test` y build OK.
+
 ## [2026-10-07] Estadísticas → Reconstrucción 2025
 
 - Nueva página (`src/pages/History2025.jsx`, `/estadisticas-estandar/reconstruccion-2025`, solo admin; `src/services/history2025Service.js`; entrada en el menú de Estadísticas): traer 2025 de Alegra por tandas ("Traer todo 2025", se puede detener), venta real vs. la que muestra Alegra, revisión de las anulaciones reales (marcar "Fue de la anulación masiva" o por número) e inventario antes de la anulación masiva con descarga en Excel. Plan en `docs/PLAN_RECONSTRUCCION_2025.md` del backend.
