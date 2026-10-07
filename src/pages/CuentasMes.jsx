@@ -6,10 +6,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Check, DownloadCloud, Lock, Unlock,
-  CalendarDays, Landmark, Hourglass, ChevronDown, AlertTriangle,
+  CalendarDays, Landmark, Hourglass, ChevronDown, AlertTriangle, Pencil, Trash2, ArrowRight,
 } from 'lucide-react';
 import {
   getMonthSheet, syncPayments, saveReconciliation, registerCommissions, closeMonth, reopenMonth,
+  createCorrection, deleteCorrection,
 } from '../services/monthSheetService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import { getColombiaDate } from '../utils/dateUtils';
@@ -74,6 +75,8 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
   const [openAccount, setOpenAccount] = useState(null);
   const [openDay, setOpenDay] = useState(null);
   const [closeNotes, setCloseNotes] = useState('');
+  // Corrección del medio de pago de un día: { date, from_medio, to_medio, amount, note }
+  const [fix, setFix] = useState(null);
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3500); };
 
@@ -126,6 +129,26 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
     if (!window.confirm('¿Reabrir el mes? Se borra la foto guardada al cerrarlo.')) return;
     run('close', () => reopenMonth({ year, month }), 'Mes reabierto');
   };
+  const startFix = (d) => {
+    // Lo más común: una venta de tarjeta (datáfono/Addi/Bold) que al final fue en efectivo
+    const from = ['ahorro', 'credito', 'addi', 'bold', 'qr', 'nequi', 'bbva', 'daviplata', 'sistecredito', 'efectivo']
+      .find(k => d.medios[k] > 0) || 'efectivo';
+    setFix({ date: d.date, from_medio: from, to_medio: from === 'efectivo' ? 'qr' : 'efectivo',
+      amount: String(Math.round(d.medios[from] || 0)), note: '' });
+  };
+  const fixDay = fix && sheet?.sales?.days?.find(d => d.date === fix.date);
+  const handleSaveFix = async (e) => {
+    e.preventDefault();
+    const r = await run('fix', () => createCorrection({ ...fix, amount: Number(fix.amount) || 0 }),
+      `Corregido: ${fmt(fix.amount)} de ${MEDIO_LABEL[fix.from_medio]} a ${MEDIO_LABEL[fix.to_medio]}`);
+    if (r) setFix(null);
+  };
+  const handleDeleteFix = (c) => {
+    if (!window.confirm(`¿Quitar la corrección de ${fmt(c.amount)} (${MEDIO_LABEL[c.from_medio]} → ${MEDIO_LABEL[c.to_medio]})?`)) return;
+    run('fix', () => deleteCorrection(c.id), 'Corrección quitada');
+  };
+  const corrections = sheet?.corrections || [];
+
   const handleSaveReal = (row) => run(`real-${row.account_id}`, () => saveReconciliation({
     period: sheet.period,
     account_id: row.account_id,
@@ -267,7 +290,9 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                   {sales.days.map(d => (
                     <li key={d.date} className="px-4 py-2.5">
                       <button className="w-full flex items-center justify-between gap-2 text-left" onClick={() => setOpenDay(o => (o === d.date ? null : d.date))}>
-                        <span className="text-sm text-gray-800 capitalize">{dayLabel(d.date)}</span>
+                        <span className="text-sm text-gray-800 capitalize">
+                          {dayLabel(d.date)}{d.corrected && <Pencil title="Corregido a mano" className="inline w-3 h-3 ml-1 text-indigo-500" />}
+                        </span>
                         <span className="flex items-center gap-2">
                           {d.rating && <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${RATINGS[d.rating].cls}`}>{RATINGS[d.rating].short}</span>}
                           <span className="text-sm font-bold text-gray-900">{fmt(d.total)}</span>
@@ -279,6 +304,11 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                           {MEDIOS.filter(m => d.medios[m.key]).map(m => (
                             <span key={m.key} className="flex justify-between"><span>{m.label}</span><span>{fmt(d.medios[m.key])}</span></span>
                           ))}
+                          {d.total > 0 && !sheet.closed && (
+                            <button onClick={() => startFix(d)} className="col-span-2 mt-1.5 flex items-center gap-1 text-indigo-700 font-medium">
+                              <Pencil className="w-3.5 h-3.5" /> Corregir medio de pago
+                            </button>
+                          )}
                         </div>
                       )}
                     </li>
@@ -301,6 +331,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                         {sales.totals.otro > 0 && <th className="text-right px-3 py-2.5">Otro</th>}
                         <th className="text-right px-3 py-2.5 bg-emerald-600">Total</th>
                         <th className="text-left px-3 py-2.5">Venta</th>
+                        <th className="px-2 py-2.5"><span className="sr-only">Corregir</span></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -308,12 +339,22 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                         <tr key={d.date} className={i % 2 ? 'bg-sky-50/50' : 'bg-white'}>
                           <td className={`px-3 py-1.5 whitespace-nowrap capitalize sticky left-0 ${i % 2 ? 'bg-sky-50' : 'bg-white'}`}>
                             {dayLabel(d.date)}{d.needs_review > 0 && <AlertTriangle title="Hay un pago en una cuenta rara de Alegra" className="inline w-3.5 h-3.5 ml-1 text-amber-600" />}
+                            {d.corrected && <Pencil title="Corregido a mano (ver abajo)" className="inline w-3 h-3 ml-1 text-indigo-500" />}
                           </td>
                           {visibleMedios.map(m => <td key={m.key} className="px-3 py-1.5 text-right text-gray-700 whitespace-nowrap">{fmtCell(d.medios[m.key])}</td>)}
                           {sales.totals.otro > 0 && <td className="px-3 py-1.5 text-right text-gray-700">{fmtCell(d.medios.otro)}</td>}
                           <td className="px-3 py-1.5 text-right font-semibold text-gray-900 whitespace-nowrap">{fmtCell(d.total)}</td>
                           <td className="px-3 py-1.5">
                             {d.rating && <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${RATINGS[d.rating].cls}`}>{RATINGS[d.rating].label}</span>}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {d.total > 0 && !sheet.closed && (
+                              <button onClick={() => startFix(d)} title="Corregir el medio de pago de este día"
+                                aria-label={`Corregir medio de pago del ${dayLabel(d.date)}`}
+                                className="p-1 rounded hover:bg-indigo-50 text-gray-400 hover:text-indigo-700">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -325,10 +366,76 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                         {sales.totals.otro > 0 && <td className="px-3 py-2.5 text-right">{fmtCell(sales.totals.otro)}</td>}
                         <td className="px-3 py-2.5 text-right bg-emerald-700 whitespace-nowrap">{fmt(sales.total)}</td>
                         <td />
+                        <td />
                       </tr>
                     </tfoot>
                   </table>
                 </div>
+                {fix && fixDay && (
+                  <form onSubmit={handleSaveFix} className="border-t border-indigo-100 bg-indigo-50/60 px-4 py-3 space-y-2">
+                    <p className="text-sm font-semibold text-indigo-900">Corregir medio de pago · <span className="capitalize">{dayLabel(fix.date)}</span></p>
+                    <p className="text-[11px] text-gray-600">Para cuando en Alegra quedó un medio equivocado (ej. se pasó por datáfono y al final pagó en efectivo). Mueve el valor de un medio a otro; el total del día no cambia y Alegra no se toca.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">De</label>
+                        <select aria-label="Medio de origen" value={fix.from_medio}
+                          onChange={e => setFix(f => ({ ...f, from_medio: e.target.value, amount: String(Math.round(fixDay.medios[e.target.value] || 0)),
+                            to_medio: f.to_medio === e.target.value ? (e.target.value === 'efectivo' ? 'qr' : 'efectivo') : f.to_medio }))}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm bg-white">
+                          {MEDIOS.filter(m => fixDay.medios[m.key] > 0).map(m => (
+                            <option key={m.key} value={m.key}>{m.label} ({fmt(fixDay.medios[m.key])})</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">A</label>
+                        <select aria-label="Medio correcto" value={fix.to_medio} onChange={e => setFix(f => ({ ...f, to_medio: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm bg-white">
+                          {MEDIOS.filter(m => m.key !== fix.from_medio).map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Valor</label>
+                        <LiveMoneyInput value={fix.amount} onChange={v => setFix(f => ({ ...f, amount: v }))} required
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm bg-white" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Nota (opcional)</label>
+                        <input value={fix.note} onChange={e => setFix(f => ({ ...f, note: e.target.value }))} placeholder="Ej. la tarjeta no pasó"
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm bg-white" />
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={!!busy || !Number(fix.amount)}
+                          className="px-3 py-1.5 bg-indigo-700 text-white rounded-lg text-sm font-medium hover:bg-indigo-800 disabled:opacity-50">
+                          {busy === 'fix' ? 'Guardando…' : 'Guardar'}
+                        </button>
+                        <button type="button" onClick={() => setFix(null)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white">Cancelar</button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+                {corrections.length > 0 && (
+                  <div className="border-t border-gray-100 px-4 py-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1.5 flex items-center gap-1"><Pencil className="w-3 h-3" /> Correcciones a mano del mes</p>
+                    <ul className="space-y-1">
+                      {corrections.map(c => (
+                        <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="text-gray-700">
+                            <span className="capitalize">{dayLabel(c.date)}</span>: {fmt(c.amount)} de <b>{MEDIO_LABEL[c.from_medio]}</b>
+                            <ArrowRight className="inline w-3.5 h-3.5 mx-1 text-gray-400" /><b>{MEDIO_LABEL[c.to_medio]}</b>
+                            {c.note && <span className="text-gray-500"> · {c.note}</span>}
+                          </span>
+                          {!sheet.closed && (
+                            <button onClick={() => handleDeleteFix(c)} disabled={!!busy} aria-label="Quitar corrección"
+                              className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </div>

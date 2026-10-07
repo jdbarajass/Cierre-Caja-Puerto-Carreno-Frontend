@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 8) Cuentas → Mes: corregir el medio de pago de un día
+
+- `CuentasMes.jsx`: lápiz ✎ en cada día (en celular, "Corregir medio de pago" al abrir el día) con De / A / Valor / Nota; los días corregidos llevan ✎ y abajo de la tabla está la lista "Correcciones a mano del mes" con botón para quitar. `monthSheetService.js`: `createCorrection`, `deleteCorrection`. Verificado en Chromium (1366 y 390, sin scroll horizontal).
+
 ## [2026-10-07] (continuación 7) Cuentas → Mes: "Traer ventas de Alegra" ya no se rinde
 
 - En producción, la primera carga (todos los recibos desde el 1-sep, ~50 páginas de Alegra) tardaba más de los 80 s de espera y salía "No se pudo conectar con el servidor". `syncPayments` usa ahora 230 s (`SYNC_PAYMENTS_TIMEOUT`; el servidor corta a los 240 s) y la página avisa que la primera vez tarda 1-2 minutos. Las ventas quedan guardadas en la base (`payment_facts`): después, abrir el mes es inmediato y el botón solo trae los últimos días.

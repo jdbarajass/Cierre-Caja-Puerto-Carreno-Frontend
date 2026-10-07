@@ -36,6 +36,10 @@ export const getMonthSheet = ({ year, month }) => call('getMonthSheet', `${BASE}
 // rendía con "No se pudo conectar". El servidor corta a los 240 s.
 export const SYNC_PAYMENTS_TIMEOUT = 230000;
 export const syncPayments = (since) => call('syncPayments', `${BASE}/sync-payments`, json('POST', since ? { since } : {}), SYNC_PAYMENTS_TIMEOUT);
+// Corrección a mano del medio de pago de un día (ej. se pasó por datáfono pero pagó en efectivo)
+export const createCorrection = ({ date, from_medio, to_medio, amount, note }) =>
+  call('createCorrection', `${BASE}/corrections`, json('POST', { date, from_medio, to_medio, amount, note }));
+export const deleteCorrection = (id) => call('deleteCorrection', `${BASE}/corrections/${id}`, { method: 'DELETE' });
 export const saveReconciliation = (payload) => call('saveReconciliation', `${BASE}/reconciliation`, json('PUT', payload));
 export const registerCommissions = ({ year, month }) => call('registerCommissions', `${BASE}/commissions`, json('POST', { year, month }));
 export const closeMonth = ({ year, month, notes }) => call('closeMonth', `${BASE}/close`, json('POST', { year, month, notes }));
