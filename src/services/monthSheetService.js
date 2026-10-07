@@ -24,14 +24,18 @@ const json = (method, payload) => ({
   body: JSON.stringify(payload),
 });
 
-const call = async (name, url, options) => {
+const call = async (name, url, options, timeout = null) => {
   try {
-    return await handle(await authenticatedFetch(url, options));
+    return await handle(await authenticatedFetch(url, options, timeout));
   } catch (e) { logger.error(`${name}:`, e); throw e; }
 };
 
 export const getMonthSheet = ({ year, month }) => call('getMonthSheet', `${BASE}?year=${year}&month=${month}`);
-export const syncPayments = (since) => call('syncPayments', `${BASE}/sync-payments`, json('POST', since ? { since } : {}));
+// La primera carga trae todos los recibos desde el 1-sep (unas 50 páginas de
+// Alegra, 1-2 minutos): con el tiempo de espera normal (80 s) la página se
+// rendía con "No se pudo conectar". El servidor corta a los 240 s.
+export const SYNC_PAYMENTS_TIMEOUT = 230000;
+export const syncPayments = (since) => call('syncPayments', `${BASE}/sync-payments`, json('POST', since ? { since } : {}), SYNC_PAYMENTS_TIMEOUT);
 export const saveReconciliation = (payload) => call('saveReconciliation', `${BASE}/reconciliation`, json('PUT', payload));
 export const registerCommissions = ({ year, month }) => call('registerCommissions', `${BASE}/commissions`, json('POST', { year, month }));
 export const closeMonth = ({ year, month, notes }) => call('closeMonth', `${BASE}/close`, json('POST', { year, month, notes }));

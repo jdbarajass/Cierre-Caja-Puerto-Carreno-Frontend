@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 7) Cuentas → Mes: "Traer ventas de Alegra" ya no se rinde
+
+- En producción, la primera carga (todos los recibos desde el 1-sep, ~50 páginas de Alegra) tardaba más de los 80 s de espera y salía "No se pudo conectar con el servidor". `syncPayments` usa ahora 230 s (`SYNC_PAYMENTS_TIMEOUT`; el servidor corta a los 240 s) y la página avisa que la primera vez tarda 1-2 minutos. Las ventas quedan guardadas en la base (`payment_facts`): después, abrir el mes es inmediato y el botón solo trae los últimos días.
+
 ## [2026-10-07] (continuación 6) Analytics: clientes únicos con nombre
 
 - `TopSellers.jsx`: la columna dice "Clientes Únicos (con nombre)": el backend ya no cuenta Consumidor final (ver CHANGELOG del backend, continuación 7: % de participación sin bolsa, recurrencia y productos que se compran juntos corregidos).

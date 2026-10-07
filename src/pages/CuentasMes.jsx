@@ -156,6 +156,12 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
           </button>
         </div>
       </div>
+      {busy === 'sync' && (
+        <p className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+          Trayendo los pagos de Alegra. La primera vez puede tardar 1 a 2 minutos (trae todo desde el 1 de septiembre);
+          después solo trae los últimos días y es rápido. No cierres esta página.
+        </p>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
