@@ -35,6 +35,7 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Año** (Fase 3): `src/pages/CuentasAnual.jsx` + `src/services/monthlySummaryService.js` (resumen mensual/anual, edición a mano, inventario de fin de mes).
 - **Mes** (Fase 2): `src/pages/CuentasMes.jsx` + `src/services/monthSheetService.js` (hoja del mes por medio de pago, saldo real, por llegar, cerrar mes).
 - **Excedentes y sincronización (2026-10-08)**: plan en `docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md` del backend. Movimiento `excedente` (no es venta) en `CuentasLayout.jsx`, columna Excedentes en `CuentasMes.jsx` y `CuentasAnual.jsx`; "Sincronizar ahora" salta los cierres sin Cierre exitoso (`blocked`) y `Dashboard.jsx` lo avisa. Fase 2: botón "Subir Excel del cierre" en el paso 2 de `Dashboard.jsx` (`parseClosingExcel` en `api.js`), solo llena el formulario.
+- **Orden de las cuentas (2026-10-08)**: viene del `sort_order` del backend; en "Cómo se compone el total" (`FlowWindow`, `CuentasLayout.jsx`) Jhonatan va justo después de NEQUI y AHORRO aparte.
 - **Gastos** (Fase 1): `src/pages/CuentasGastos.jsx` + `src/services/expensesService.js`, dentro de `CuentasLayout` (pestaña Gastos). Plan y fases: `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
 - `src/components/common/LiveMoneyInput.jsx`: input de dinero con miles en vivo (Recompras y Gastos).
 
