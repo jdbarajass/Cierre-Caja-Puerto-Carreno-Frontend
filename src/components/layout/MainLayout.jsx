@@ -31,7 +31,8 @@ import {
   X,
   AlertTriangle,
   Store,
-  History
+  History,
+  ShieldCheck,
 } from 'lucide-react';
 import { getColombiaTimeString, getColombiaTodayString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -244,6 +245,15 @@ const MainLayout = ({ children }) => {
       path: '/estadisticas-estandar/reconstruccion-2025',
       icon: History,
       color: 'amber',
+      roles: ['admin']
+    },
+    {
+      id: 'respaldo-facturas',
+      label: 'Respaldo de facturas',
+      description: 'Copia propia de las facturas y protegerla antes de una anulación masiva',
+      path: '/estadisticas-estandar/respaldo-facturas',
+      icon: ShieldCheck,
+      color: 'emerald',
       roles: ['admin']
     },
     {

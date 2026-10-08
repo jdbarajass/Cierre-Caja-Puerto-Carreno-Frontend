@@ -22,6 +22,7 @@ const Arrivals = lazy(() => import('./pages/Arrivals'));
 const SalesPatterns = lazy(() => import('./pages/SalesPatterns'));
 const SellerGoals = lazy(() => import('./pages/SellerGoals'));
 const History2025 = lazy(() => import('./pages/History2025'));
+const FactsBackup = lazy(() => import('./pages/FactsBackup'));
 
 // Lazy loading de componentes de Estadísticas Avanzadas (APIs Directas)
 const DirectStatsDashboard = lazy(() => import('./components/direct/DirectStatsDashboard'));
@@ -289,6 +290,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin']}>
                     <MainLayout>
                       <History2025 />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Respaldo de facturas: copia propia y congelarla antes de una anulación masiva (solo admin) */}
+              <Route
+                path="/estadisticas-estandar/respaldo-facturas"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <MainLayout>
+                      <FactsBackup />
                     </MainLayout>
                   </ProtectedRoute>
                 }

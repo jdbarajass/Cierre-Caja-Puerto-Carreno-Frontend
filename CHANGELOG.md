@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-08] (continuación 2) Estadísticas → Respaldo de facturas
+
+- `src/pages/FactsBackup.jsx` (`/estadisticas-estandar/respaldo-facturas`, solo admin, menú Estadísticas) + `src/services/factsFreezeService.js`: qué tiene guardado la plataforma (días, facturas, ventas vigentes, prendas), descargar el respaldo del año en Excel, "Repasar todo hasta esa fecha" (marca y carga por tandas de 31 días con `syncInvoiceFacts`) y "Congelar" con la palabra CONGELAR. Plan: `docs/PLAN_BLINDAJE_COPIA.md` del backend.
+
 ## [2026-10-08] (continuación) Cierre diario: subir el Excel del cierre
 
 Fase 2 de `docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md` del backend.
