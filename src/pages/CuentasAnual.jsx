@@ -291,6 +291,11 @@ const CuentasAnual = () => {
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ventas</p>
           <p className="text-2xl font-bold text-gray-900">{fmt(t?.ventas)}</p>
           <p className="text-[11px] text-gray-500">Promedio mensual {fmt(data?.averages?.ventas)}</p>
+          {t?.excedentes ? (
+            <p className="text-[11px] text-gray-500" title="Plata que entró en los cierres pero no es venta de Alegra (cambios, tarjeta regalo, vueltas). No suma a ventas ni ganancia.">
+              + {fmt(t.excedentes)} de excedentes = {fmt(t.ventas_mas_excedentes)}
+            </p>
+          ) : null}
         </div>
         <div className={`rounded-xl p-4 border ${t && t.ganancia_real < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ganancia real</p>
@@ -335,6 +340,7 @@ const CuentasAnual = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 mt-1.5 text-xs">
                     <span className="text-gray-500">Ventas</span><span className="text-right">{fmt(m.ventas)}<EditedMark info={m.edited.ventas} /></span>
+                    {m.excedentes ? <><span className="text-gray-500">Excedentes (no venta)</span><span className="text-right">{fmt(m.excedentes)}</span></> : null}
                     <span className="text-gray-500">Recompras</span><span className="text-right">{fmt(m.recompras)}<EditedMark info={m.edited.recompras} /></span>
                     <span className="text-gray-500">Gastos operativos</span><span className="text-right">{m.has_expenses ? fmt(m.gastos_operativos) : 'Sin registrar'}<EditedMark info={m.edited.gastos_operativos} /></span>
                     <span className="text-gray-500">Ganancia real</span><span className={`text-right font-bold ${m.ganancia_real < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{fmt(m.ganancia_real)} ({pct(m.porcentaje)})</span>
@@ -345,11 +351,12 @@ const CuentasAnual = () => {
               ))}
             </ul>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm min-w-[1100px]">
+              <table className="w-full text-sm min-w-[1200px]">
                 <thead>
                   <tr className="bg-gray-800 text-white text-xs uppercase tracking-wide">
                     <th className="text-left px-3 py-2.5">Mes</th>
                     <th className="text-right px-3 py-2.5">Ventas</th>
+                    <th className="text-right px-3 py-2.5" title="Excedentes de los cierres sincronizados: plata que entró pero no es venta de Alegra. No suma a ventas ni ganancia.">Excedentes</th>
                     <th className="text-right px-3 py-2.5">Recompras</th>
                     <th className="text-right px-3 py-2.5">Gastos operativos</th>
                     <th className="text-right px-3 py-2.5" title="Ventas − recompras">G. bruta</th>
@@ -369,6 +376,7 @@ const CuentasAnual = () => {
                         {m.label}{m.in_progress && <span className="ml-1 text-[11px] text-sky-700">(en curso)</span>}
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.ventas)}<EditedMark info={m.edited.ventas} /></td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap text-gray-600">{m.excedentes ? fmt(m.excedentes) : ''}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.recompras)}<EditedMark info={m.edited.recompras} /></td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         {m.has_expenses ? fmt(m.gastos_operativos) : <span className="text-gray-400" title="No hay gastos registrados para este mes: escríbelos a mano con Editar">Sin registrar</span>}
@@ -398,6 +406,7 @@ const CuentasAnual = () => {
                   <tr className="bg-gray-800 text-white font-bold">
                     <td className="px-3 py-2.5">Total {data.months_counted ? `(${data.months_counted} meses)` : ''}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.ventas)}</td>
+                    <td className="px-3 py-2.5 text-right whitespace-nowrap">{t.excedentes ? fmt(t.excedentes) : ''}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.recompras)}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.gastos_operativos)}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.ganancia_bruta)}</td>

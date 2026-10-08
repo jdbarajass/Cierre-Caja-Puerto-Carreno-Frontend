@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-10-08] Excedentes en Cuentas y sincronizar solo con Cierre exitoso
+
+Fase 1 de `docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md` del backend.
+- `CuentasLayout.jsx`: movimiento "Excedente del cierre (no es venta)"; el mensaje de Sincronizar separa los excedentes y avisa en rojo los cierres que no se sincronizaron; junto al botón, "Sin Cierre exitoso: fechas" (`sync-status.blocked`).
+- `CuentasMes.jsx`: columna **Excedentes** (resumen y día por día) y "Ventas + excedentes" por cuenta.
+- `CuentasAnual.jsx`: columna **Excedentes** junto a Ventas (tabla, celular, total) y en la tarjeta de Ventas.
+- `Dashboard.jsx`: si el cierre no sale exitoso, aviso de que no se sincroniza con Cuentas hasta corregirlo y reenviarlo.
+
 ## [2026-10-07] (continuación 10) Cuentas → Mes: ventana "lo que falta que llegue"
 
 - En el cuadro "Por llegar", Datáfono y Addi se pueden tocar: abre una ventana con vendido, comisión y lo que llega, y una fila por venta con la fecha en que llega (la más próxima marcada), incluidas las de meses pasados. En Addi, nota para compararlo con su "Reporte de pagos". Usa `useDialog` (Escape cierra) y en celular sale como hoja desde abajo.

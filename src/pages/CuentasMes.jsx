@@ -71,6 +71,8 @@ const RATINGS = {
 
 const STATEMENT_COLS = [
   { key: 'ventas', label: 'Ventas (cierres)' },
+  // Excedentes del cierre (cambios de prenda, tarjeta regalo, vueltas): no son venta
+  { key: 'excedentes', label: 'Excedentes' },
   { key: 'recompras', label: 'Recompras' },
   { key: 'gastos', label: 'Gastos' },
   { key: 'entradas', label: 'Entradas' },
@@ -501,7 +503,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                 <span className="text-sm font-semibold text-gray-700">Plata en cada cuenta en {MONTHS[month - 1].toLowerCase()}</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                Saldo inicial (lo que quedó del mes anterior) + ventas − recompras − gastos ± ajustes = saldo final. Escribe el “saldo real” que ves en el banco o en la caja para ver la diferencia (debe dar $0). Toca una cuenta para verla día por día.
+                Saldo inicial (lo que quedó del mes anterior) + ventas + excedentes − recompras − gastos ± ajustes = saldo final. Los excedentes (plata que entró en el cierre pero no es venta de Alegra) van aparte de las ventas. Escribe el “saldo real” que ves en el banco o en la caja para ver la diferencia (debe dar $0). Toca una cuenta para verla día por día.
               </p>
             </div>
             <div className="divide-y divide-gray-100">
@@ -529,6 +531,9 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                         {STATEMENT_COLS.filter(c => Math.round(row[c.key])).map(c => (
                           <span key={c.key}>{c.label} <b className={row[c.key] < 0 ? 'text-red-700' : 'text-emerald-700'}>{fmtSigned(row[c.key])}</b></span>
                         ))}
+                        {Math.round(row.excedentes || 0) !== 0 && (
+                          <span>Ventas + excedentes <b className="text-emerald-800">{fmtSigned(row.ingresos_cierres)}</b></span>
+                        )}
                       </div>
                     </button>
 
@@ -558,7 +563,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                         <p className="mt-2 text-xs text-gray-500">Sin movimientos este mes.</p>
                       ) : (
                         <div className="mt-2 overflow-x-auto">
-                          <table className="w-full text-xs min-w-[640px]">
+                          <table className="w-full text-xs min-w-[720px]">
                             <thead>
                               <tr className="text-gray-500 uppercase">
                                 <th className="text-left py-1">Día</th>
@@ -572,7 +577,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                                   <td className="py-1 capitalize whitespace-nowrap">{dayLabel(d.date)}</td>
                                   {STATEMENT_COLS.map(c => (
                                     <td key={c.key} className={`py-1 text-right whitespace-nowrap ${d[c.key] < 0 ? 'text-red-700' : 'text-emerald-700'}`}>
-                                      {Math.round(d[c.key]) ? fmtSigned(d[c.key]) : ''}
+                                      {Math.round(d[c.key] || 0) ? fmtSigned(d[c.key]) : ''}
                                     </td>
                                   ))}
                                   <td className="py-1 text-right font-semibold whitespace-nowrap">{fmt(d.balance)}</td>

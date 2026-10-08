@@ -2059,6 +2059,13 @@ const Dashboard = () => {
                         {results.validation.mensaje_validacion}
                       </p>
 
+                      {/* Solo un Cierre exitoso pasa a Cuentas (backend: CashClosing.can_sync) */}
+                      {results.validation.validation_status !== 'success' && (
+                        <p className="text-sm mb-3 font-medium text-red-700">
+                          Este cierre no se va a sincronizar con Cuentas hasta que salga Cierre exitoso. Corrige los valores y vuelve a enviarlo.
+                        </p>
+                      )}
+
                       {/* Mostrar diferencias si existen */}
                       {results.validation.diferencias && (
                         <div className="space-y-3">

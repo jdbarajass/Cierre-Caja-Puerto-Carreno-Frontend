@@ -154,6 +154,7 @@ const MOVEMENT_TYPE_LABELS = {
   transfer_out: 'Transferencia (salida)',
   transfer_in: 'Transferencia (entrada)',
   cash_closing: 'Cierre de caja',
+  excedente: 'Excedente del cierre (no es venta)',
   repurchase_send: 'Envío a socio (recompra)',
   expense: 'Gasto (salida)',
   expense_in: 'Entrada (no venta)',
@@ -414,8 +415,13 @@ const CuentasLayout = () => {
       // hecho hoy porque no se alcanzó a tiempo) también se acredita, sin
       // necesitar reintentar con una fecha específica.
       const data = await syncDaily();
+      // Cierres que no salieron exitosos: no se sincronizan (quedan pendientes)
+      const blockedText = (data.blocked || []).map(b => b.message).join(' ');
       if (data.credited && data.credited.length > 0) {
-        setSuccess(`Sincronizado: ${data.credited.map(c => `${c.account} ${fmt(c.amount)}${c.date ? ` (${c.date})` : ''}`).join(', ')}`);
+        setSuccess(`Sincronizado: ${data.credited.map(c => `${c.account}${c.kind === 'excedente' ? ' (excedente)' : ''} ${fmt(c.amount)}${c.date ? ` (${c.date})` : ''}`).join(', ')}`);
+        if (blockedText) setError(blockedText);
+      } else if (blockedText) {
+        setError(blockedText);
       } else {
         setSuccess(data.message || 'Sincronización completada (sin montos nuevos que acreditar)');
       }
@@ -542,6 +548,12 @@ const CuentasLayout = () => {
                   {syncStatus.pending_count > 0 && (
                     <p className="text-xs text-amber-600 font-medium">
                       {syncStatus.pending_count} cierre{syncStatus.pending_count > 1 ? 's' : ''} sin sincronizar
+                    </p>
+                  )}
+                  {syncStatus.blocked?.length > 0 && (
+                    <p className="text-xs text-red-600 font-medium max-w-xs ml-auto">
+                      Sin Cierre exitoso (no se sincroniza{syncStatus.blocked.length > 1 ? 'n' : ''} hasta corregir y reenviar el cierre):{' '}
+                      {syncStatus.blocked.map(b => b.date).join(', ')}
                     </p>
                   )}
                 </div>
