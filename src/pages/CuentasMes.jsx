@@ -39,6 +39,28 @@ const MEDIOS = [
 ];
 const MEDIO_LABEL = Object.fromEntries(MEDIOS.map(m => [m.key, m.label]));
 
+// Tarjetas: llegan a la misma cuenta (Bancolombia …6018) pero con comisión y
+// día de llegada distintos. Datáfono = débito (ahorro) + crédito.
+const CARD_GROUPS = [
+  { key: 'datafono', label: 'Datáfono', detail: 'débito + crédito', medios: ['ahorro', 'credito'], fee: '3,8 %', when: 'siguiente día hábil' },
+  { key: 'addi', label: 'Addi', detail: '', medios: ['addi'], fee: '7,735 %', when: '30 días después' },
+];
+const TRANSIT_LABEL = { ahorro: 'Datáfono débito', credito: 'Datáfono crédito', addi: 'Addi' };
+
+// Suma por grupo (datáfono / Addi) de la plata por llegar y de las comisiones
+const cardGroups = (tr, comm) => CARD_GROUPS.map(g => {
+  const items = (tr?.items || []).filter(i => g.medios.includes(i.medio));
+  const byMedio = comm?.by_medio || {};
+  return {
+    ...g,
+    gross: items.reduce((a, i) => a + i.gross, 0),
+    net: items.reduce((a, i) => a + i.net, 0),
+    next: items.map(i => i.arrival_date).sort()[0] || null,
+    sales: g.medios.reduce((a, m) => a + (byMedio[m]?.sales || 0), 0),
+    commission: g.medios.reduce((a, m) => a + (byMedio[m]?.fee || 0), 0),
+  };
+});
+
 const RATINGS = {
   mala: { label: 'Venta mala', short: 'Mala', cls: 'bg-red-100 text-red-700', hint: 'hasta $680.000' },
   bajita: { label: 'Venta bajita', short: 'Bajita', cls: 'bg-amber-100 text-amber-800', hint: 'hasta $1.000.000' },
@@ -160,6 +182,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
   const tr = sheet?.transit;
   const visibleMedios = MEDIOS.filter(m => sales && (sales.totals[m.key] || ['efectivo', 'qr', 'ahorro', 'credito', 'nequi', 'addi'].includes(m.key)));
   const reviewDays = (sales?.days || []).filter(d => d.needs_review > 0).length;
+  const groups = cardGroups(tr, comm);
 
   return (
     <div className="space-y-5">
@@ -223,7 +246,14 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comisiones del mes</p>
           <p className="text-2xl font-bold text-orange-800">{fmt(comm?.total)}</p>
-          <p className="text-[11px] text-gray-600">Datáfono 3,8 % · Addi 7,735 % (6,5 % + IVA)</p>
+          <div className="mt-1 space-y-0.5 text-[11px] text-gray-700">
+            {groups.map(g => (
+              <p key={g.key} className="flex justify-between gap-2">
+                <span>{g.label} {g.fee}{g.key === 'addi' && <span className="text-gray-500"> (6,5 % + IVA)</span>}</span>
+                <span className="font-semibold whitespace-nowrap" title={`De ${fmt(g.sales)} vendidos`}>{fmt(g.commission)}</span>
+              </p>
+            ))}
+          </div>
           {comm && comm.total > 0 && (
             comm.registered_amount === comm.total
               ? <p className="text-[11px] text-emerald-700 font-semibold mt-1">✓ Registradas en Gastos</p>
@@ -238,7 +268,15 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Por llegar (datáfono y Addi)</p>
           <p className="text-2xl font-bold text-sky-800">{fmt(tr?.net)}</p>
-          <p className="text-[11px] text-gray-600">Neto, de {fmt(tr?.gross)} vendidos. Aún no está disponible.</p>
+          <p className="text-[11px] text-gray-600">Total datáfono + Addi, neto (de {fmt(tr?.gross)} vendidos)</p>
+          <div className="mt-1 space-y-0.5 text-[11px] text-gray-700">
+            {groups.map(g => (
+              <p key={g.key} className="flex justify-between gap-2">
+                <span>{g.label}{g.next && <span className="text-gray-500 capitalize"> · {g.key === 'addi' ? 'próxima ' : 'llega '}{dayLabel(g.next)}</span>}</span>
+                <span className="font-semibold whitespace-nowrap">{fmt(g.net)}</span>
+              </p>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -565,7 +603,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                     {tr.items.map(i => (
                       <tr key={`${i.arrival_date}-${i.medio}`}>
                         <td className="px-4 py-2 whitespace-nowrap capitalize">{dayLabel(i.arrival_date)} <span className="text-gray-400 text-xs">{i.arrival_date.slice(5)}</span></td>
-                        <td className="px-3 py-2">{MEDIO_LABEL[i.medio]}</td>
+                        <td className="px-3 py-2">{TRANSIT_LABEL[i.medio] || MEDIO_LABEL[i.medio]}</td>
                         <td className="px-3 py-2 text-xs text-gray-600">{i.sales_dates.map(s => s.slice(5)).join(', ')}</td>
                         <td className="px-3 py-2 text-right text-gray-600 whitespace-nowrap">{fmt(i.gross)}</td>
                         <td className="px-4 py-2 text-right font-semibold text-sky-800 whitespace-nowrap">{fmt(i.net)}</td>
@@ -573,8 +611,15 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="font-bold bg-gray-50">
-                      <td className="px-4 py-2" colSpan={3}>Total por llegar</td>
+                    {groups.filter(g => g.gross > 0).map(g => (
+                      <tr key={g.key} className="bg-gray-50 text-gray-700">
+                        <td className="px-4 py-1.5" colSpan={3}>{g.label}{g.detail && ` (${g.detail})`} <span className="text-xs text-gray-500">· menos {g.fee}, llega {g.when}</span></td>
+                        <td className="px-3 py-1.5 text-right">{fmt(g.gross)}</td>
+                        <td className="px-4 py-1.5 text-right font-semibold text-sky-800">{fmt(g.net)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-bold bg-gray-50 border-t border-gray-200">
+                      <td className="px-4 py-2" colSpan={3}>Total por llegar (datáfono + Addi)</td>
                       <td className="px-3 py-2 text-right">{fmt(tr.gross)}</td>
                       <td className="px-4 py-2 text-right text-sky-800">{fmt(tr.net)}</td>
                     </tr>
