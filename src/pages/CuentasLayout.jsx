@@ -74,10 +74,12 @@ const FlowWindow = ({ accounts, repurchase, total, fmtMoney }) => {
   const flow = useMemo(() => {
     const inStore = accounts.filter((a) => !APART_KEYS.has(a.payment_key));
     const apart = accounts.filter((a) => APART_KEYS.has(a.payment_key));
-    const flowing = [
-      ...inStore.map((a) => ({ id: a.id, name: a.name, value: Number(a.balance) || 0, color: ACCOUNT_HEX[a.color] || ACCOUNT_HEX.blue })),
-      { id: 'jhonatan', name: 'Jhonatan', value: Number(repurchase) || 0, color: '#3341C2' },
-    ];
+    // Orden de las cuentas = sort_order del backend; Jhonatan (no es cuenta)
+    // va justo después de NEQUI, como lo pidió el usuario (2026-10-08).
+    const flowing = inStore.map((a) => ({ id: a.id, name: a.name, value: Number(a.balance) || 0, color: ACCOUNT_HEX[a.color] || ACCOUNT_HEX.blue }));
+    const nequiAt = inStore.findIndex((a) => a.payment_key === 'nequi');
+    flowing.splice(nequiAt >= 0 ? nequiAt + 1 : flowing.length, 0,
+      { id: 'jhonatan', name: 'Jhonatan', value: Number(repurchase) || 0, color: '#3341C2' });
     const n = flowing.length;
     const nodes = flowing.map((node, i) => {
       if (narrow) {

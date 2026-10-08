@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-08] Gestión → Cuentas: nuevo orden
+
+- "Cómo se compone el total" y las tarjetas siguen el orden nuevo del backend (EFECTIVO, QR, ADDI + DATÁFONO, NEQUI, …); Jhonatan va justo después de NEQUI (`FlowWindow` en `CuentasLayout.jsx`). AHORRO sigue aparte.
+
 ## [2026-10-08] (continuación 3) Recordatorios en ventana emergente
 
 - `src/components/layout/RemindersPopup.jsx` (en `MainLayout`, solo admin) + `src/services/remindersService.js`: al entrar, una ventana por recordatorio activo con los pasos, "Ir a …" (lleva al lugar exacto), "Recordarme mañana" y, si aplica, "Ya lo hice". Una vez por sesión y tienda (`sessionStorage`). `CuentasLayout.jsx` abre la pestaña de `?tab=` (ej. `/cuentas?tab=mes`).
