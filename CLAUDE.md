@@ -26,6 +26,7 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Alertas diarias** (`src/components/alerts/DailyAlertsPanel.jsx`): arriba del Dashboard, solo admin (Fase D4).
 - **Reconstrucción 2025** (`src/pages/History2025.jsx`, `/estadisticas-estandar/reconstruccion-2025`): anulación masiva de POS de 2025, venta real e inventario antes de la anulación (plan: `docs/PLAN_RECONSTRUCCION_2025.md` del backend).
 - **Respaldo de facturas** (`src/pages/FactsBackup.jsx`, `/estadisticas-estandar/respaldo-facturas`): estado de la copia propia, Excel del año, repasar y congelar antes de una anulación masiva (plan: `docs/PLAN_BLINDAJE_COPIA.md` del backend).
+- **Recordatorios** (`src/components/layout/RemindersPopup.jsx`, en `MainLayout`, solo admin): ventana con lo que toca hacer (congelar la copia en diciembre, cerrar el mes, respaldo); los calcula el backend (`app/services/reminders.py`).
 - Días que Alegra no entregó: el backend manda el header `X-Alegra-Failed-Days` y `AlegraFailedDaysBanner` (en `MainLayout`) avisa en cualquier pantalla; `/api/direct/sales/documents` los trae en `metadata.failed_days` (`SalesDataNotice`).
 
 ## Cuentas → Gastos, Mes y Año (cuentas diarias, Fases 1 a 4)

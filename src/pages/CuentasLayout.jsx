@@ -225,7 +225,13 @@ const TABS = [
 
 const CuentasLayout = () => {
   useDocumentTitle('Cuentas');
-  const [tab, setTab] = useState('resumen');
+  // ?tab=mes abre directo una pestaña (lo usan los recordatorios)
+  const [tab, setTab] = useState(() => {
+    try {
+      const t = new URLSearchParams(window.location.search).get('tab');
+      return ['resumen', 'mes', 'anual', 'recompras', 'gastos', 'movimientos'].includes(t) ? t : 'resumen';
+    } catch { return 'resumen'; }
+  });
 
   const [accounts, setAccounts] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);

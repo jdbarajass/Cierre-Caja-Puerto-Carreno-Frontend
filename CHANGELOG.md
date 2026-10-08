@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-08] (continuación 3) Recordatorios en ventana emergente
+
+- `src/components/layout/RemindersPopup.jsx` (en `MainLayout`, solo admin) + `src/services/remindersService.js`: al entrar, una ventana por recordatorio activo con los pasos, "Ir a …" (lleva al lugar exacto), "Recordarme mañana" y, si aplica, "Ya lo hice". Una vez por sesión y tienda (`sessionStorage`). `CuentasLayout.jsx` abre la pestaña de `?tab=` (ej. `/cuentas?tab=mes`).
+
 ## [2026-10-08] (continuación 2) Estadísticas → Respaldo de facturas
 
 - `src/pages/FactsBackup.jsx` (`/estadisticas-estandar/respaldo-facturas`, solo admin, menú Estadísticas) + `src/services/factsFreezeService.js`: qué tiene guardado la plataforma (días, facturas, ventas vigentes, prendas), descargar el respaldo del año en Excel, "Repasar todo hasta esa fecha" (marca y carga por tandas de 31 días con `syncInvoiceFacts`) y "Congelar" con la palabra CONGELAR. Plan: `docs/PLAN_BLINDAJE_COPIA.md` del backend.
