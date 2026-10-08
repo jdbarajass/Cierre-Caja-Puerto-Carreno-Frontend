@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-07] (continuación 10) Cuentas → Mes: ventana "lo que falta que llegue"
+
+- En el cuadro "Por llegar", Datáfono y Addi se pueden tocar: abre una ventana con vendido, comisión y lo que llega, y una fila por venta con la fecha en que llega (la más próxima marcada), incluidas las de meses pasados. En Addi, nota para compararlo con su "Reporte de pagos". Usa `useDialog` (Escape cierra) y en celular sale como hoja desde abajo.
+
 ## [2026-10-07] (continuación 9) Cuentas → Mes: datáfono y Addi por separado
 
 - Pedido del usuario: llegan a la misma cuenta (…6018) pero con comisión y día de llegada distintos. Las tarjetas "Comisiones del mes" y "Por llegar" muestran el total y, debajo, **Datáfono (débito + crédito)** y **Addi** cada uno con su valor (y el día en que llega lo siguiente). La tabla de plata por llegar dice "Datáfono débito / crédito" y tiene subtotales por grupo antes del total. Solo frontend (`cardGroups` en `CuentasMes.jsx`); el backend ya lo separaba (`commissions.by_medio`, `transit.items[].medio`).
