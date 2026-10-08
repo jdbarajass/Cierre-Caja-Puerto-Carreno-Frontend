@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Calendar, DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image, ChevronDown, Wallet, Landmark } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Loader2, Plus, X, FileText, CreditCard, Download, Image, ChevronDown, Wallet, Landmark, FileSpreadsheet, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { submitCashClosing, getPreconsulta } from '../services/api';
+import { submitCashClosing, getPreconsulta, parseClosingExcel } from '../services/api';
 import { getColombiaTodayString, formatColombiaDate, getColombiaTimestamp, formatDateStringToColombiaDate } from '../utils/dateUtils';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -172,6 +172,13 @@ const Dashboard = () => {
   const [preconsultaRealizada, setPreconsultaRealizada] = useState(false);
   const [loadingPreconsulta, setLoadingPreconsulta] = useState(false);
   const [errorPreconsulta, setErrorPreconsulta] = useState(null);
+
+  // Carga del Excel del cierre (Fase 2 de docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md
+  // del backend): solo llena el formulario, la vendedora revisa y envía.
+  const [excelLoading, setExcelLoading] = useState(false);
+  const [excelInfo, setExcelInfo] = useState(null); // { fileName, warnings, consignar }
+  const [excelError, setExcelError] = useState(null);
+  const excelInputRef = useRef(null);
 
   const [coins, setCoins] = useState({
     '50': '', '100': '', '200': '', '500': '', '1000': ''
@@ -379,6 +386,58 @@ const Dashboard = () => {
     setPreconsultaRealizada(false);
     setErrorPreconsulta(null);
     setDraftRestoredNotice(false);
+    setExcelInfo(null);
+    setExcelError(null);
+  };
+
+  // Sube el Excel del cierre y llena el formulario con lo que trae. No envía
+  // el cierre: los valores quedan como si se hubieran escrito a mano (también
+  // en el borrador local) y la vendedora los revisa antes de enviar.
+  const handleExcelFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // permite volver a subir el mismo archivo
+    if (!file) return;
+    setExcelLoading(true);
+    setExcelError(null);
+    setExcelInfo(null);
+    try {
+      const data = await parseClosingExcel(file, closingDate);
+      const asText = (n) => (n ? String(n) : '');
+
+      setCoins(prev => Object.fromEntries(Object.keys(prev).map(d => [d, asText(data.coins[d])])));
+      setBills(prev => Object.fromEntries(Object.keys(prev).map(d => [d, asText(data.bills[d])])));
+      setExcedentes(data.excedentes.length
+        ? data.excedentes.map((exc, i) => ({ id: Date.now() + i, tipo: exc.tipo, subtipo: exc.subtipo || '', valor: String(exc.valor) }))
+        : [{ id: Date.now(), tipo: 'efectivo', subtipo: '', valor: '' }]);
+      setAdjustments(prev => ({
+        ...prev,
+        gastos_operativos: asText(data.gastos_operativos),
+        gastos_operativos_nota: data.gastos_operativos_nota || '',
+        prestamos: asText(data.prestamos),
+        prestamos_nota: data.prestamos_nota || '',
+      }));
+      setMetodosPago(prev => Object.fromEntries(Object.keys(prev).map(k => [k, asText(data.metodos_pago[k])])));
+
+      // Avisos que solo se pueden calcular aquí (con la preconsulta y la base)
+      const warnings = [...data.warnings];
+      const alegraCash = preconsultaData?.totales?.efectivo?.total;
+      if (data.excel_alegra.efectivo != null && alegraCash != null && Math.abs(data.excel_alegra.efectivo - alegraCash) >= 100) {
+        warnings.push(`En el Excel el efectivo de Alegra es ${formatCurrency(data.excel_alegra.efectivo)}, pero Alegra hoy dice ${formatCurrency(alegraCash)}.`);
+      }
+      const alegraTotal = preconsultaData?.total_ventas?.total;
+      if (data.excel_alegra.total != null && alegraTotal != null && Math.abs(data.excel_alegra.total - alegraTotal) >= 100) {
+        warnings.push(`En el Excel el total de Alegra es ${formatCurrency(data.excel_alegra.total)}, pero Alegra hoy dice ${formatCurrency(alegraTotal)}.`);
+      }
+      const base = parseInt(baseCaja) || defaultBaseCaja;
+      if (data.excel_totals.base && data.excel_totals.base !== base) {
+        warnings.push(`En el Excel la base que se deja es ${formatCurrency(data.excel_totals.base)} y aquí la base es ${formatCurrency(base)}: lo que se consigna no va a ser igual.`);
+      }
+      setExcelInfo({ fileName: file.name, warnings, consignar: data.excel_totals.consignar });
+    } catch (err) {
+      setExcelError(err.message || 'No se pudo leer el Excel del cierre');
+    } finally {
+      setExcelLoading(false);
+    }
   };
 
   // Si la URL cambia a otra fecha (ej. clic en el aviso fijo de "cierre
@@ -1050,6 +1109,43 @@ const Dashboard = () => {
             <>
           {/* PASO 2 - Monedas y Billetes */}
           <StepSection id="paso-efectivo" number={2} title="Efectivo contado" description="Cantidad de monedas y billetes por denominación." reveal={1}>
+            {/* Llenar todo desde el Excel del cierre (no se guarda el archivo) */}
+            <div className="mb-6 rounded-xl border border-dashed border-gray-300 bg-gray-50/60 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <FileSpreadsheet className="hidden sm:block w-8 h-8 text-emerald-600 flex-shrink-0" aria-hidden="true" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">¿Ya hicieron el cierre en el Excel?</p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Súbelo y se llenan solos el conteo, los excedentes, los gastos, los préstamos, las transferencias y las tarjetas. Revisa y envía el cierre como siempre. El archivo no se guarda.
+                  </p>
+                </div>
+                <input ref={excelInputRef} type="file" accept=".xlsx,.xlsm" className="hidden" onChange={handleExcelFile} aria-label="Subir Excel del cierre" />
+                <button
+                  type="button"
+                  onClick={() => excelInputRef.current?.click()}
+                  disabled={excelLoading}
+                  className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium transition-colors flex-shrink-0"
+                >
+                  {excelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {excelLoading ? 'Leyendo…' : 'Subir Excel del cierre'}
+                </button>
+              </div>
+              {excelError && (
+                <p role="alert" className="mt-3 text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2">{excelError}</p>
+              )}
+              {excelInfo && (
+                <div role="status" className="mt-3 text-sm">
+                  <p className="text-emerald-800 bg-emerald-50 rounded-lg px-3 py-2">
+                    Formulario llenado con <b className="break-all">{excelInfo.fileName}</b> (en el Excel: {formatCurrency(excelInfo.consignar)} a consignar). Revisa los valores y envía el cierre.
+                  </p>
+                  {excelInfo.warnings.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-amber-900 bg-amber-50 rounded-lg px-3 py-2 list-disc list-inside">
+                      {excelInfo.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="grid lg:grid-cols-2 gap-x-10 gap-y-8">
               <div>
                 <h3 className="font-sans text-[13px] font-semibold text-gray-500 tracking-normal mb-2">Monedas</h3>

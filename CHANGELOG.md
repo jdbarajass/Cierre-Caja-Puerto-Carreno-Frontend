@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-08] (continuación) Cierre diario: subir el Excel del cierre
+
+Fase 2 de `docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md` del backend.
+- `Dashboard.jsx` (paso 2): botón **Subir Excel del cierre** que llena conteo, excedentes, gastos/préstamos con nota, transferencias y tarjetas; muestra el archivo usado, lo que el Excel dice a consignar y avisos (fecha, Alegra del Excel vs. preconsulta, base). No envía el cierre. `api.js`: `parseClosingExcel`.
+- Verificado en Chromium (1366 y 390 px, sin scroll horizontal) con el Excel real del 7-oct: formulario lleno y Cierre Exitoso.
+
 ## [2026-10-08] Excedentes en Cuentas y sincronizar solo con Cierre exitoso
 
 Fase 1 de `docs/PLAN_EXCEDENTES_Y_CARGA_EXCEL.md` del backend.

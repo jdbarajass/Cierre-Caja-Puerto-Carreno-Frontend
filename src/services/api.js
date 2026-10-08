@@ -388,6 +388,27 @@ export const getPreconsulta = async (date) => {
 };
 
 /**
+ * Lee el Excel del cierre de las vendedoras (Formato Cierre Caja) y devuelve
+ * los valores para llenar el formulario. No guarda el archivo ni el cierre.
+ * @param {File} file - Excel .xlsx
+ * @param {string} date - Fecha del cierre (YYYY-MM-DD), para avisar si es de otro día
+ */
+export const parseClosingExcel = async (file, date) => {
+  const form = new FormData();
+  form.append('file', file);
+  if (date) form.append('date', date);
+  const response = await authenticatedFetch('/api/cash_closing/parse-excel', {
+    method: 'POST',
+    body: form,
+  }, 60000);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'No se pudo leer el Excel del cierre');
+  }
+  return data;
+};
+
+/**
  * Función para obtener las fechas pasadas sin cierre de caja registrado
  * (alimenta el aviso recordatorio fijo del dashboard)
  * @returns {Promise} - Promesa con { success, missing_dates: string[] }
