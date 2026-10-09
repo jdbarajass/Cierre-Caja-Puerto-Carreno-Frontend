@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wallet, History, Plus, Minus, RefreshCw,
-  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange
+  AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange,
+  StickyNote
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
-  updateContemplatedUntil
+  updateContemplatedUntil, updateAccountNote, getImportantNotes, saveImportantNotes
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
@@ -214,6 +215,98 @@ const DateNoteInput = ({ id, value, onSave, disabled }) => {
   );
 };
 
+// Texto libre que se guarda al salir del campo (onBlur), con el mismo
+// borrador local que DateNoteInput para no pisar lo que se está escribiendo
+// si la pantalla se refresca. Se usa en la nota de cada tarjeta y en la
+// tarjeta NOTAS IMPORTANTES.
+const NoteTextArea = ({ id, label, value, onSave, disabled, rows = 2, maxLength, placeholder, className }) => {
+  const [draft, setDraft] = useState(value || '');
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) setDraft(value || '');
+  }, [value, dirty]);
+
+  return (
+    <textarea
+      id={id}
+      aria-label={label}
+      rows={rows}
+      maxLength={maxLength}
+      placeholder={placeholder}
+      value={draft}
+      onChange={e => { setDraft(e.target.value); setDirty(true); }}
+      onBlur={async () => {
+        if (!dirty) return;
+        const ok = await onSave(draft.trim());
+        // si no se pudo guardar, el borrador se queda para no perder lo escrito
+        if (ok !== false) setDirty(false);
+      }}
+      disabled={disabled}
+      className={className}
+    />
+  );
+};
+
+// Tarjeta "NOTAS IMPORTANTES" de Resumen: texto libre del admin, una por
+// tienda (se recarga sola al cambiar de tienda porque ProtectedRoute
+// remonta la página).
+const ImportantNotesCard = () => {
+  const [text, setText] = useState('');
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [status, setStatus] = useState('loading'); // loading | idle | saving | saved | error
+
+  useEffect(() => {
+    let alive = true;
+    getImportantNotes()
+      .then(data => { if (alive) { setText(data.text || ''); setUpdatedAt(data.updated_at); setStatus('idle'); } })
+      .catch(() => { if (alive) setStatus('error'); });
+    return () => { alive = false; };
+  }, []);
+
+  const save = async (value) => {
+    setStatus('saving');
+    try {
+      const data = await saveImportantNotes(value);
+      setText(data.text || '');
+      setUpdatedAt(data.updated_at);
+      setStatus('saved');
+      return true;
+    } catch {
+      setStatus('error');
+      return false;
+    }
+  };
+
+  return (
+    <div className="bg-amber-50 rounded-xl border border-amber-300 shadow-sm p-5">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <StickyNote className="w-4 h-4 text-amber-700" />
+          <span className="text-sm font-bold text-amber-900 tracking-wide">NOTAS IMPORTANTES</span>
+        </div>
+        <span className="text-[11px] text-amber-800">
+          {status === 'saving' && 'Guardando…'}
+          {status === 'saved' && 'Guardado'}
+          {status === 'error' && <span className="text-red-700 font-medium">No se pudo guardar o cargar, intenta de nuevo</span>}
+          {(status === 'idle' || status === 'saved') && updatedAt && ` · ${formatColombiaDateTime(updatedAt)}`}
+        </span>
+      </div>
+      <NoteTextArea
+        id="important-notes"
+        label="Notas importantes"
+        value={text}
+        onSave={save}
+        disabled={status === 'loading'}
+        rows={4}
+        maxLength={10000}
+        placeholder="Algo urgente que no se te puede olvidar… (se guarda al salir del campo)"
+        className="w-full bg-white/70 border border-amber-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-300 resize-y disabled:opacity-50"
+      />
+    </div>
+  );
+};
+
 // La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
 // El código y el estado siguen intactos: para reactivarla basta con volver a
 // agregar { id: 'movimientos', label: 'Movimientos', icon: History } aquí.
@@ -414,6 +507,18 @@ const CuentasLayout = () => {
     }
   };
 
+  const handleNoteChange = async (accountId, note) => {
+    clearMessages();
+    try {
+      const data = await updateAccountNote(accountId, note);
+      setAccounts(prev => prev.map(a => (a.id === accountId ? data.account : a)));
+      return true;
+    } catch (e) {
+      setError(e.message);
+      return false;
+    }
+  };
+
   const handleSync = async () => {
     clearMessages();
     setSyncing(true);
@@ -578,6 +683,8 @@ const CuentasLayout = () => {
             />
           )}
 
+          <ImportantNotesCard />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {accounts.map(a => {
               const colors = COLOR_CLASSES[a.color] || COLOR_CLASSES.blue;
@@ -604,6 +711,15 @@ const CuentasLayout = () => {
                       />
                     </div>
                   )}
+                  <NoteTextArea
+                    id={`note-${a.id}`}
+                    label={`Nota de ${a.name}`}
+                    value={a.note}
+                    onSave={note => handleNoteChange(a.id, note)}
+                    maxLength={2000}
+                    placeholder="Agregar nota…"
+                    className="mt-3 w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white resize-y"
+                  />
                 </div>
               );
             })}

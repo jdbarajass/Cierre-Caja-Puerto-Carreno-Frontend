@@ -53,6 +53,48 @@ const IN_CATEGORIES = [
 ];
 const CATEGORY_BY_VALUE = Object.fromEntries([...OUT_CATEGORIES, ...IN_CATEGORIES].map(c => [c.value, c]));
 
+// Categoría detallada de las salidas (lista del usuario, 2026-10-09). Cada una
+// suma en un grupo de OUT_CATEGORIES (ganancia, Mes, Año, Empleadas...); el
+// backend la valida con EXPENSE_SUBCATEGORIES (app/models/expense.py).
+const SUBCATEGORIES = [
+  { value: 'cuota_banco', label: 'Cuota banco', group: 'cuota_credito' },
+  { value: 'sueldos_empleadas_1', label: 'Sueldos empleadas 1 (15 de cada mes)', short: 'Sueldos empleadas 1', group: 'sueldo' },
+  { value: 'sueldos_empleadas_2', label: 'Sueldos empleadas 2 (30 de cada mes)', short: 'Sueldos empleadas 2', group: 'sueldo' },
+  { value: 'internet', label: 'Internet (5 de cada mes)', short: 'Internet', group: 'operativo' },
+  { value: 'youtube', label: 'YouTube (20 de cada mes)', short: 'YouTube', group: 'operativo' },
+  { value: 'alegra', label: 'Alegra (22 de cada mes)', short: 'Alegra', group: 'operativo' },
+  { value: 'luz', label: 'Luz (30 de cada mes)', short: 'Luz', group: 'operativo' },
+  { value: 'arriendo', label: 'Arriendo (30 de cada mes)', short: 'Arriendo', group: 'operativo' },
+  { value: 'cuota_manejo', label: 'Cuota de manejo Bancolombia', group: 'financiero' },
+  { value: 'sueldo_jhonatan_recompras', label: 'Sueldo Jhonatan por recompras', group: 'sueldo' },
+  { value: 'incentivo_1', label: 'Incentivo 1 empleadas', group: 'sueldo' },
+  { value: 'incentivo_2', label: 'Incentivo 2 empleadas', group: 'sueldo' },
+  { value: 'ganancia_jhonatan', label: 'Ganancias mes a mes Jhonatan', group: 'retiro_socio' },
+  { value: 'ganancia_cristian', label: 'Ganancias mes a mes Cristian', group: 'retiro_socio' },
+  { value: 'ganancia_jose', label: 'Ganancias mes a mes José', group: 'retiro_socio' },
+  { value: 'prestamo_empleada', label: 'Préstamo empleada', group: 'prestamo_empleada' },
+  { value: 'prestamo_tienda', label: 'Préstamo a otra tienda', group: 'prestamo_tienda' },
+  { value: 'flete', label: 'Flete mercancía', group: 'flete' },
+  { value: 'aseo', label: 'Aseo', group: 'operativo' },
+  { value: 'moto_carro', label: 'Moto carro', group: 'flete', hint: 'Mercancía del aeropuerto al local' },
+  { value: 'inversion', label: 'Inversión / activo', group: 'inversion' },
+  { value: 'operativo', label: 'Gasto operativo', group: 'operativo' },
+  { value: 'otra', label: 'Otra…', short: 'Otra', group: 'otro' },
+];
+const SUB_BY_VALUE = Object.fromEntries(SUBCATEGORIES.map(c => [c.value, c]));
+// Gastos guardados antes de la categoría detallada: se editan con su grupo
+const LEGACY_PREFIX = 'cat:';
+const subValueOf = (row) => row.subcategory || `${LEGACY_PREFIX}${row.category}`;
+const groupOf = (subValue) => (subValue?.startsWith(LEGACY_PREFIX) ? subValue.slice(LEGACY_PREFIX.length) : SUB_BY_VALUE[subValue]?.group);
+// Etiqueta y color para mostrar un movimiento o un gasto fijo
+const categoryView = (row) => {
+  const group = CATEGORY_BY_VALUE[row.category];
+  const sub = row.subcategory && SUB_BY_VALUE[row.subcategory];
+  let label = sub ? (sub.short || sub.label) : (group?.label || row.category);
+  if (row.subcategory === 'otra' && row.category_detail) label = `Otra: ${row.category_detail}`;
+  return { label, badge: group?.badge || 'bg-gray-100 text-gray-700', groupLabel: sub ? group?.label : null };
+};
+
 const ACCOUNT_MODES = [
   { value: 'cuentas', label: 'De las cuentas', hint: 'Descuenta (o suma) en Cuentas → Resumen' },
   { value: 'caja', label: 'De la caja del día', hint: 'Ya se descontó en el cierre de caja: no se vuelve a restar' },
@@ -74,6 +116,8 @@ const emptyForm = (direction = 'out') => ({
   period: '',
   concept: '',
   category: direction === 'out' ? 'operativo' : 'ingreso_extra',
+  subcategory: '', // solo salidas: valor de SUBCATEGORIES (o 'cat:<grupo>' en los viejos)
+  category_detail: '',
   account_mode: 'cuentas',
   employee_name: '',
   related_store_code: '',
@@ -158,7 +202,9 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
   const formNonCash = formTotal - toNum(form.efectivo);
   const formFeeAuto = form.direction === 'out' && form.apply_fee ? Math.round(formNonCash * 4 / 1000) : 0;
   const formFee = form.direction !== 'out' ? 0 : (form.feeOverride !== null ? toNum(form.feeOverride) : formFeeAuto);
-  const categories = form.direction === 'out' ? OUT_CATEGORIES : IN_CATEGORIES;
+  // Grupo con el que se guarda: en salidas sale de la categoría detallada
+  const formCategory = form.direction === 'out' ? (groupOf(form.subcategory) || '') : form.category;
+  const formSub = SUB_BY_VALUE[form.subcategory];
 
   const openNew = (direction) => {
     setForm(emptyForm(direction));
@@ -173,6 +219,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
       ...emptyForm('out'),
       concept: f.name,
       category: f.category,
+      subcategory: subValueOf(f),
       period: ym,
       fixed_expense_id: String(f.id),
       [method]: String(Math.round(f.amount || 0)),
@@ -189,6 +236,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
       period: row.period,
       concept: row.concept,
       category: row.category,
+      subcategory: row.direction === 'out' ? subValueOf(row) : '',
+      category_detail: row.category_detail || '',
       account_mode: row.account_mode,
       employee_name: row.employee_name || '',
       related_store_code: row.related_store_code || '',
@@ -210,15 +259,19 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
     setSaving(true);
     setError('');
     try {
+      if (form.direction === 'out' && !formCategory) throw new Error('Elige la categoría');
+      const isLegacy = form.subcategory.startsWith(LEGACY_PREFIX);
       const payload = {
         direction: form.direction,
         date: form.date,
         period: form.period || form.date.slice(0, 7),
         concept: form.concept.trim(),
-        category: form.category,
+        category: formCategory,
+        subcategory: form.direction === 'out' && !isLegacy ? form.subcategory : null,
+        category_detail: form.subcategory === 'otra' ? form.category_detail.trim() : '',
         account_mode: form.account_mode,
-        employee_name: EMPLOYEE_CATEGORIES.includes(form.category) ? form.employee_name : '',
-        related_store_code: STORE_CATEGORIES.includes(form.category) ? form.related_store_code : '',
+        employee_name: EMPLOYEE_CATEGORIES.includes(formCategory) ? form.employee_name : '',
+        related_store_code: STORE_CATEGORIES.includes(formCategory) ? form.related_store_code : '',
         fixed_expense_id: form.fixed_expense_id ? Number(form.fixed_expense_id) : null,
         apply_fee: form.apply_fee,
         fee_override: form.feeOverride !== null ? toNum(form.feeOverride) : null,
@@ -255,7 +308,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
         name: fixedForm.name,
         amount: toNum(fixedForm.amount),
         due_day: Number(fixedForm.due_day) || 30,
-        category: fixedForm.category,
+        category: groupOf(fixedForm.subcategory) || 'operativo',
+        subcategory: fixedForm.subcategory.startsWith(LEGACY_PREFIX) ? null : fixedForm.subcategory,
         default_method: fixedForm.default_method || null,
         active: fixedForm.active !== false,
       };
@@ -333,7 +387,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
               <div className="inline-flex rounded-lg border border-gray-200 p-0.5 text-sm">
                 {[['out', 'Salida'], ['in', 'Entrada']].map(([d, label]) => (
                   <button type="button" key={d}
-                    onClick={() => setForm(f => ({ ...f, direction: d, category: d === 'out' ? 'operativo' : 'ingreso_extra', fixed_expense_id: d === 'in' ? '' : f.fixed_expense_id }))}
+                    onClick={() => setForm(f => ({ ...f, direction: d, category: d === 'out' ? 'operativo' : 'ingreso_extra', subcategory: d === 'in' ? '' : f.subcategory, fixed_expense_id: d === 'in' ? '' : f.fixed_expense_id }))}
                     className={`px-3 py-1 rounded-md ${form.direction === d ? 'bg-gray-900 text-white' : 'text-gray-600'}`}>
                     {label}
                   </button>
@@ -360,20 +414,48 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Categoría *</label>
-              <select aria-label="Categoría" value={form.category} onChange={e => set('category', e.target.value)} className={inputCls}>
-                {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-              {CATEGORY_BY_VALUE[form.category]?.hint && (
-                <p className="text-[11px] text-gray-500 mt-1">{CATEGORY_BY_VALUE[form.category].hint}</p>
+              {form.direction === 'out' ? (
+                <>
+                  <select aria-label="Categoría" required value={form.subcategory} onChange={e => set('subcategory', e.target.value)} className={inputCls}>
+                    <option value="" disabled>Selecciona…</option>
+                    {form.subcategory.startsWith(LEGACY_PREFIX) && (
+                      <option value={form.subcategory}>{CATEGORY_BY_VALUE[groupOf(form.subcategory)]?.label || groupOf(form.subcategory)} (anterior)</option>
+                    )}
+                    {SUBCATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  {formCategory && (
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {formSub?.hint ? `${formSub.hint}. ` : ''}Suma en: {CATEGORY_BY_VALUE[formCategory]?.label}
+                      {CATEGORY_BY_VALUE[formCategory]?.hint ? ` (${CATEGORY_BY_VALUE[formCategory].hint})` : ''}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <select aria-label="Categoría" value={form.category} onChange={e => set('category', e.target.value)} className={inputCls}>
+                    {IN_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  {CATEGORY_BY_VALUE[form.category]?.hint && (
+                    <p className="text-[11px] text-gray-500 mt-1">{CATEGORY_BY_VALUE[form.category].hint}</p>
+                  )}
+                </>
               )}
             </div>
 
-            {EMPLOYEE_CATEGORIES.includes(form.category) && (
+            {form.direction === 'out' && form.subcategory === 'otra' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">¿Qué otra categoría es? *</label>
+                <input aria-label="Otra categoría" type="text" required maxLength={120} value={form.category_detail}
+                  placeholder="Ej.: Papelería, publicidad…" onChange={e => set('category_detail', e.target.value)} className={inputCls} />
+              </div>
+            )}
+
+            {EMPLOYEE_CATEGORIES.includes(formCategory) && (
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Empleada {form.category === 'prestamo_empleada' ? '*' : '(opcional)'}
+                  Empleada {formCategory === 'prestamo_empleada' ? '*' : '(opcional)'}
                 </label>
-                {form.category === 'prestamo_empleada' ? (
+                {formCategory === 'prestamo_empleada' ? (
                   <EmployeeSelect value={form.employee_name} onChange={e => set('employee_name', e.target.value)} />
                 ) : (
                   <select aria-label="Empleada" value={form.employee_name} onChange={e => set('employee_name', e.target.value)} className={inputCls}>
@@ -385,10 +467,10 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
               </div>
             )}
 
-            {STORE_CATEGORIES.includes(form.category) && (
+            {STORE_CATEGORIES.includes(formCategory) && (
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  {form.category === 'prestamo_tienda' ? 'Tienda a la que se le presta *' : 'Tienda que devuelve *'}
+                  {formCategory === 'prestamo_tienda' ? 'Tienda a la que se le presta *' : 'Tienda que devuelve *'}
                 </label>
                 <select aria-label="Otra tienda" required value={form.related_store_code} onChange={e => set('related_store_code', e.target.value)} className={inputCls}>
                   <option value="" disabled>Selecciona…</option>
@@ -537,7 +619,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                     Cargar los gastos fijos del Excel
                   </button>
                 )}
-                <button onClick={() => setFixedForm({ name: '', amount: '', due_day: 30, category: 'operativo', default_method: '' })}
+                <button onClick={() => setFixedForm({ name: '', amount: '', due_day: 30, subcategory: 'operativo', default_method: '' })}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
                   <Plus className="w-3.5 h-3.5" /> Gasto fijo
                 </button>
@@ -560,8 +642,11 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Categoría</label>
-                  <select aria-label="Categoría del gasto fijo" value={fixedForm.category} onChange={e => setFixedForm(f => ({ ...f, category: e.target.value }))} className={inputCls}>
-                    {OUT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  <select aria-label="Categoría del gasto fijo" value={fixedForm.subcategory} onChange={e => setFixedForm(f => ({ ...f, subcategory: e.target.value }))} className={inputCls}>
+                    {fixedForm.subcategory.startsWith(LEGACY_PREFIX) && (
+                      <option value={fixedForm.subcategory}>{CATEGORY_BY_VALUE[groupOf(fixedForm.subcategory)]?.label} (anterior)</option>
+                    )}
+                    {SUBCATEGORIES.filter(c => c.value !== 'otra').map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -602,7 +687,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                       {f.status !== 'pagado' && f.active && (
                         <button onClick={() => openFromFixed(f)} className="px-3 py-1.5 text-xs font-medium bg-gray-900 text-white rounded-lg">Registrar pago</button>
                       )}
-                      <button onClick={() => setFixedForm({ ...f, amount: String(Math.round(f.amount || 0)) })} className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg">Editar</button>
+                      <button onClick={() => setFixedForm({ ...f, subcategory: subValueOf(f), amount: String(Math.round(f.amount || 0)) })} className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg">Editar</button>
                       <button onClick={() => toggleFixedActive(f)} className="px-2 py-1.5 text-xs text-gray-500">Desactivar</button>
                     </div>
                   </li>
@@ -625,7 +710,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                       <tr key={f.id} className={!f.active ? 'opacity-60' : ''}>
                         <td className="px-4 py-2.5">
                           <span className="font-medium text-gray-800">{f.name}</span>
-                          <span className="block text-[11px] text-gray-500">{CATEGORY_BY_VALUE[f.category]?.label}</span>
+                          <span className="block text-[11px] text-gray-500">{categoryView(f).label}</span>
                         </td>
                         <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">{f.due_date}</td>
                         <td className="px-3 py-2.5 text-right text-gray-600 whitespace-nowrap">{fmt(f.amount)}</td>
@@ -639,7 +724,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                             {f.status !== 'pagado' && f.active && (
                               <button onClick={() => openFromFixed(f)} className="px-2.5 py-1 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 whitespace-nowrap">Registrar pago</button>
                             )}
-                            <button aria-label="Editar gasto fijo" onClick={() => setFixedForm({ ...f, amount: String(Math.round(f.amount || 0)) })} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
+                            <button aria-label="Editar gasto fijo" onClick={() => setFixedForm({ ...f, subcategory: subValueOf(f), amount: String(Math.round(f.amount || 0)) })} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
                             <button onClick={() => toggleFixedActive(f)} className="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded-lg">Desactivar</button>
                           </div>
                         </td>
@@ -681,7 +766,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
               <>
               <ul className="sm:hidden divide-y divide-gray-100">
                 {items.map(row => {
-                  const cat = CATEGORY_BY_VALUE[row.category];
+                  const cat = categoryView(row);
                   return (
                     <li key={row.id} className="px-4 py-3">
                       <div className="flex items-start justify-between gap-2">
@@ -696,7 +781,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${cat?.badge || 'bg-gray-100 text-gray-700'}`}>{cat?.label || row.category}</span>
+                        <span title={cat.groupLabel ? `Suma en: ${cat.groupLabel}` : undefined} className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${cat.badge}`}>{cat.label}</span>
                         <span className="text-[11px] text-gray-600">
                           {METHODS.filter(m => row[m.key]).map(m => `${m.label} ${fmt(row[m.key])}`).join(' · ')}
                           {row.fee ? ` · 4x1000 ${fmt(row.fee)}` : ''}
@@ -731,7 +816,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {items.map(row => {
-                      const cat = CATEGORY_BY_VALUE[row.category];
+                      const cat = categoryView(row);
                       const otherPeriod = row.period !== ym;
                       const otherDate = row.date.slice(0, 7) !== ym;
                       return (
@@ -750,7 +835,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                             {row.notes && <span className="block text-[11px] text-gray-500 italic">{row.notes}</span>}
                           </td>
                           <td className="px-3 py-2.5">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${cat?.badge || 'bg-gray-100 text-gray-700'}`}>{cat?.label || row.category}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${cat.badge}`}>{cat.label}</span>
+                            {cat.groupLabel && <span className="block text-[11px] text-gray-500 mt-0.5">{cat.groupLabel}</span>}
                           </td>
                           <td className="px-3 py-2.5 text-xs text-gray-600">
                             {METHODS.filter(m => row[m.key]).map(m => (

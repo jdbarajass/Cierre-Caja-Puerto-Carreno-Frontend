@@ -81,3 +81,31 @@ export const updateContemplatedUntil = async (accountId, dateStr) => {
     }));
   } catch (e) { logger.error('updateContemplatedUntil:', e); throw e; }
 };
+
+// Nota libre de una tarjeta de Resumen (no toca el saldo)
+export const updateAccountNote = async (accountId, note) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/${accountId}/note`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: note || '' })
+    }));
+  } catch (e) { logger.error('updateAccountNote:', e); throw e; }
+};
+
+// Tarjeta "NOTAS IMPORTANTES" de Resumen (una por tienda)
+export const getImportantNotes = async () => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/important-notes`));
+  } catch (e) { logger.error('getImportantNotes:', e); throw e; }
+};
+
+export const saveImportantNotes = async (text) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/important-notes`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text || '' })
+    }));
+  } catch (e) { logger.error('saveImportantNotes:', e); throw e; }
+};

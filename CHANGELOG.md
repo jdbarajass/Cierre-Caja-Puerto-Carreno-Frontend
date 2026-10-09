@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-09] Gastos con categorías detalladas y notas en Cuentas
+
+- `CuentasGastos.jsx`: el selector de categoría de las salidas usa la lista del usuario (`SUBCATEGORIES`, cada una con su grupo; mismo mapa que `EXPENSE_SUBCATEGORIES` del backend) y muestra "Suma en: <grupo>". "Otra…" pide escribir qué es. Empleada y otra tienda aparecen según el grupo. Los gastos viejos se editan con su categoría "(anterior)". Los gastos fijos también usan la lista. La tabla muestra la categoría detallada y debajo el grupo.
+- `CuentasLayout.jsx` (Resumen): nota editable en cada tarjeta (`NoteTextArea`, guarda al salir del campo) y tarjeta NOTAS IMPORTANTES arriba (`ImportantNotesCard`, una por tienda). `accountsService.js`: `updateAccountNote`, `getImportantNotes`, `saveImportantNotes`.
+
 ## [2026-10-08] Gestión → Cuentas: nuevo orden
 
 - "Cómo se compone el total" y las tarjetas siguen el orden nuevo del backend (EFECTIVO, QR, ADDI + DATÁFONO, NEQUI, …); Jhonatan va justo después de NEQUI (`FlowWindow` en `CuentasLayout.jsx`). AHORRO sigue aparte.
