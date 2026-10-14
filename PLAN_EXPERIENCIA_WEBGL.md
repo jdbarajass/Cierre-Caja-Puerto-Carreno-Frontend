@@ -1,6 +1,6 @@
 # Plan por fases: experiencia inmersiva WebGL (KOAJ)
 
-Fuente: `# MASTER PROMPT.txt` (transformación inmersiva) sobre la base visual "Arqueo" ya implementada (ver CHANGELOG 2026-09-23).
+Fuente: `# MASTER PROMPT.txt` (transformación inmersiva; quitado del repo el 2026-10-14, sigue en el historial de git) sobre la base visual "Arqueo" ya implementada (ver CHANGELOG 2026-09-23).
 
 **Regla que aplica a todas las fases:** la lógica de negocio, endpoints, cálculos, estados, flujos, autenticación y permisos NO cambian. Un botón que hoy hace X sigue haciendo X. Toda la experiencia nueva es una capa visual (DOM de presentación + WebGL) encima del DOM funcional.
 
@@ -256,7 +256,7 @@ Auditoría automática en las 15 rutas (estructura, recorrido con Tab, contraste
 | Botones de ícono < 44 px en táctil | ✅ Regla CSS solo para `pointer: coarse`: los botones de solo ícono miden 44 px reales (sin superponerse). Los de Usuarios/Códigos que solo tenían `title` recibieron `aria-label`. Códigos 102 → 5 y Usuarios 19 → 3 elementos bajo 44 px (quedan botones de texto y campos de 38-42 px). |
 | Íconos del reporte unos px altos en el JPEG | Cerrado como limitación conocida de html2canvas (ya pasaba con el "$" previo). Se probó `leading-none` sin efecto; corregirlo exigiría tocar las funciones de exportación. Solo cosmético y solo en la imagen. |
 | Herramientas de medición solo en desarrollo | ✅ `?quality=low|medium|high` ahora funciona en producción y el navegador lo recuerda (`?quality=auto` lo borra). El monitor solo baja de nivel, así que forzar `high` en un PC lento sigue protegido. `window.__koajGL` sigue solo en desarrollo (expone internos). |
-| Archivos `# MASTER PROMPT*.txt` | Se versionan (sin datos sensibles: revisado). Son la fuente citada por este plan y el flujo entre máquinas es `git pull`. |
+| Archivos `# MASTER PROMPT*.txt` | Se versionaron mientras duró el plan. Quitados del repo el 2026-10-14 (plan terminado; siguen en el historial de git). |
 | Rediseño opcional del reporte | No se hace: es el documento diario del equipo; ya heredó paleta, íconos y la corrección de base exacta. Cambiar su estructura tiene costo de adopción y riesgo con html2canvas. |
 | Monitoreo de rendimiento de usuarios reales | No se hace: requiere backend y el alcance es solo frontend. |
 | 45 textos grises sobre fondos tintados | Aceptado: cumplen AA; el cambio sería solo estético. |

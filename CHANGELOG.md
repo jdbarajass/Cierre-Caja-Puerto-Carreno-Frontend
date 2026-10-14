@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-14] Limpieza de archivos que no se usan
+
+- Quitados del repo los dos `# MASTER PROMPT*.txt` (fuente del rediseño de septiembre, plan terminado; siguen en el historial de git). `PLAN_EXPERIENCIA_WEBGL.md` lo anota.
+- `README.md`: se quitó la guía vieja de despliegue en PythonAnywhere (el frontend se publica en Vercel).
+- La carpeta `dist/` sigue versionada a propósito hasta confirmar en Vercel que no la usa.
+
 ## [2026-10-09] Gastos con categorías detalladas y notas en Cuentas
 
 - `CuentasGastos.jsx`: el selector de categoría de las salidas usa la lista del usuario (`SUBCATEGORIES`, cada una con su grupo; mismo mapa que `EXPENSE_SUBCATEGORIES` del backend) y muestra "Suma en: <grupo>". "Otra…" pide escribir qué es. Empleada y otra tienda aparecen según el grupo. Los gastos viejos se editan con su categoría "(anterior)". Los gastos fijos también usan la lista. La tabla muestra la categoría detallada y debajo el grupo.
