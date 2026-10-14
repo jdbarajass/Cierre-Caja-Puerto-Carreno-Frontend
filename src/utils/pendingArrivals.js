@@ -1,7 +1,7 @@
 // Datáfono y Addi por llegar: grupos y sumas compartidas por Cuentas → Mes y
 // Cuentas → Resumen (los componentes están en components/accounts/PendingArrivals.jsx).
 
-// Tarjetas: llegan a la misma cuenta (Bancolombia …6018) pero con comisión y
+// Tarjetas: llegan a la misma cuenta (la de Cristhian, …6018) pero con comisión y
 // día de llegada distintos. Datáfono = débito (ahorro) + crédito.
 export const CARD_GROUPS = [
   { key: 'datafono', label: 'Datáfono', detail: 'débito + crédito', medios: ['ahorro', 'credito'], fee: '3,8 %', when: 'siguiente día hábil' },

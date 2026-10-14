@@ -576,7 +576,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                 <span className="text-sm font-semibold text-gray-700">Plata por llegar (datáfono y Addi)</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                Datáfono: llega el siguiente día hábil menos 3,8 %. Addi: llega 30 días después (o el siguiente día hábil) menos 7,735 %. Las dos a la cuenta Bancolombia …6018.
+                Datáfono: llega el siguiente día hábil menos 3,8 %. Addi: llega 30 días después (o el siguiente día hábil) menos 7,735 %. Las dos a la cuenta de Cristhian (…6018).
               </p>
             </div>
             {tr.items.length === 0 ? (

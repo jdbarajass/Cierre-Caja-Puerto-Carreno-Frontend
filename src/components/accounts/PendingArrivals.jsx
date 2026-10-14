@@ -1,5 +1,5 @@
-// Plata del datáfono y de Addi que todavía no llega a la cuenta (Bancolombia
-// …6018). Lo usan Cuentas → Mes (tarjeta "Por llegar") y Cuentas → Resumen
+// Plata del datáfono y de Addi que todavía no llega a la cuenta de Cristhian
+// (…6018). Lo usan Cuentas → Mes (tarjeta "Por llegar") y Cuentas → Resumen
 // (tarjeta ADDI + DATÁFONO), con el mismo `transit` de /api/month-sheet: la
 // fecha de llegada la calcula el backend (payment_facts.arrival_date, con los
 // festivos de Colombia), aquí solo se agrupa y se muestra.
@@ -62,7 +62,7 @@ export const PendingArrivalsDialog = ({ groupKey, transit: tr, onClose }) => {
                 {g.key === 'addi'
                   ? 'Ventas con Addi (de este mes y de meses pasados) que Addi todavía no ha consignado. Paga 30 días después de la venta (o el siguiente día hábil), menos 7,735 % (6,5 % + IVA).'
                   : 'Ventas con tarjeta débito y crédito que todavía no llegan. Llegan el siguiente día hábil (sin sábados, domingos ni festivos de Colombia: lo del viernes llega el lunes), menos 3,8 %.'}
-                {' '}Llega a la cuenta Bancolombia …6018. Calculado al {tr.cutoff}.
+                {' '}Llega a la cuenta de Cristhian (…6018). Calculado al {tr.cutoff}.
               </p>
             </div>
             <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
