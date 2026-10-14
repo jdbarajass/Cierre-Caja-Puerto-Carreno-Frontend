@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Check, DownloadCloud, Lock, Unlock,
-  CalendarDays, Landmark, Hourglass, ChevronDown, AlertTriangle, Pencil, Trash2, ArrowRight, X,
+  CalendarDays, Landmark, Hourglass, ChevronDown, AlertTriangle, Pencil, Trash2, ArrowRight,
 } from 'lucide-react';
 import {
   getMonthSheet, syncPayments, saveReconciliation, registerCommissions, closeMonth, reopenMonth,
@@ -14,7 +14,8 @@ import {
 } from '../services/monthSheetService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import { getColombiaDate } from '../utils/dateUtils';
-import useDialog from '../hooks/useDialog';
+import { PendingGroupRows, PendingArrivalsDialog } from '../components/accounts/PendingArrivals';
+import { TRANSIT_LABEL, cardGroups } from '../utils/pendingArrivals';
 
 const fmt = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.round(v || 0));
@@ -40,27 +41,7 @@ const MEDIOS = [
 ];
 const MEDIO_LABEL = Object.fromEntries(MEDIOS.map(m => [m.key, m.label]));
 
-// Tarjetas: llegan a la misma cuenta (Bancolombia …6018) pero con comisión y
-// día de llegada distintos. Datáfono = débito (ahorro) + crédito.
-const CARD_GROUPS = [
-  { key: 'datafono', label: 'Datáfono', detail: 'débito + crédito', medios: ['ahorro', 'credito'], fee: '3,8 %', when: 'siguiente día hábil' },
-  { key: 'addi', label: 'Addi', detail: '', medios: ['addi'], fee: '7,735 %', when: '30 días después' },
-];
-const TRANSIT_LABEL = { ahorro: 'Datáfono débito', credito: 'Datáfono crédito', addi: 'Addi' };
-
-// Suma por grupo (datáfono / Addi) de la plata por llegar y de las comisiones
-const cardGroups = (tr, comm) => CARD_GROUPS.map(g => {
-  const items = (tr?.items || []).filter(i => g.medios.includes(i.medio));
-  const byMedio = comm?.by_medio || {};
-  return {
-    ...g,
-    gross: items.reduce((a, i) => a + i.gross, 0),
-    net: items.reduce((a, i) => a + i.net, 0),
-    next: items.map(i => i.arrival_date).sort()[0] || null,
-    sales: g.medios.reduce((a, m) => a + (byMedio[m]?.sales || 0), 0),
-    commission: g.medios.reduce((a, m) => a + (byMedio[m]?.fee || 0), 0),
-  };
-});
+// Datáfono/Addi por llegar: utils/pendingArrivals.js y components/accounts/PendingArrivals.jsx
 
 const RATINGS = {
   mala: { label: 'Venta mala', short: 'Mala', cls: 'bg-red-100 text-red-700', hint: 'hasta $680.000' },
@@ -79,12 +60,6 @@ const STATEMENT_COLS = [
   { key: 'ajustes', label: 'Ajustes' },
   { key: 'transferencias', label: 'Transferencias' },
 ];
-
-const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const dateLong = (iso) => {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${d} ${MONTHS_SHORT[m - 1]}`;
-};
 
 const dayLabel = (iso) => {
   const [y, m, d] = iso.split('-').map(Number);
@@ -110,7 +85,6 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
   const [fix, setFix] = useState(null);
   // Detalle de la plata por llegar de un grupo ('datafono' | 'addi')
   const [pendingGroup, setPendingGroup] = useState(null);
-  const pendingRef = useDialog(!!pendingGroup, () => setPendingGroup(null));
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3500); };
 
@@ -281,18 +255,8 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Por llegar (datáfono y Addi)</p>
           <p className="text-2xl font-bold text-sky-800">{fmt(tr?.net)}</p>
           <p className="text-[11px] text-gray-600">Total datáfono + Addi, neto (de {fmt(tr?.gross)} vendidos)</p>
-          <div className="mt-1 space-y-0.5 text-[11px] text-gray-700">
-            {groups.map(g => (
-              <button key={g.key} type="button" onClick={() => setPendingGroup(g.key)} disabled={!g.gross}
-                title={g.gross ? `Ver qué falta que llegue de ${g.label}` : undefined}
-                className="w-full flex justify-between gap-2 text-left rounded px-1 -mx-1 hover:bg-sky-100 disabled:hover:bg-transparent disabled:cursor-default">
-                <span>
-                  <span className={g.gross ? 'underline decoration-dotted underline-offset-2' : ''}>{g.label}</span>
-                  {g.next && <span className="text-gray-500"> · {g.key === 'addi' ? 'próxima' : 'llega'} {dayLabel(g.next)}</span>}
-                </span>
-                <span className="font-semibold whitespace-nowrap">{fmt(g.net)}</span>
-              </button>
-            ))}
+          <div className="mt-1">
+            <PendingGroupRows groups={groups} onOpen={setPendingGroup} />
           </div>
         </div>
       </div>
@@ -672,69 +636,9 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
       )}
 
       {/* ── Detalle de lo que falta por llegar (datáfono o Addi) ─────────── */}
-      {pendingGroup && tr && (() => {
-        const g = groups.find(x => x.key === pendingGroup);
-        // Una fila por día de venta (como el reporte de pagos de Addi), la más próxima arriba
-        const items = tr.items.filter(i => g.medios.includes(i.medio)).flatMap(i =>
-          (i.by_sale || [{ date: i.sales_dates[0], gross: i.gross, net: i.net }]).map(s => ({ ...s, medio: i.medio, arrival_date: i.arrival_date })));
-        const first = items[0]?.arrival_date;
-        return (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end sm:items-center justify-center min-h-full sm:p-4">
-              <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px]" onClick={() => setPendingGroup(null)} />
-              <div ref={pendingRef} role="dialog" aria-modal="true" aria-labelledby="dlg-pending" tabIndex={-1}
-                className="relative w-full bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl sm:max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain">
-                <div className="px-5 py-4 border-b border-gray-200 flex items-start justify-between gap-3">
-                  <div>
-                    <h3 id="dlg-pending" className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <Hourglass className="w-5 h-5 text-sky-600" /> {g.label}: lo que falta que llegue
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {g.key === 'addi'
-                        ? 'Ventas con Addi (de este mes y de meses pasados) que Addi todavía no ha consignado. Paga 30 días después de la venta (o el siguiente día hábil), menos 7,735 % (6,5 % + IVA).'
-                        : 'Ventas con tarjeta débito y crédito que todavía no llegan. Llegan el siguiente día hábil, menos 3,8 %.'}
-                      {' '}Llega a la cuenta Bancolombia …6018. Calculado al {tr.cutoff}.
-                    </p>
-                  </div>
-                  <button aria-label="Cerrar" onClick={() => setPendingGroup(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 px-5 py-3 bg-sky-50 text-center">
-                  <div><p className="text-[11px] text-gray-500 uppercase">Vendido</p><p className="font-semibold text-gray-800">{fmt(g.gross)}</p></div>
-                  <div><p className="text-[11px] text-gray-500 uppercase">Comisión</p><p className="font-semibold text-orange-700">−{fmt(g.gross - g.net)}</p></div>
-                  <div><p className="text-[11px] text-gray-500 uppercase">Te llega</p><p className="text-lg font-bold text-sky-800">{fmt(g.net)}</p></div>
-                </div>
-                <ul className="divide-y divide-gray-100">
-                  {items.map((i, idx) => (
-                    <li key={`${i.arrival_date}-${i.medio}-${i.date}-${idx}`} className="px-5 py-2.5 flex items-center justify-between gap-3 text-sm">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Llega {dateLong(i.arrival_date)}
-                          {i.arrival_date === first && <span className="ml-2 normal-case px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-semibold">Próximo</span>}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {g.key === 'datafono' && `${TRANSIT_LABEL[i.medio]} · `}Venta del {dateLong(i.date)} · vendido {fmt(i.gross)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sky-800 whitespace-nowrap">{fmt(i.net)}</p>
-                        <p className="text-[11px] text-orange-700 whitespace-nowrap">−{fmt(i.gross - i.net)}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                {g.key === 'addi' && (
-                  <p className="px-5 py-3 text-[11px] text-gray-600 bg-gray-50 border-t border-gray-100">
-                    Para revisar: en el <b>Reporte de pagos</b> de Addi, cada pago "Pendiente de pago" debe tener la misma fecha y el mismo "Total a pagar" que aquí.
-                    Si una venta de aquí no aparece en Addi, probablemente se pasó por datáfono: corrígela con el lápiz ✎ de ese día.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {pendingGroup && tr && (
+        <PendingArrivalsDialog groupKey={pendingGroup} transit={tr} onClose={() => setPendingGroup(null)} />
+      )}
     </div>
   );
 };

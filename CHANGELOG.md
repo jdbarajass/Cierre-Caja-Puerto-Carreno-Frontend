@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-10-14] Cuentas → Resumen: datáfono y Addi por llegar en la tarjeta ADDI + DATÁFONO
+
+- La tarjeta ADDI + DATÁFONO de Resumen muestra "Por llegar" (neto y vendido) con las líneas Datáfono y Addi clickeables, que abren el mismo detalle que Cuentas → Mes. Usa el `transit` de `/api/month-sheet` del mes en curso, calculado a hoy. La fecha de llegada la calcula el backend (`payment_facts.arrival_date`): el datáfono llega el siguiente día hábil sin fines de semana ni festivos de Colombia, y Addi a los 30 días. No depende de "Contempla saldo hasta". Las ventas de hoy aparecen después del cargue de las 9 pm o de "Traer ventas de Alegra".
+- Piezas compartidas para que Mes y Resumen no se desfasen: `src/utils/pendingArrivals.js` (`CARD_GROUPS`, `TRANSIT_LABEL`, `cardGroups`) y `src/components/accounts/PendingArrivals.jsx` (`PendingGroupRows`, `PendingArrivalsDialog`). `CuentasMes.jsx` ya no tiene su propia copia.
+
 ## [2026-10-14] Limpieza de archivos que no se usan
 
 - Quitados del repo los dos `# MASTER PROMPT*.txt` (fuente del rediseño de septiembre, plan terminado; siguen en el historial de git). `PLAN_EXPERIENCIA_WEBGL.md` lo anota.

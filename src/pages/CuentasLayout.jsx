@@ -9,6 +9,9 @@ import {
   updateContemplatedUntil, updateAccountNote, getImportantNotes, saveImportantNotes
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
+import { getMonthSheet } from '../services/monthSheetService';
+import { PendingGroupRows, PendingArrivalsDialog } from '../components/accounts/PendingArrivals';
+import { cardGroups } from '../utils/pendingArrivals';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
@@ -405,6 +408,21 @@ const CuentasLayout = () => {
     }
   }, [movementFilters]);
 
+  // Plata del datáfono y de Addi que todavía no llega, calculada a hoy (el
+  // mismo `transit` de Cuentas → Mes): se muestra en la tarjeta ADDI + DATÁFONO.
+  const [transit, setTransit] = useState(null);
+  const [pendingGroup, setPendingGroup] = useState(null);
+
+  const loadTransit = useCallback(async () => {
+    try {
+      const today = getColombiaDate();
+      const data = await getMonthSheet({ year: today.getFullYear(), month: today.getMonth() + 1 });
+      setTransit(data.transit || null);
+    } catch {
+      // No bloquea el resto del Resumen si esto falla - simplemente no se muestra.
+    }
+  }, []);
+
   const loadRepurchaseBalance = useCallback(async () => {
     setLoadingRepurchase(true);
     try {
@@ -431,11 +449,12 @@ const CuentasLayout = () => {
   // Refresca cuentas Y balance de recompras juntos: crear/editar/eliminar un
   // envío o una compra en "Cuentas Recompras" puede afectar a ambos.
   const refreshSummary = useCallback(async () => {
-    await Promise.all([loadAccounts(), loadRepurchaseBalance()]);
-  }, [loadAccounts, loadRepurchaseBalance]);
+    await Promise.all([loadAccounts(), loadRepurchaseBalance(), loadTransit()]);
+  }, [loadAccounts, loadRepurchaseBalance, loadTransit]);
 
   useEffect(() => { loadAccounts(); }, [loadAccounts]);
   useEffect(() => { loadRepurchaseBalance(); }, [loadRepurchaseBalance]);
+  useEffect(() => { loadTransit(); }, [loadTransit]);
   useEffect(() => { if (tab === 'movimientos') loadMovements(); }, [tab, loadMovements]);
 
   const clearMessages = () => { setError(''); setSuccess(''); };
@@ -711,6 +730,16 @@ const CuentasLayout = () => {
                       />
                     </div>
                   )}
+                  {a.payment_key === 'addi_datafono' && transit && (
+                    <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar</span>
+                        <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mb-1">Neto, de {fmt(Math.round(transit.gross))} vendidos · al {transit.cutoff}</p>
+                      <PendingGroupRows groups={cardGroups(transit)} onOpen={setPendingGroup} />
+                    </div>
+                  )}
                   <NoteTextArea
                     id={`note-${a.id}`}
                     label={`Nota de ${a.name}`}
@@ -832,6 +861,10 @@ const CuentasLayout = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {pendingGroup && transit && (
+        <PendingArrivalsDialog groupKey={pendingGroup} transit={transit} onClose={() => setPendingGroup(null)} />
       )}
 
       {tab === 'recompras' && <CuentasRecompras onEntriesChanged={refreshSummary} />}
