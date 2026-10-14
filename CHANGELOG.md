@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-14] ADDI + DATÁFONO = plata real del banco
+
+- `CuentasLayout.jsx` (`CardArrivalsBox`): sin activar, la tarjeta muestra lo que falta por llegar y el formulario "Igualar al banco" (`startCardArrivals` en `accountsService.js`, con confirmación). Activado (`card_arrivals_since` de `/api/accounts`): el saldo es lo disponible, "Por llegar (no está en el saldo)" con Datáfono y Addi clickeables, y el total entre las dos. Movimiento `card_arrival` en `MOVEMENT_TYPE_LABELS`.
+- `CuentasMes.jsx`: columna "Llegadas tarjetas" en el estado por cuenta; en modo activo, la nota de ADDI + DATÁFONO dice que lo por llegar va aparte y el aviso de comisiones dice que son informativas.
+- Backend: `app/services/card_arrivals.py` (ver su CHANGELOG).
+
 ## [2026-10-14] Cuentas → Resumen: datáfono y Addi por llegar en la tarjeta ADDI + DATÁFONO
 
 - La tarjeta ADDI + DATÁFONO de Resumen muestra "Por llegar" (neto y vendido) con las líneas Datáfono y Addi clickeables, que abren el mismo detalle que Cuentas → Mes. Usa el `transit` de `/api/month-sheet` del mes en curso, calculado a hoy. La fecha de llegada la calcula el backend (`payment_facts.arrival_date`): el datáfono llega el siguiente día hábil sin fines de semana ni festivos de Colombia, y Addi a los 30 días. No depende de "Contempla saldo hasta". Las ventas de hoy aparecen después del cargue de las 9 pm o de "Traer ventas de Alegra".

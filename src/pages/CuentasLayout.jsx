@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
-  updateContemplatedUntil, updateAccountNote, getImportantNotes, saveImportantNotes
+  updateContemplatedUntil, updateAccountNote, getImportantNotes, saveImportantNotes, startCardArrivals
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getMonthSheet } from '../services/monthSheetService';
@@ -164,6 +164,7 @@ const MOVEMENT_TYPE_LABELS = {
   repurchase_send: 'Envío a socio (recompra)',
   expense: 'Gasto (salida)',
   expense_in: 'Entrada (no venta)',
+  card_arrival: 'Llegó datáfono/Addi (neto)',
 };
 
 // Input de monto con separador de miles: muestra el número plano mientras se
@@ -310,6 +311,73 @@ const ImportantNotesCard = () => {
   );
 };
 
+// Datáfono y Addi en la tarjeta ADDI + DATÁFONO (2026-10-14). Con
+// `cardSince` (activado) el saldo de la tarjeta es la plata real del banco y
+// lo que falta por llegar va aparte: no está disponible para recompras. Sin
+// activar, el saldo todavía incluye lo vendido que no ha llegado; se muestra
+// lo que falta y el formulario para igualar la cuenta al banco.
+const CardArrivalsBox = ({ balance, transit, cardSince, onOpen, onStart }) => {
+  const [real, setReal] = useState('');
+  const [saving, setSaving] = useState(false);
+  const groups = cardGroups(transit);
+
+  const start = async (e) => {
+    e.preventDefault();
+    const value = Number(real);
+    if (!real) return;
+    if (!window.confirm(`La cuenta queda en ${fmt(value)} (lo que hay hoy en el banco). Desde mañana el datáfono y Addi entran solos el día que llegan, ya sin comisión, y el cierre ya no los suma el día de la venta. ¿Continuar?`)) return;
+    setSaving(true);
+    const ok = await onStart(value);
+    setSaving(false);
+    if (ok) setReal('');
+  };
+
+  if (cardSince) {
+    return (
+      <>
+        <p className="text-xs text-gray-500 mt-1">Disponible: lo que ya llegó al banco (neto)</p>
+        <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar (no está en el saldo)</span>
+            <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
+          </div>
+          <p className="text-[11px] text-gray-500 mb-1">Lo que llega ya sin comisión, de {fmt(Math.round(transit.gross))} vendidos</p>
+          <PendingGroupRows groups={groups} onOpen={onOpen} />
+          <div className="mt-1.5 pt-1.5 border-t border-sky-200 flex justify-between gap-2 text-[11px] text-gray-700">
+            <span>Total entre las dos (banco + por llegar)</span>
+            <span className="font-semibold whitespace-nowrap">{fmt(Math.round(balance + transit.net))}</span>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar</span>
+        <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
+      </div>
+      <p className="text-[11px] text-gray-500 mb-1">Lo que llega ya sin comisión, de {fmt(Math.round(transit.gross))} vendidos</p>
+      <PendingGroupRows groups={groups} onOpen={onOpen} />
+      <form onSubmit={start} className="mt-2 pt-2 border-t border-sky-200 space-y-1.5">
+        <p className="text-[11px] text-amber-800">
+          Este saldo todavía cuenta lo vendido que no ha llegado. Escribe lo que hay hoy en el banco para que el saldo sea solo plata disponible.
+        </p>
+        <div className="flex gap-1.5">
+          <div className="flex-1">
+            <CurrencyInput placeholder="Saldo hoy en el banco" value={real} onChange={setReal} />
+          </div>
+          <button type="submit" disabled={saving || !real}
+            className="px-3 py-2 text-xs font-medium bg-sky-700 text-white rounded-lg hover:bg-sky-800 disabled:opacity-50 whitespace-nowrap">
+            {saving ? 'Guardando…' : 'Igualar al banco'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 // La pestaña "Movimientos" se dejó oculta a pedido del usuario (2026-09-01).
 // El código y el estado siguen intactos: para reactivarla basta con volver a
 // agregar { id: 'movimientos', label: 'Movimientos', icon: History } aquí.
@@ -333,6 +401,8 @@ const CuentasLayout = () => {
 
   const [accounts, setAccounts] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);
+  // Desde cuándo ADDI + DATÁFONO es la plata real del banco (null = sin activar)
+  const [cardSince, setCardSince] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -384,6 +454,7 @@ const CuentasLayout = () => {
       const data = await getAccounts();
       setAccounts(data.accounts || []);
       setTotalBalance(data.total_balance || 0);
+      setCardSince(data.card_arrivals_since || null);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -523,6 +594,19 @@ const CuentasLayout = () => {
       setError(e.message);
     } finally {
       setSavingContemplatedId(null);
+    }
+  };
+
+  const handleStartCardArrivals = async (realBalance) => {
+    clearMessages();
+    try {
+      const data = await startCardArrivals(realBalance);
+      setSuccess(`ADDI + DATÁFONO quedó igual al banco (${fmt(data.account.balance)}). Desde mañana el datáfono y Addi entran solos el día que llegan.`);
+      await Promise.all([loadAccounts(), loadTransit()]);
+      return true;
+    } catch (e) {
+      setError(e.message);
+      return false;
     }
   };
 
@@ -731,14 +815,13 @@ const CuentasLayout = () => {
                     </div>
                   )}
                   {a.payment_key === 'addi_datafono' && transit && (
-                    <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar</span>
-                        <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
-                      </div>
-                      <p className="text-[11px] text-gray-500 mb-1">Neto, de {fmt(Math.round(transit.gross))} vendidos · al {transit.cutoff}</p>
-                      <PendingGroupRows groups={cardGroups(transit)} onOpen={setPendingGroup} />
-                    </div>
+                    <CardArrivalsBox
+                      balance={Number(a.balance) || 0}
+                      transit={transit}
+                      cardSince={cardSince}
+                      onOpen={setPendingGroup}
+                      onStart={handleStartCardArrivals}
+                    />
                   )}
                   <NoteTextArea
                     id={`note-${a.id}`}

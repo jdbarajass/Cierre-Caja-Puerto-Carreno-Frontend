@@ -54,6 +54,8 @@ const STATEMENT_COLS = [
   { key: 'ventas', label: 'Ventas (cierres)' },
   // Excedentes del cierre (cambios de prenda, tarjeta regalo, vueltas): no son venta
   { key: 'excedentes', label: 'Excedentes' },
+  // Datáfono/Addi que llegó al banco, neto (con ADDI + DATÁFONO = plata real del banco)
+  { key: 'llegadas', label: 'Llegadas tarjetas' },
   { key: 'recompras', label: 'Recompras' },
   { key: 'gastos', label: 'Gastos' },
   { key: 'entradas', label: 'Entradas' },
@@ -131,7 +133,10 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
     const r = await registerCommissions({ year, month });
     onEntriesChanged?.();
     return r;
-  }, r => (r.total ? `Comisión de ${fmt(r.total)} registrada en Gastos y descontada de ADDI + DATÁFONO` : 'No hay comisiones este mes'));
+  }, r => (!r.total ? 'No hay comisiones este mes'
+    : sheet?.card_arrivals_since
+      ? `Comisión de ${fmt(r.total)} registrada en Gastos (informativa: los pagos ya llegan sin comisión)`
+      : `Comisión de ${fmt(r.total)} registrada en Gastos y descontada de ADDI + DATÁFONO`));
   const handleClose = () => run('close', () => closeMonth({ year, month, notes: closeNotes }), 'Mes cerrado: quedó guardada la foto del mes');
   const handleReopen = () => {
     if (!window.confirm('¿Reabrir el mes? Se borra la foto guardada al cerrarlo.')) return;
@@ -467,7 +472,7 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                 <span className="text-sm font-semibold text-gray-700">Plata en cada cuenta en {MONTHS[month - 1].toLowerCase()}</span>
               </div>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                Saldo inicial (lo que quedó del mes anterior) + ventas + excedentes − recompras − gastos ± ajustes = saldo final. Los excedentes (plata que entró en el cierre pero no es venta de Alegra) van aparte de las ventas. Escribe el “saldo real” que ves en el banco o en la caja para ver la diferencia (debe dar $0). Toca una cuenta para verla día por día.
+                Saldo inicial (lo que quedó del mes anterior) + ventas + excedentes + llegadas de tarjetas − recompras − gastos ± ajustes = saldo final. Los excedentes (plata que entró en el cierre pero no es venta de Alegra) van aparte de las ventas. Escribe el “saldo real” que ves en el banco o en la caja para ver la diferencia (debe dar $0). Toca una cuenta para verla día por día.
               </p>
             </div>
             <div className="divide-y divide-gray-100">
@@ -501,7 +506,12 @@ const CuentasMes = ({ onEntriesChanged } = {}) => {
                       </div>
                     </button>
 
-                    {row.payment_key === 'addi_datafono' && (row.in_transit_gross > 0 || row.pending_commission > 0) && (
+                    {row.payment_key === 'addi_datafono' && sheet.card_arrivals_since && row.in_transit_net_apart > 0 && (
+                      <p className="mt-1.5 text-xs text-sky-900 bg-sky-50 rounded-lg px-3 py-2">
+                        Este saldo es lo que ya llegó al banco. Aparte, <b>todavía faltan por llegar {fmt(row.in_transit_net_apart)}</b> (datáfono/Addi, ya sin comisión): no están disponibles.
+                      </p>
+                    )}
+                    {row.payment_key === 'addi_datafono' && !sheet.card_arrivals_since && (row.in_transit_gross > 0 || row.pending_commission > 0) && (
                       <p className="mt-1.5 text-xs text-sky-900 bg-sky-50 rounded-lg px-3 py-2">
                         De este saldo, {fmt(row.in_transit_gross)} son ventas de datáfono/Addi que <b>todavía no llegan</b>
                         {row.pending_commission > 0 && <> y faltan {fmt(row.pending_commission)} de comisiones por descontar</>}.

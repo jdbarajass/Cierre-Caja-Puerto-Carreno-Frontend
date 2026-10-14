@@ -109,3 +109,16 @@ export const saveImportantNotes = async (text) => {
     }));
   } catch (e) { logger.error('saveImportantNotes:', e); throw e; }
 };
+
+// ADDI + DATÁFONO = plata real del banco (una vez por tienda): deja la cuenta
+// igual al saldo del banco y desde mañana el datáfono y Addi entran el día
+// que llegan, ya sin comisión (app/services/card_arrivals.py del backend).
+export const startCardArrivals = async (realBalance) => {
+  try {
+    return await handle(await authenticatedFetch(`${BASE}/card-arrivals/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ real_balance: realBalance }),
+    }));
+  } catch (e) { logger.error('startCardArrivals:', e); throw e; }
+};
