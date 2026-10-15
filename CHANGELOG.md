@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-15] Cuentas → Resumen: ADDI + DATÁFONO sola, a todo el ancho
+
+- En producción la tarjeta ocupaba 2 de las 3 columnas de la cuadrícula: dejaba huecos (QR solo en su fila) y estiraba NEQUI a su altura. Ahora va sola debajo de Notas importantes y las demás cuentas siguen en su cuadrícula de 3, en el mismo orden.
+- Nuevo `src/components/accounts/CardAccountPanel.jsx`: a la izquierda el saldo, "Contempla saldo hasta", "Igualar al banco" (más compacto) o "Banco + por llegar"; a la derecha tres columnas que se leen como tabla, **Datáfono | Addi | Datáfono + Addi**, cada una con "Llegó en <mes>" y "Por llegar" (monto, y debajo el último pago o el próximo). Sin tarjetas dentro de tarjetas. En celular las columnas se apilan. Revisado con capturas a 1100, 800 y 390 px (sin desborde) y con el detector de `impeccable`.
+- `CuentasLayout.jsx`: se quitaron `CardArrivalsBox` y `CardGroupBox`; nota de cada tarjeta en `AccountNote`.
+
 ## [2026-10-15] Cuentas → Resumen: ADDI + DATÁFONO en dos casillas (Datáfono y Addi)
 
 - La tarjeta ADDI + DATÁFONO ocupa dos columnas y adentro tiene: "Llegó en <mes>" (Datáfono + Addi) y "Por llegar" (Datáfono + Addi), y dos casillas, Datáfono y Addi, cada una con su "Llegó en <mes>" y su "Por llegar". Cada línea abre una ventana: la nueva `ArrivedDialog` (pagos que llegaron en el mes, uno por día de venta, con flechas para ver los meses anteriores) y la de siempre (lo que falta que llegue). El saldo de la cuenta sigue siendo el número grande; el formulario "Igualar al banco" sigue igual y desaparece al usarlo.

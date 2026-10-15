@@ -11,7 +11,7 @@ import {
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getMonthSheet } from '../services/monthSheetService';
 import { PendingArrivalsDialog, ArrivedDialog } from '../components/accounts/PendingArrivals';
-import { cardGroups, dayLabel, monthName } from '../utils/pendingArrivals';
+import CardAccountPanel from '../components/accounts/CardAccountPanel';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
@@ -252,6 +252,19 @@ const NoteTextArea = ({ id, label, value, onSave, disabled, rows = 2, maxLength,
   );
 };
 
+// Nota libre de una tarjeta de cuenta (Resumen)
+const AccountNote = ({ account, onSave }) => (
+  <NoteTextArea
+    id={`note-${account.id}`}
+    label={`Nota de ${account.name}`}
+    value={account.note}
+    onSave={note => onSave(account.id, note)}
+    maxLength={2000}
+    placeholder="Agregar nota…"
+    className="mt-3 w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white resize-y"
+  />
+);
+
 // Tarjeta "NOTAS IMPORTANTES" de Resumen: texto libre del admin, una por
 // tienda (se recarga sola al cambiar de tienda porque ProtectedRoute
 // remonta la página).
@@ -308,114 +321,6 @@ const ImportantNotesCard = () => {
         className="w-full bg-white/70 border border-amber-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-300 resize-y disabled:opacity-50"
       />
     </div>
-  );
-};
-
-// Datáfono y Addi en la tarjeta ADDI + DATÁFONO (2026-10-14; separada en dos
-// casillas el 2026-10-15). Con `cardSince` (activado) el saldo de la tarjeta es
-// la plata real del banco y lo que falta por llegar va aparte: no está
-// disponible para recompras. Sin activar, el saldo todavía incluye lo vendido
-// que no ha llegado; se muestra lo que falta y el formulario para igualar la
-// cuenta al banco (desaparece al usarlo).
-//
-// "Llegó en <mes>" se calcula desde las ventas con la misma regla de llegada
-// (month_sheet.arrived), así que cubre todo el mes aunque se haya activado a
-// mitad de mes. No suma igual al saldo: el banco también tiene lo que había al
-// empezar el mes y de ahí sale plata (gastos, envíos).
-const CardGroupBox = ({ g, month, onOpenArrived, onOpenPending }) => {
-  const row = 'w-full flex items-baseline justify-between gap-2 text-left rounded px-1.5 -mx-1.5 py-0.5 disabled:cursor-default';
-  return (
-    <div className="rounded-lg border border-sky-200 bg-white px-3 py-2.5">
-      <div className="flex items-baseline justify-between gap-2 mb-1.5">
-        <span className="text-sm font-semibold text-gray-800">{g.label}</span>
-        <span className="text-[10px] text-gray-500 text-right">{g.detail ? `${g.detail} · ` : ''}{g.when}, −{g.fee}</span>
-      </div>
-      <button type="button" onClick={() => onOpenArrived(g.key)} className={`${row} hover:bg-emerald-50`}
-        title={`Ver los pagos de ${g.label} que llegaron en ${month}`}>
-        <span className="text-[11px] text-gray-600">
-          <span className="underline decoration-dotted underline-offset-2">Llegó en {month}</span>
-          {g.last && <span className="text-gray-500"> · último {dayLabel(g.last)}</span>}
-        </span>
-        <span className="text-sm font-bold text-emerald-700 whitespace-nowrap">{fmt(g.arrivedNet)}</span>
-      </button>
-      <button type="button" onClick={() => onOpenPending(g.key)} disabled={!g.gross}
-        className={`${row} hover:bg-sky-50 disabled:hover:bg-transparent`}
-        title={g.gross ? `Ver qué falta que llegue de ${g.label}` : undefined}>
-        <span className="text-[11px] text-gray-600">
-          <span className={g.gross ? 'underline decoration-dotted underline-offset-2' : ''}>Por llegar</span>
-          {g.next && <span className="text-gray-500"> · {g.key === 'addi' ? 'próxima' : 'llega'} {dayLabel(g.next)}</span>}
-        </span>
-        <span className="text-sm font-bold text-sky-800 whitespace-nowrap">{fmt(g.net)}</span>
-      </button>
-    </div>
-  );
-};
-
-const CardArrivalsBox = ({ balance, transit, arrived, cardSince, onOpenArrived, onOpenPending, onStart }) => {
-  const [real, setReal] = useState('');
-  const [saving, setSaving] = useState(false);
-  const groups = cardGroups(transit, null, arrived);
-  const month = arrived ? monthName(arrived.start) : 'el mes';
-  const arrivedNet = groups.reduce((a, g) => a + g.arrivedNet, 0);
-
-  const start = async (e) => {
-    e.preventDefault();
-    const value = Number(real);
-    if (!real) return;
-    if (!window.confirm(`La cuenta queda en ${fmt(value)} (lo que hay hoy en el banco). Desde mañana el datáfono y Addi entran solos el día que llegan, ya sin comisión, y el cierre ya no los suma el día de la venta. ¿Continuar?`)) return;
-    setSaving(true);
-    const ok = await onStart(value);
-    setSaving(false);
-    if (ok) setReal('');
-  };
-
-  return (
-    <>
-      {cardSince && <p className="text-xs text-gray-500 mt-1">Disponible: lo que ya llegó al banco (neto)</p>}
-      <div className="mt-3 rounded-xl bg-sky-50 border border-sky-200 p-3">
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Llegó en {month}</p>
-            <p className="text-lg font-bold text-emerald-700">{fmt(arrivedNet)}</p>
-            <p className="text-[10px] text-gray-500">Datáfono + Addi, ya sin comisión</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Por llegar{cardSince ? ' (no está en el saldo)' : ''}
-            </p>
-            <p className="text-lg font-bold text-sky-800">{fmt(Math.round(transit.net))}</p>
-            <p className="text-[10px] text-gray-500">de {fmt(Math.round(transit.gross))} vendidos</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {groups.map(g => (
-            <CardGroupBox key={g.key} g={g} month={month} onOpenArrived={onOpenArrived} onOpenPending={onOpenPending} />
-          ))}
-        </div>
-        {cardSince ? (
-          <div className="mt-2.5 pt-2 border-t border-sky-200 flex justify-between gap-2 text-[11px] text-gray-700">
-            <span>Total entre las dos (banco + por llegar)</span>
-            <span className="font-semibold whitespace-nowrap">{fmt(Math.round(balance + transit.net))}</span>
-          </div>
-        ) : (
-          <form onSubmit={start} className="mt-2.5 pt-2 border-t border-sky-200 space-y-1.5">
-            <p className="text-[11px] text-amber-800">
-              Este saldo todavía cuenta lo vendido que no ha llegado. Escribe lo que hay hoy en el banco para que el saldo sea solo plata disponible.
-              Hazlo al final del día, cuando ya hayan entrado los pagos de hoy.
-            </p>
-            <div className="flex gap-1.5">
-              <div className="flex-1">
-                <CurrencyInput placeholder="Saldo hoy en el banco" value={real} onChange={setReal} />
-              </div>
-              <button type="submit" disabled={saving || !real}
-                className="px-3 py-2 text-xs font-medium bg-sky-700 text-white rounded-lg hover:bg-sky-800 disabled:opacity-50 whitespace-nowrap">
-                {saving ? 'Guardando…' : 'Igualar al banco'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </>
   );
 };
 
@@ -832,11 +737,40 @@ const CuentasLayout = () => {
 
           <ImportantNotesCard />
 
+          {/* ADDI + DATÁFONO va sola, a todo el ancho (Datáfono | Addi | las dos);
+              las demás cuentas siguen en su cuadrícula, en el mismo orden. */}
+          {accounts.filter(a => a.payment_key === 'addi_datafono').map(a => (
+            <CardAccountPanel
+              key={a.id}
+              account={a}
+              dotClass={(COLOR_CLASSES[a.color] || COLOR_CLASSES.blue).dot}
+              transit={transit}
+              arrived={arrived}
+              cardSince={cardSince}
+              onOpenArrived={setArrivedGroup}
+              onOpenPending={setPendingGroup}
+              onStart={handleStartCardArrivals}
+              renderMoneyInput={props => <CurrencyInput {...props} />}
+              contemplatedField={<>
+                <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-500 whitespace-nowrap">
+                  Contempla saldo hasta:
+                </label>
+                <DateNoteInput
+                  id={`contemplated-${a.id}`}
+                  value={a.contemplated_until}
+                  onSave={dateStr => handleContemplatedUntilChange(a.id, dateStr)}
+                  disabled={savingContemplatedId === a.id}
+                />
+              </>}
+              noteField={<AccountNote account={a} onSave={handleNoteChange} />}
+            />
+          ))}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accounts.map(a => {
+            {accounts.filter(a => a.payment_key !== 'addi_datafono').map(a => {
               const colors = COLOR_CLASSES[a.color] || COLOR_CLASSES.blue;
               return (
-                <div key={a.id} className={`bg-white rounded-xl border border-gray-200 shadow-sm p-5 ${a.payment_key === 'addi_datafono' && transit ? 'sm:col-span-2' : ''}`}>
+                <div key={a.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
                     <span className="text-sm font-semibold text-gray-700">{a.name}</span>
@@ -845,39 +779,7 @@ const CuentasLayout = () => {
                   {a.payment_key === 'cash' && (
                     <p className="text-xs text-gray-500 mt-1">Está en el local, aún no se ha enviado</p>
                   )}
-                  {a.payment_key === 'addi_datafono' && (
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <label htmlFor={`contemplated-${a.id}`} className="text-xs text-gray-500 whitespace-nowrap">
-                        Contempla saldo hasta:
-                      </label>
-                      <DateNoteInput
-                        id={`contemplated-${a.id}`}
-                        value={a.contemplated_until}
-                        onSave={dateStr => handleContemplatedUntilChange(a.id, dateStr)}
-                        disabled={savingContemplatedId === a.id}
-                      />
-                    </div>
-                  )}
-                  {a.payment_key === 'addi_datafono' && transit && (
-                    <CardArrivalsBox
-                      balance={Number(a.balance) || 0}
-                      transit={transit}
-                      arrived={arrived}
-                      cardSince={cardSince}
-                      onOpenArrived={setArrivedGroup}
-                      onOpenPending={setPendingGroup}
-                      onStart={handleStartCardArrivals}
-                    />
-                  )}
-                  <NoteTextArea
-                    id={`note-${a.id}`}
-                    label={`Nota de ${a.name}`}
-                    value={a.note}
-                    onSave={note => handleNoteChange(a.id, note)}
-                    maxLength={2000}
-                    placeholder="Agregar nota…"
-                    className="mt-3 w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white resize-y"
-                  />
+                  <AccountNote account={a} onSave={handleNoteChange} />
                 </div>
               );
             })}
