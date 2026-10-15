@@ -5,8 +5,11 @@
 // Izquierda: el saldo de la cuenta (lo que suma al total de Cuentas), "Contempla
 // saldo hasta", el formulario "Igualar al banco" (desaparece al usarlo) y la
 // nota. Derecha: tres columnas que se leen como tabla, Datáfono | Addi |
-// Datáfono + Addi, cada una con "Llegó en <mes>" y "Por llegar"; las dos
-// primeras abren el detalle (ArrivedDialog / PendingArrivalsDialog).
+// Datáfono + Addi, cada una con "Vendido en <mes>" (la venta real, para
+// comparar con el Excel, y lo que de eso llega a la cuenta ya sin comisión),
+// "Llegó en <mes>" y "Por llegar"; las dos primeras abren el detalle
+// (ArrivedDialog / PendingArrivalsDialog). Lo vendido sale de
+// `commissions.by_medio` de la hoja del mes (ventas del mes con correcciones).
 //
 // Con `cardSince` (plata real del banco activo) el saldo es lo que ya llegó y
 // lo que falta por llegar va aparte. Sin activar, el saldo todavía incluye lo
@@ -50,16 +53,18 @@ const Column = ({ title, caption, children, highlight }) => (
 );
 
 const CardAccountPanel = ({
-  account, dotClass, transit, arrived, cardSince, onOpenArrived, onOpenPending, onStart,
+  account, dotClass, transit, arrived, commissions, cardSince, onOpenArrived, onOpenPending, onStart,
   contemplatedField, noteField, renderMoneyInput,
 }) => {
   const [real, setReal] = useState('');
   const [saving, setSaving] = useState(false);
   const balance = Number(account.balance) || 0;
   const hasData = !!transit;
-  const groups = cardGroups(transit, null, arrived);
+  const groups = cardGroups(transit, commissions, arrived);
   const month = arrived ? monthName(arrived.start) : 'el mes';
   const arrivedTotal = groups.reduce((a, g) => a + g.arrivedNet, 0);
+  const soldTotal = groups.reduce((a, g) => a + g.sales, 0);
+  const soldNetTotal = groups.reduce((a, g) => a + g.sales - g.commission, 0);
 
   const start = async (e) => {
     e.preventDefault();
@@ -114,6 +119,8 @@ const CardAccountPanel = ({
             {groups.map(g => (
               <Column key={g.key} title={g.label}
                 caption={`${g.key === 'datafono' ? 'Débito, crédito y Bold · siguiente día hábil' : '30 días después de la venta'} · −${g.fee}`}>
+                <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(g.sales - g.commission)}`}
+                  amount={g.sales} tone="text-gray-900" />
                 <Figure label={`Llegó en ${month}`} meta={g.last && `Último: ${dayLabel(g.last)}`}
                   amount={g.arrivedNet} tone="text-emerald-700"
                   onClick={() => onOpenArrived(g.key)} title={`Ver los pagos de ${g.label} que llegaron en ${month}`} />
@@ -124,6 +131,7 @@ const CardAccountPanel = ({
               </Column>
             ))}
             <Column title="Datáfono + Addi" caption="Lo que suman las dos, ya sin comisión" highlight>
+              <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(soldNetTotal)}`} amount={soldTotal} tone="text-gray-900" />
               <Figure label={`Llegó en ${month}`} amount={arrivedTotal} tone="text-emerald-800" />
               <Figure label="Por llegar"
                 meta={`de ${fmt(transit.gross)} vendidos`} amount={transit.net} tone="text-sky-900" />

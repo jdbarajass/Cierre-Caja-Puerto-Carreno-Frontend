@@ -429,6 +429,7 @@ const CuentasLayout = () => {
   // mismo `transit` de Cuentas → Mes): se muestra en la tarjeta ADDI + DATÁFONO.
   const [transit, setTransit] = useState(null);
   const [arrived, setArrived] = useState(null);
+  const [commissions, setCommissions] = useState(null);
   const [pendingGroup, setPendingGroup] = useState(null);
   const [arrivedGroup, setArrivedGroup] = useState(null);
 
@@ -438,6 +439,7 @@ const CuentasLayout = () => {
       const data = await getMonthSheet({ year: today.getFullYear(), month: today.getMonth() + 1 });
       setTransit(data.transit || null);
       setArrived(data.arrived || null);
+      setCommissions(data.commissions || null);
     } catch {
       // No bloquea el resto del Resumen si esto falla - simplemente no se muestra.
     }
@@ -746,6 +748,7 @@ const CuentasLayout = () => {
               dotClass={(COLOR_CLASSES[a.color] || COLOR_CLASSES.blue).dot}
               transit={transit}
               arrived={arrived}
+              commissions={commissions}
               cardSince={cardSince}
               onOpenArrived={setArrivedGroup}
               onOpenPending={setPendingGroup}
