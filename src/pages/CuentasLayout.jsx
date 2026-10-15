@@ -10,8 +10,8 @@ import {
 } from '../services/accountsService';
 import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getMonthSheet } from '../services/monthSheetService';
-import { PendingGroupRows, PendingArrivalsDialog } from '../components/accounts/PendingArrivals';
-import { cardGroups } from '../utils/pendingArrivals';
+import { PendingArrivalsDialog, ArrivedDialog } from '../components/accounts/PendingArrivals';
+import { cardGroups, dayLabel, monthName } from '../utils/pendingArrivals';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
@@ -311,15 +311,52 @@ const ImportantNotesCard = () => {
   );
 };
 
-// Datáfono y Addi en la tarjeta ADDI + DATÁFONO (2026-10-14). Con
-// `cardSince` (activado) el saldo de la tarjeta es la plata real del banco y
-// lo que falta por llegar va aparte: no está disponible para recompras. Sin
-// activar, el saldo todavía incluye lo vendido que no ha llegado; se muestra
-// lo que falta y el formulario para igualar la cuenta al banco.
-const CardArrivalsBox = ({ balance, transit, cardSince, onOpen, onStart }) => {
+// Datáfono y Addi en la tarjeta ADDI + DATÁFONO (2026-10-14; separada en dos
+// casillas el 2026-10-15). Con `cardSince` (activado) el saldo de la tarjeta es
+// la plata real del banco y lo que falta por llegar va aparte: no está
+// disponible para recompras. Sin activar, el saldo todavía incluye lo vendido
+// que no ha llegado; se muestra lo que falta y el formulario para igualar la
+// cuenta al banco (desaparece al usarlo).
+//
+// "Llegó en <mes>" se calcula desde las ventas con la misma regla de llegada
+// (month_sheet.arrived), así que cubre todo el mes aunque se haya activado a
+// mitad de mes. No suma igual al saldo: el banco también tiene lo que había al
+// empezar el mes y de ahí sale plata (gastos, envíos).
+const CardGroupBox = ({ g, month, onOpenArrived, onOpenPending }) => {
+  const row = 'w-full flex items-baseline justify-between gap-2 text-left rounded px-1.5 -mx-1.5 py-0.5 disabled:cursor-default';
+  return (
+    <div className="rounded-lg border border-sky-200 bg-white px-3 py-2.5">
+      <div className="flex items-baseline justify-between gap-2 mb-1.5">
+        <span className="text-sm font-semibold text-gray-800">{g.label}</span>
+        <span className="text-[10px] text-gray-500 text-right">{g.detail ? `${g.detail} · ` : ''}{g.when}, −{g.fee}</span>
+      </div>
+      <button type="button" onClick={() => onOpenArrived(g.key)} className={`${row} hover:bg-emerald-50`}
+        title={`Ver los pagos de ${g.label} que llegaron en ${month}`}>
+        <span className="text-[11px] text-gray-600">
+          <span className="underline decoration-dotted underline-offset-2">Llegó en {month}</span>
+          {g.last && <span className="text-gray-500"> · último {dayLabel(g.last)}</span>}
+        </span>
+        <span className="text-sm font-bold text-emerald-700 whitespace-nowrap">{fmt(g.arrivedNet)}</span>
+      </button>
+      <button type="button" onClick={() => onOpenPending(g.key)} disabled={!g.gross}
+        className={`${row} hover:bg-sky-50 disabled:hover:bg-transparent`}
+        title={g.gross ? `Ver qué falta que llegue de ${g.label}` : undefined}>
+        <span className="text-[11px] text-gray-600">
+          <span className={g.gross ? 'underline decoration-dotted underline-offset-2' : ''}>Por llegar</span>
+          {g.next && <span className="text-gray-500"> · {g.key === 'addi' ? 'próxima' : 'llega'} {dayLabel(g.next)}</span>}
+        </span>
+        <span className="text-sm font-bold text-sky-800 whitespace-nowrap">{fmt(g.net)}</span>
+      </button>
+    </div>
+  );
+};
+
+const CardArrivalsBox = ({ balance, transit, arrived, cardSince, onOpenArrived, onOpenPending, onStart }) => {
   const [real, setReal] = useState('');
   const [saving, setSaving] = useState(false);
-  const groups = cardGroups(transit);
+  const groups = cardGroups(transit, null, arrived);
+  const month = arrived ? monthName(arrived.start) : 'el mes';
+  const arrivedNet = groups.reduce((a, g) => a + g.arrivedNet, 0);
 
   const start = async (e) => {
     e.preventDefault();
@@ -332,49 +369,53 @@ const CardArrivalsBox = ({ balance, transit, cardSince, onOpen, onStart }) => {
     if (ok) setReal('');
   };
 
-  if (cardSince) {
-    return (
-      <>
-        <p className="text-xs text-gray-500 mt-1">Disponible: lo que ya llegó al banco (neto)</p>
-        <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar (no está en el saldo)</span>
-            <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
+  return (
+    <>
+      {cardSince && <p className="text-xs text-gray-500 mt-1">Disponible: lo que ya llegó al banco (neto)</p>}
+      <div className="mt-3 rounded-xl bg-sky-50 border border-sky-200 p-3">
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Llegó en {month}</p>
+            <p className="text-lg font-bold text-emerald-700">{fmt(arrivedNet)}</p>
+            <p className="text-[10px] text-gray-500">Datáfono + Addi, ya sin comisión</p>
           </div>
-          <p className="text-[11px] text-gray-500 mb-1">Lo que llega ya sin comisión, de {fmt(Math.round(transit.gross))} vendidos</p>
-          <PendingGroupRows groups={groups} onOpen={onOpen} />
-          <div className="mt-1.5 pt-1.5 border-t border-sky-200 flex justify-between gap-2 text-[11px] text-gray-700">
+          <div className="text-right">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+              Por llegar{cardSince ? ' (no está en el saldo)' : ''}
+            </p>
+            <p className="text-lg font-bold text-sky-800">{fmt(Math.round(transit.net))}</p>
+            <p className="text-[10px] text-gray-500">de {fmt(Math.round(transit.gross))} vendidos</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {groups.map(g => (
+            <CardGroupBox key={g.key} g={g} month={month} onOpenArrived={onOpenArrived} onOpenPending={onOpenPending} />
+          ))}
+        </div>
+        {cardSince ? (
+          <div className="mt-2.5 pt-2 border-t border-sky-200 flex justify-between gap-2 text-[11px] text-gray-700">
             <span>Total entre las dos (banco + por llegar)</span>
             <span className="font-semibold whitespace-nowrap">{fmt(Math.round(balance + transit.net))}</span>
           </div>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Por llegar</span>
-        <span className="text-sm font-bold text-sky-800">{fmt(Math.round(transit.net))}</span>
+        ) : (
+          <form onSubmit={start} className="mt-2.5 pt-2 border-t border-sky-200 space-y-1.5">
+            <p className="text-[11px] text-amber-800">
+              Este saldo todavía cuenta lo vendido que no ha llegado. Escribe lo que hay hoy en el banco para que el saldo sea solo plata disponible.
+              Hazlo al final del día, cuando ya hayan entrado los pagos de hoy.
+            </p>
+            <div className="flex gap-1.5">
+              <div className="flex-1">
+                <CurrencyInput placeholder="Saldo hoy en el banco" value={real} onChange={setReal} />
+              </div>
+              <button type="submit" disabled={saving || !real}
+                className="px-3 py-2 text-xs font-medium bg-sky-700 text-white rounded-lg hover:bg-sky-800 disabled:opacity-50 whitespace-nowrap">
+                {saving ? 'Guardando…' : 'Igualar al banco'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
-      <p className="text-[11px] text-gray-500 mb-1">Lo que llega ya sin comisión, de {fmt(Math.round(transit.gross))} vendidos</p>
-      <PendingGroupRows groups={groups} onOpen={onOpen} />
-      <form onSubmit={start} className="mt-2 pt-2 border-t border-sky-200 space-y-1.5">
-        <p className="text-[11px] text-amber-800">
-          Este saldo todavía cuenta lo vendido que no ha llegado. Escribe lo que hay hoy en el banco para que el saldo sea solo plata disponible.
-        </p>
-        <div className="flex gap-1.5">
-          <div className="flex-1">
-            <CurrencyInput placeholder="Saldo hoy en el banco" value={real} onChange={setReal} />
-          </div>
-          <button type="submit" disabled={saving || !real}
-            className="px-3 py-2 text-xs font-medium bg-sky-700 text-white rounded-lg hover:bg-sky-800 disabled:opacity-50 whitespace-nowrap">
-            {saving ? 'Guardando…' : 'Igualar al banco'}
-          </button>
-        </div>
-      </form>
-    </div>
+    </>
   );
 };
 
@@ -482,13 +523,16 @@ const CuentasLayout = () => {
   // Plata del datáfono y de Addi que todavía no llega, calculada a hoy (el
   // mismo `transit` de Cuentas → Mes): se muestra en la tarjeta ADDI + DATÁFONO.
   const [transit, setTransit] = useState(null);
+  const [arrived, setArrived] = useState(null);
   const [pendingGroup, setPendingGroup] = useState(null);
+  const [arrivedGroup, setArrivedGroup] = useState(null);
 
   const loadTransit = useCallback(async () => {
     try {
       const today = getColombiaDate();
       const data = await getMonthSheet({ year: today.getFullYear(), month: today.getMonth() + 1 });
       setTransit(data.transit || null);
+      setArrived(data.arrived || null);
     } catch {
       // No bloquea el resto del Resumen si esto falla - simplemente no se muestra.
     }
@@ -792,7 +836,7 @@ const CuentasLayout = () => {
             {accounts.map(a => {
               const colors = COLOR_CLASSES[a.color] || COLOR_CLASSES.blue;
               return (
-                <div key={a.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <div key={a.id} className={`bg-white rounded-xl border border-gray-200 shadow-sm p-5 ${a.payment_key === 'addi_datafono' && transit ? 'sm:col-span-2' : ''}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
                     <span className="text-sm font-semibold text-gray-700">{a.name}</span>
@@ -818,8 +862,10 @@ const CuentasLayout = () => {
                     <CardArrivalsBox
                       balance={Number(a.balance) || 0}
                       transit={transit}
+                      arrived={arrived}
                       cardSince={cardSince}
-                      onOpen={setPendingGroup}
+                      onOpenArrived={setArrivedGroup}
+                      onOpenPending={setPendingGroup}
                       onStart={handleStartCardArrivals}
                     />
                   )}
@@ -948,6 +994,9 @@ const CuentasLayout = () => {
 
       {pendingGroup && transit && (
         <PendingArrivalsDialog groupKey={pendingGroup} transit={transit} onClose={() => setPendingGroup(null)} />
+      )}
+      {arrivedGroup && arrived && (
+        <ArrivedDialog groupKey={arrivedGroup} arrived={arrived} onClose={() => setArrivedGroup(null)} />
       )}
 
       {tab === 'recompras' && <CuentasRecompras onEntriesChanged={refreshSummary} />}

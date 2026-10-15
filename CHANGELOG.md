@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-10-15] Cuentas → Resumen: ADDI + DATÁFONO en dos casillas (Datáfono y Addi)
+
+- La tarjeta ADDI + DATÁFONO ocupa dos columnas y adentro tiene: "Llegó en <mes>" (Datáfono + Addi) y "Por llegar" (Datáfono + Addi), y dos casillas, Datáfono y Addi, cada una con su "Llegó en <mes>" y su "Por llegar". Cada línea abre una ventana: la nueva `ArrivedDialog` (pagos que llegaron en el mes, uno por día de venta, con flechas para ver los meses anteriores) y la de siempre (lo que falta que llegue). El saldo de la cuenta sigue siendo el número grande; el formulario "Igualar al banco" sigue igual y desaparece al usarlo.
+- Usa `arrived` de `/api/month-sheet` (backend `month_sheet.arrived`). "Llegó en <mes>" va por día de llegada: lo vendido a fin de mes que llega el mes siguiente cuenta en el mes siguiente y mientras tanto está en "Por llegar".
+- Bold va dentro del Datáfono (`CARD_GROUPS`, `TRANSIT_LABEL`).
+- Piezas compartidas: `cardGroups(tr, comm, arr)` (suma también lo que llegó), `saleRows` y las fechas (`dayLabel`, `dateLong`, `monthName`) pasaron a `src/utils/pendingArrivals.js`; las dos ventanas comparten `ArrivalsDialogFrame` en `PendingArrivals.jsx`. Cuentas → Mes sigue igual.
+
 ## [2026-10-14] ADDI + DATÁFONO = plata real del banco
 
 - `CuentasLayout.jsx` (`CardArrivalsBox`): sin activar, la tarjeta muestra lo que falta por llegar y el formulario "Igualar al banco" (`startCardArrivals` en `accountsService.js`, con confirmación). Activado (`card_arrivals_since` de `/api/accounts`): el saldo es lo disponible, "Por llegar (no está en el saldo)" con Datáfono y Addi clickeables, y el total entre las dos. Movimiento `card_arrival` en `MOVEMENT_TYPE_LABELS`.
