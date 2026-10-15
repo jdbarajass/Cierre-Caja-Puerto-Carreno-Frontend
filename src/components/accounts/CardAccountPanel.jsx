@@ -6,7 +6,8 @@
 // saldo hasta", el formulario "Igualar al banco" (desaparece al usarlo) y la
 // nota. Derecha: tres columnas que se leen como tabla, Datáfono | Addi |
 // Datáfono + Addi, cada una con "Vendido en <mes>" (la venta real, para
-// comparar con el Excel, y lo que de eso llega a la cuenta ya sin comisión),
+// comparar con el Excel, lo que de eso llega a la cuenta y la comisión que se
+// queda el datáfono o Addi),
 // "Llegó en <mes>" y "Por llegar"; las dos primeras abren el detalle
 // (ArrivedDialog / PendingArrivalsDialog). Lo vendido sale de
 // `commissions.by_medio` de la hoja del mes (ventas del mes con correcciones).
@@ -25,12 +26,13 @@ const fmt = (v) =>
 // Una fila de una columna: etiqueta, monto y fecha, siempre en tres líneas
 // para que los montos de las tres columnas queden a la misma altura. Con
 // `onClick` es un botón que abre el detalle.
-const Figure = ({ label, meta, amount, tone, onClick, disabled, title }) => {
+const Figure = ({ label, meta, fee, amount, tone, onClick, disabled, title }) => {
   const body = (
     <>
       <span className={`block text-xs text-gray-600 truncate ${onClick && !disabled ? 'underline decoration-dotted underline-offset-2' : ''}`}>{label}</span>
       <span className={`block text-lg font-bold tabular-nums leading-tight mt-0.5 ${tone}`}>{fmt(amount)}</span>
       <span className="block text-[11px] text-gray-500 truncate">{meta || ' '}</span>
+      {fee !== undefined && <span className="block text-[11px] text-orange-700 truncate">Comisión: −{fmt(fee)}</span>}
     </>
   );
   if (!onClick) return <div className="px-2 py-1.5">{body}</div>;
@@ -120,7 +122,7 @@ const CardAccountPanel = ({
               <Column key={g.key} title={g.label}
                 caption={`${g.key === 'datafono' ? 'Débito, crédito y Bold · siguiente día hábil' : '30 días después de la venta'} · −${g.fee}`}>
                 <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(g.sales - g.commission)}`}
-                  amount={g.sales} tone="text-gray-900" />
+                  fee={g.commission} amount={g.sales} tone="text-gray-900" />
                 <Figure label={`Llegó en ${month}`} meta={g.last && `Último: ${dayLabel(g.last)}`}
                   amount={g.arrivedNet} tone="text-emerald-700"
                   onClick={() => onOpenArrived(g.key)} title={`Ver los pagos de ${g.label} que llegaron en ${month}`} />
@@ -131,7 +133,7 @@ const CardAccountPanel = ({
               </Column>
             ))}
             <Column title="Datáfono + Addi" caption="Lo que suman las dos, ya sin comisión" highlight>
-              <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(soldNetTotal)}`} amount={soldTotal} tone="text-gray-900" />
+              <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(soldNetTotal)}`} fee={soldTotal - soldNetTotal} amount={soldTotal} tone="text-gray-900" />
               <Figure label={`Llegó en ${month}`} amount={arrivedTotal} tone="text-emerald-800" />
               <Figure label="Por llegar"
                 meta={`de ${fmt(transit.gross)} vendidos`} amount={transit.net} tone="text-sky-900" />
