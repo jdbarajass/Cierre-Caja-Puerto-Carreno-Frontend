@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-10-16] Corrección de texto
+
+- Ventana "lo que llegó" (`ArrivedDialog`): cada fila decía "Llegaó" en vez de "Llegó".
+
 ## [2026-10-15] ADDI + DATÁFONO: "Vendido en <mes>" en cada columna
 
 - Pedido del usuario para comparar con su Excel (que lleva lo vendido, no lo que llegó): fila nueva arriba en Datáfono, Addi y Datáfono + Addi con la venta real del mes y, debajo, "A la cuenta" (lo vendido menos la comisión). Sale de `commissions.by_medio` de la hoja del mes (ya traía ventas y comisión por medio, con las correcciones); `CuentasLayout.jsx` la guarda junto con `transit` y `arrived`. Sin cambios en el backend.

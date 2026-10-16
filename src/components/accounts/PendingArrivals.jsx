@@ -60,7 +60,7 @@ const ArrivalsDialogFrame = ({ onClose, icon, title, nav, intro, summary, rows, 
                 <li key={`${i.arrival_date}-${i.medio}-${i.date}-${idx}`} className="px-5 py-2.5 flex items-center justify-between gap-3 text-sm">
                   <div>
                     <p className="font-medium text-gray-900">
-                      Llega{badge ? '' : 'ó'} {dateLong(i.arrival_date)}
+                      {badge ? 'Llega' : 'Llegó'} {dateLong(i.arrival_date)}
                       {badge && i.arrival_date === rows[0].arrival_date && <span className="ml-2 normal-case px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-semibold">{badge}</span>}
                     </p>
                     <p className="text-xs text-gray-500">
