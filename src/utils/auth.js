@@ -18,6 +18,16 @@ export const isAdmin = () => {
 };
 
 /**
+ * Admin de solo lectura (rol 'viewer' del backend): ve todo como el admin
+ * (AuthContext le guarda role 'admin'), pero no puede modificar nada. Las
+ * peticiones que modifican se cortan en services/api.js y en el backend.
+ * @returns {boolean}
+ */
+export const isReadOnly = () => {
+  return getUser()?.readOnly === true;
+};
+
+/**
  * Verifica si el usuario actual es del equipo de ventas
  * @returns {boolean} - true si el usuario es sales, false en caso contrario
  */

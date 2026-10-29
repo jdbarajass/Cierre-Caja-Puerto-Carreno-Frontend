@@ -373,19 +373,21 @@ const UsersManagement = () => {
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                         user.role === 'admin'
                           ? 'bg-purple-100 text-purple-800'
-                          : 'bg-blue-100 text-blue-800'
+                          : user.role === 'viewer'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {user.role === 'admin' ? (
+                        {user.role === 'admin' || user.role === 'viewer' ? (
                           <ShieldCheck className="w-3.5 h-3.5" />
                         ) : (
                           <Shield className="w-3.5 h-3.5" />
                         )}
-                        {user.role === 'admin' ? 'Administrador' : 'Ventas'}
+                        {user.role === 'admin' ? 'Administrador' : user.role === 'viewer' ? 'Solo lectura' : 'Ventas'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
                       {/* El admin opera todas las tiendas sin importar la asignada */}
-                      {user.role === 'admin' ? 'Todas' : storeLabel(user.store_code)}
+                      {user.role === 'admin' || user.role === 'viewer' ? 'Todas' : storeLabel(user.store_code)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -536,6 +538,7 @@ const UsersManagement = () => {
                           <option value="sales">Ventas</option>
                           <option value="admin">Administrador</option>
                           <option value="partner">Socio (solo recompras)</option>
+                          <option value="viewer">Administrador de solo lectura</option>
                         </select>
                       </div>
 
@@ -550,7 +553,7 @@ const UsersManagement = () => {
                             name="store_code"
                             value={formData.store_code}
                             onChange={handleInputChange}
-                            disabled={formData.role === 'admin'}
+                            disabled={formData.role === 'admin' || formData.role === 'viewer'}
                             aria-describedby="store_code-ayuda"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500"
                           >
@@ -559,7 +562,7 @@ const UsersManagement = () => {
                             ))}
                           </select>
                           <p id="store_code-ayuda" className="mt-1 text-xs text-gray-500">
-                            {formData.role === 'admin'
+                            {formData.role === 'admin' || formData.role === 'viewer'
                               ? 'El administrador opera todas las tiendas.'
                               : 'Solo verá y registrará datos de esta tienda. Un cambio aplica en su próximo inicio de sesión.'}
                           </p>

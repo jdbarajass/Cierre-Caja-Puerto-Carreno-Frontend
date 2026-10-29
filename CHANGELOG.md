@@ -2,6 +2,15 @@
 
 ---
 
+## [2026-10-29] Administrador de solo lectura
+
+- Pedido del usuario: un usuario que ve todo lo que ve el admin, en las dos tiendas, pero no puede modificar nada. Rol `viewer` del backend.
+- `AuthContext` lo guarda como `role: 'admin'` con `readOnly: true` (así ve todos los menús y pantallas); `utils/auth.js` `isReadOnly()`.
+- `services/api.js` (`authenticatedFetch`): con solo lectura, cualquier POST/PUT/PATCH/DELETE (menos `/auth/*` y el análisis de un archivo de inventario, que no guarda nada) devuelve un 403 local con el mismo mensaje del backend; cada pantalla muestra su error. El backend lo bloquea igual.
+- `MainLayout`: aviso "Modo solo lectura" arriba de cada pantalla, "Solo lectura" bajo el nombre y sin la ventana de recordatorios (sus botones guardan).
+- Gestión de usuarios: opción "Administrador de solo lectura", etiqueta "Solo lectura" y tienda "Todas".
+- `npm run build` OK; vitest se cuelga en el PC de la entidad (repetir en el PC personal).
+
 ## [2026-10-16] Corrección de texto
 
 - Ventana "lo que llegó" (`ArrivedDialog`): cada fila decía "Llegaó" en vez de "Llegó".

@@ -34,6 +34,7 @@ import {
   Store,
   History,
   ShieldCheck,
+  Eye,
 } from 'lucide-react';
 import { getColombiaTimeString, getColombiaTodayString } from '../../utils/dateUtils';
 import { canAccess } from '../../utils/auth';
@@ -551,7 +552,7 @@ const MainLayout = ({ children }) => {
                   </span>
                   <span className="hidden md:block text-left leading-tight">
                     <span className="block text-[13px] font-semibold text-gray-900 max-w-[160px] truncate">{userName}</span>
-                    <span className="block text-[11px] text-gray-500">{user?.role === 'admin' ? 'Administrador' : 'Ventas'}</span>
+                    <span className="block text-[11px] text-gray-500">{user?.readOnly ? 'Solo lectura' : user?.role === 'admin' ? 'Administrador' : 'Ventas'}</span>
                   </span>
                   <ChevronDown className={`hidden sm:block w-4 h-4 text-gray-400 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -962,8 +963,14 @@ const MainLayout = ({ children }) => {
       {/* CONTENIDO PRINCIPAL */}
       <main id="contenido" tabIndex={-1} className="flex-1 outline-none">
         <div className="page-enter max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {user?.readOnly && (
+            <div role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900 ring-1 ring-amber-200">
+              <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Modo solo lectura: puedes ver todo, pero no guardar ni cambiar nada.
+            </div>
+          )}
           <AlegraFailedDaysBanner />
-          {user?.role === 'admin' && <RemindersPopup store={activeStore} />}
+          {user?.role === 'admin' && !user?.readOnly && <RemindersPopup store={activeStore} />}
           {children}
         </div>
       </main>

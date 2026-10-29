@@ -181,10 +181,14 @@ export const AuthProvider = ({ children }) => {
 
         // Guardar token JWT y datos del usuario del backend
         const jwtToken = data.token;
+        // Admin de solo lectura: se guarda como admin para que vea todo (ver
+        // utils/auth.js isReadOnly)
+        const readOnly = data.user.role === 'viewer' || data.user.read_only === true;
         const userData = {
           email: data.user.email,
           name: data.user.name,
-          role: data.user.role,
+          role: readOnly ? 'admin' : data.user.role,
+          readOnly,
           store_code: data.user.store_code,
           stores: data.user.stores,
           loginTime: new Date().toISOString()

@@ -2,6 +2,7 @@ import logger from '../utils/logger';
 import { secureGetItem, secureRemoveItem } from '../utils/secureStorage';
 import { getActiveStoreCode } from '../utils/activeStore';
 import { reportAlegraFailedDays } from '../utils/dataWarnings';
+import { isReadOnly } from '../utils/auth';
 
 // URLs de los backends
 const API_LOCALS = [
@@ -343,7 +344,18 @@ const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = nul
  * Fetch autenticado (con X-Store y descubrimiento de backend). Además avisa si
  * el backend reporta días que Alegra no entregó (ver utils/dataWarnings.js).
  */
+// Lo único que el admin de solo lectura puede mandar además de GET (no guarda nada)
+const READ_ONLY_ALLOWED = ['/api/inventory/upload-file'];
+
 export const authenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && isReadOnly()
+      && !endpoint.startsWith('/auth/') && !READ_ONLY_ALLOWED.includes(endpoint)) {
+    // Misma respuesta que da el backend: cada pantalla muestra su mensaje de error
+    return new Response(JSON.stringify({
+      success: false, read_only: true, message: 'Usuario de solo lectura: no puede modificar nada',
+    }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  }
   const response = await rawAuthenticatedFetch(endpoint, options, customTimeout);
   reportAlegraFailedDays(response);
   return response;
