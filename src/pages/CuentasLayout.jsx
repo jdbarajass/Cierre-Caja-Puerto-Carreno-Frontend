@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useR
 import {
   Wallet, History, Plus, Minus, RefreshCw,
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange,
-  StickyNote
+  StickyNote, Maximize2, X
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
@@ -18,6 +18,7 @@ import CuentasGastos from './CuentasGastos';
 import CuentasMes from './CuentasMes';
 import CuentasAnual from './CuentasAnual';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import useDialog from '../hooks/useDialog';
 import { usePublishSceneData, experience } from '../experience/store';
 
 const fmt = (v) =>
@@ -222,16 +223,37 @@ const DateNoteInput = ({ id, value, onSave, disabled }) => {
 // Texto libre que se guarda al salir del campo (onBlur), con el mismo
 // borrador local que DateNoteInput para no pisar lo que se está escribiendo
 // si la pantalla se refresca. Se usa en la nota de cada tarjeta y en la
-// tarjeta NOTAS IMPORTANTES.
-const NoteTextArea = ({ id, label, value, onSave, disabled, rows = 2, maxLength, placeholder, className }) => {
+// tarjeta NOTAS IMPORTANTES. Con `expandTitle`, un botón en la esquina abre la
+// nota en grande (NoteExpandDialog) con el mismo borrador; se guarda al cerrar.
+const NoteTextArea = ({ id, label, value, onSave, disabled, rows = 2, maxLength, placeholder, className, expandTitle, wrapperClassName = '' }) => {
   const [draft, setDraft] = useState(value || '');
   const [dirty, setDirty] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  // refs: el blur del campo y el cierre de la ventana pueden guardar casi a la vez
+  const draftRef = useRef(draft);
+  const dirtyRef = useRef(false);
 
   useEffect(() => {
-    if (!dirty) setDraft(value || '');
+    if (!dirty) { setDraft(value || ''); draftRef.current = value || ''; }
   }, [value, dirty]);
 
-  return (
+  const change = (text) => {
+    setDraft(text);
+    draftRef.current = text;
+    dirtyRef.current = true;
+    setDirty(true);
+  };
+
+  const commit = async () => {
+    if (!dirtyRef.current) return;
+    dirtyRef.current = false;
+    const ok = await onSave(draftRef.current.trim());
+    // si no se pudo guardar, el borrador se queda para no perder lo escrito
+    if (ok === false) dirtyRef.current = true;
+    else setDirty(false);
+  };
+
+  const field = (
     <textarea
       id={id}
       aria-label={label}
@@ -239,16 +261,72 @@ const NoteTextArea = ({ id, label, value, onSave, disabled, rows = 2, maxLength,
       maxLength={maxLength}
       placeholder={placeholder}
       value={draft}
-      onChange={e => { setDraft(e.target.value); setDirty(true); }}
-      onBlur={async () => {
-        if (!dirty) return;
-        const ok = await onSave(draft.trim());
-        // si no se pudo guardar, el borrador se queda para no perder lo escrito
-        if (ok !== false) setDirty(false);
-      }}
+      onChange={e => change(e.target.value)}
+      onBlur={commit}
       disabled={disabled}
-      className={className}
+      className={`${className}${expandTitle ? ' pr-9' : ''}`}
     />
+  );
+  if (!expandTitle) return field;
+
+  return (
+    <div className={`relative ${wrapperClassName}`}>
+      {field}
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        disabled={disabled}
+        aria-label={`Ver en grande: ${label}`}
+        title="Ver en grande"
+        className="absolute top-1.5 right-1.5 p-1 rounded-md text-gray-500 bg-white/80 ring-1 ring-gray-200 hover:text-gray-900 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-40"
+      >
+        <Maximize2 className="w-3.5 h-3.5" aria-hidden="true" />
+      </button>
+      {expanded && (
+        <NoteExpandDialog
+          title={expandTitle}
+          label={label}
+          value={draft}
+          onChange={change}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onClose={() => { setExpanded(false); commit(); }}
+        />
+      )}
+    </div>
+  );
+};
+
+// La nota en grande: casi toda la pantalla en el celular (sube desde abajo,
+// como las demás ventanas) y una ventana ancha en el computador.
+const NoteExpandDialog = ({ title, label, value, onChange, maxLength, placeholder, onClose }) => {
+  const ref = useDialog(true, onClose);
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="flex items-end sm:items-center justify-center h-full sm:p-6">
+        <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px]" onClick={onClose} />
+        <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="dlg-note-title"
+          className="relative w-full sm:max-w-3xl h-[88dvh] sm:h-[80dvh] flex flex-col bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl">
+          <div className="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-3">
+            <h3 id="dlg-note-title" className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <StickyNote className="w-4 h-4 text-amber-700" aria-hidden="true" /> {title}
+            </h3>
+            <button type="button" aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <textarea
+            aria-label={label}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            className="flex-1 w-full resize-none px-5 py-4 text-[15px] leading-relaxed text-gray-800 focus:outline-none"
+          />
+          <p className="px-5 py-2.5 border-t border-gray-100 text-xs text-gray-500">Se guarda al cerrar esta ventana.</p>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -261,7 +339,9 @@ const AccountNote = ({ account, onSave }) => (
     onSave={note => onSave(account.id, note)}
     maxLength={2000}
     placeholder="Agregar nota…"
-    className="mt-3 w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white resize-y"
+    expandTitle={`Nota de ${account.name}`}
+    wrapperClassName="mt-3"
+    className="block w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white resize-y"
   />
 );
 
@@ -318,7 +398,8 @@ const ImportantNotesCard = () => {
         rows={4}
         maxLength={10000}
         placeholder="Algo urgente que no se te puede olvidar… (se guarda al salir del campo)"
-        className="w-full bg-white/70 border border-amber-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-300 resize-y disabled:opacity-50"
+        expandTitle="NOTAS IMPORTANTES"
+        className="block w-full bg-white/70 border border-amber-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-300 resize-y disabled:opacity-50"
       />
     </div>
   );

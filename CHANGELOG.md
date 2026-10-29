@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-10-29] Notas en grande (Cuentas → Resumen)
+
+- Pedido del usuario: NOTAS IMPORTANTES y la nota de cada tarjeta de cuenta se veían muy apretadas. Botón en la esquina del campo (`Maximize2`, "Ver en grande") que abre la nota en una ventana: casi toda la pantalla en el celular (sube desde abajo) y ancha en el computador (`max-w-3xl`, 80 % del alto).
+- Va en `NoteTextArea` (prop `expandTitle`), así lo tienen las dos notas. La ventana edita el mismo borrador y guarda al cerrarse (botón, Escape o clic afuera, con `useDialog`); el campo pequeño sigue guardando al salir y se puede seguir agrandando a mano.
+- `npm run build` y eslint de `CuentasLayout.jsx` OK.
+
 ## [2026-10-29] Administrador de solo lectura
 
 - Pedido del usuario: un usuario que ve todo lo que ve el admin, en las dos tiendas, pero no puede modificar nada. Rol `viewer` del backend.
