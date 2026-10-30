@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-10-30] Popup de gastos operativos en el cierre
+
+Pedido del usuario: si el cierre trae gastos operativos, que pregunte en qué se gastaron para que quede en Gastos con esa descripción.
+
+- `src/components/common/GastosDetalleDialog.jsx` (nuevo): "Hubo gastos operativos de $ X. ¿En qué se gastaron?". Una o varias líneas (concepto, valor y categoría: gasto operativo, flete, moto carro, aseo, inversión) que deben sumar el total; la primera línea arranca con la nota del formulario o del Excel.
+- `Dashboard.jsx`: al dar "Realizar Cierre" con gastos > 0 sale el popup antes de la confirmación (que ahora lista los gastos); el envío lleva `gastos_detalle` (y la nota se arma con las líneas si estaba vacía). Necesita el backend del mismo día (los guarda en Gastos como "De la caja del día").
+- Build OK; eslint sin errores nuevos. Vitest pendiente en el PC personal.
+
 ## [2026-10-29] Notas en grande (Cuentas → Resumen)
 
 - Pedido del usuario: NOTAS IMPORTANTES y la nota de cada tarjeta de cuenta se veían muy apretadas. Botón en la esquina del campo (`Maximize2`, "Ver en grande") que abre la nota en una ventana: casi toda la pantalla en el celular (sube desde abajo) y ancha en el computador (`max-w-3xl`, 80 % del alto).

@@ -11,6 +11,7 @@ import useDialog from '../hooks/useDialog';
 import InvoicesSummaryBadge from './common/InvoicesSummaryBadge';
 import VoidedInvoicesAlert from './common/VoidedInvoicesAlert';
 import VoidedInvoicesModal from './common/VoidedInvoicesModal';
+import GastosDetalleDialog from './common/GastosDetalleDialog';
 import { saveDraft, loadDraft, clearDraft } from '../utils/cashClosingDraft';
 import { storeDisplayName } from '../utils/activeStore';
 import { usePublishSceneData } from '../experience/store';
@@ -150,6 +151,10 @@ const Dashboard = () => {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
+  // Detalle de los gastos operativos (popup "¿En qué se gastaron?"): va a
+  // Cuentas → Gastos como "De la caja del día" al enviar el cierre.
+  const [gastosDetalle, setGastosDetalle] = useState([]);
+  const [showGastosDialog, setShowGastosDialog] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [validationWarning, setValidationWarning] = useState(null);
@@ -409,6 +414,7 @@ const Dashboard = () => {
       setExcedentes(data.excedentes.length
         ? data.excedentes.map((exc, i) => ({ id: Date.now() + i, tipo: exc.tipo, subtipo: exc.subtipo || '', valor: String(exc.valor) }))
         : [{ id: Date.now(), tipo: 'efectivo', subtipo: '', valor: '' }]);
+      setGastosDetalle([]); // el popup arranca con la nota del Excel
       setAdjustments(prev => ({
         ...prev,
         gastos_operativos: asText(data.gastos_operativos),
@@ -498,6 +504,16 @@ const Dashboard = () => {
     };
 
     setConfirmData(confirmationData);
+    if (confirmationData.hasGastos) {
+      setShowGastosDialog(true);
+    } else {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleGastosConfirm = (lines) => {
+    setGastosDetalle(lines);
+    setShowGastosDialog(false);
     setShowConfirmModal(true);
   };
 
@@ -517,6 +533,7 @@ const Dashboard = () => {
           valor: parseInt(exc.valor) || 0
         }));
 
+      const hasGastosOperativos = (parseInt(adjustments.gastos_operativos) || 0) > 0;
       const payload = {
         date: closingDate,
         timezone: 'America/Bogota',
@@ -527,7 +544,11 @@ const Dashboard = () => {
         bills: Object.fromEntries(Object.entries(bills).map(([k, v]) => [k, parseInt(v) || 0])),
         excedentes: excedentesArray,
         gastos_operativos: parseInt(adjustments.gastos_operativos) || 0,
-        gastos_operativos_nota: adjustments.gastos_operativos_nota || '',
+        gastos_operativos_nota: adjustments.gastos_operativos_nota
+          || (hasGastosOperativos ? gastosDetalle.map(g => `${g.concepto} ${formatCurrency(parseInt(g.valor))}`).join('; ') : ''),
+        gastos_detalle: hasGastosOperativos
+          ? gastosDetalle.map(g => ({ concepto: g.concepto, valor: parseInt(g.valor) || 0, subcategoria: g.subcategoria }))
+          : [],
         prestamos: parseInt(adjustments.prestamos) || 0,
         prestamos_nota: adjustments.prestamos_nota || '',
         metodos_pago: {
@@ -645,6 +666,7 @@ const Dashboard = () => {
     });
     setDesfaseSugerido(null);
     setShowDesfaseSection(false);
+    setGastosDetalle([]);
     setMetodosPago({
       addi_datafono: '',
       nequi_luz_helena: '',
@@ -1740,6 +1762,15 @@ const Dashboard = () => {
           </div>
         )}
 
+        <GastosDetalleDialog
+          open={showGastosDialog}
+          total={parseInt(adjustments.gastos_operativos) || 0}
+          initialLines={gastosDetalle}
+          nota={adjustments.gastos_operativos_nota}
+          onCancel={() => setShowGastosDialog(false)}
+          onConfirm={handleGastosConfirm}
+        />
+
         {/* Modal de Confirmación */}
         {showConfirmModal && confirmData && (
           <div className="fixed inset-0 bg-gray-950/50 backdrop-blur-[2px] animate-backdrop flex items-end sm:items-center justify-center z-[70] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="dlg-confirmar" ref={confirmDialogRef}>
@@ -1792,9 +1823,17 @@ const Dashboard = () => {
                 )}
 
                 {confirmData.hasGastos && (
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span>Gastos operativos registrados</span>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>Gastos operativos (quedan en Gastos):</span>
+                    </div>
+                    {gastosDetalle.map(g => (
+                      <div key={g.id} className="flex justify-between gap-3 pl-6">
+                        <span className="truncate">{g.concepto}</span>
+                        <span className="font-semibold tabular-nums">{formatCurrency(parseInt(g.valor))}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
 
