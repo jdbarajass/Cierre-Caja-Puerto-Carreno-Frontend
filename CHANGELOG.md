@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-03] (continuación) Nunca se devuelve plata, también en tarjeta regalo
+
+- `InventoryAdjustments.jsx`: la tarjeta regalo no deja enviar si la prenda vale menos que la tarjeta ("Faltan $X: debe llevar otra prenda") y pide el excedente si vale más, igual que el cambio de prenda. Necesita el backend del mismo día.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-03] (continuación) Cambio de prenda en Ajustes de inventario
 
 El usuario aclaró que un cambio de prenda siempre es un ajuste y que nunca se devuelve plata (lo que se lleva vale igual o más; si vale más, paga el excedente y se reporta en el cierre). Necesita el backend del mismo día (4bc04cc).

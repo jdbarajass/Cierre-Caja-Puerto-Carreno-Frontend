@@ -1,7 +1,7 @@
 // Ajustes de inventario (docs/PLAN_AJUSTES_INVENTARIO.md del backend).
 // Las vendedoras piden un conteo de inventario, redimir una tarjeta regalo o un cambio
 // de prenda; NADA toca Alegra hasta que el admin lo acepta (ahí se crea el ajuste y se
-// ve su número). En cambios nunca se devuelve plata: lo que sale vale igual o más.
+// ve su número). Nunca se devuelve plata (cambios y tarjetas): lo que sale vale igual o más.
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   PackageCheck, Gift, ClipboardList, Plus, Trash2, Check, X, Search, Loader2,
@@ -84,7 +84,10 @@ const FORM_TEXT = {
     title: 'Conteo de inventario',
     help: 'Escribe el código y cuántas hay físicamente en la tienda. La plataforma calcula si se aumenta o se disminuye.',
   },
-  tarjeta_regalo: { title: 'Redimir tarjeta regalo', help: 'Entra la tarjeta regalo y sale la prenda que se lleva el cliente.' },
+  tarjeta_regalo: {
+    title: 'Redimir tarjeta regalo',
+    help: 'Entra la tarjeta regalo y sale la prenda que se lleva el cliente. Nunca se devuelve plata: lo que se lleva debe valer igual o más que la tarjeta (si vale más, paga el excedente).',
+  },
   cambio_prenda: {
     title: 'Cambio de prenda',
     help: 'Entra la prenda que devuelve el cliente y sale la que se lleva. Nunca se devuelve plata: lo que se lleva debe valer igual o más (si vale más, paga el excedente).',
@@ -178,8 +181,8 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
     if (all.filter(r => r.code).some(r => !r.item)) { setError('Hay códigos que no se encontraron en Alegra: revísalos.'); return; }
     if (kind === 'tarjeta_regalo' && !card.item) { setError('Busca el código de la tarjeta regalo.'); return; }
     if (kind === 'tarjeta_regalo' && !card.item.is_gift_card) { setError('El código que entra no es una tarjeta regalo.'); return; }
-    if (cambio && difference < 0) { setError('Lo que se lleva vale menos que lo que devuelve: debe llevar otra prenda hasta igualar o pasar el valor.'); return; }
-    if (cambio && difference > 0 && !(Number(excedente) > 0)) { setError('Escribe el excedente que pagó el cliente.'); return; }
+    if (!conteo && difference < 0) { setError('Lo que se lleva vale menos de lo que entra: debe llevar otra prenda hasta igualar o pasar el valor (nunca se devuelve plata).'); return; }
+    if (!conteo && difference > 0 && !(Number(excedente) > 0)) { setError('Escribe el excedente que pagó el cliente.'); return; }
     if (Number(excedente) > 0 && !medio) { setError('Elige por qué medio pagó el excedente.'); return; }
 
     const extra = conteo ? {} : { excedente_valor: Number(excedente || 0), excedente_medio: Number(excedente) > 0 ? medio : '' };
@@ -238,13 +241,11 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
       </div>
 
       {ready && (
-        <div className={`text-sm rounded-xl px-3 py-2 border ${difference < 0 && cambio ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-800'}`}>
+        <div className={`text-sm rounded-xl px-3 py-2 border ${difference < 0 ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-800'}`}>
           Entra {fmt(valueIn)} · Sale {fmt(valueOut)} ·{' '}
           {difference > 0 && <b>El cliente paga {fmt(difference)}</b>}
           {difference === 0 && <b>Mismo valor: no hay excedente</b>}
-          {difference < 0 && (cambio
-            ? <b>Faltan {fmt(-difference)}: debe llevar otra prenda (nunca se devuelve plata)</b>
-            : <b>Quedan {fmt(-difference)} a favor del cliente</b>)}
+          {difference < 0 && <b>Faltan {fmt(-difference)}: debe llevar otra prenda (nunca se devuelve plata)</b>}
         </div>
       )}
 
