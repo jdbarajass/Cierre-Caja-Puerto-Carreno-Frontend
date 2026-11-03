@@ -328,7 +328,7 @@ const MainLayout = ({ children }) => {
     {
       id: 'ajustes-inventario',
       label: 'Ajustes de inventario',
-      description: 'Conteos y tarjetas regalo; se aplican en Alegra al aceptarlos',
+      description: 'Conteos, cambios de prenda y tarjetas regalo; se aplican en Alegra al aceptarlos',
       path: '/ajustes-inventario',
       icon: PackageCheck,
       color: 'indigo',

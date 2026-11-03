@@ -1,11 +1,11 @@
 // Ajustes de inventario (docs/PLAN_AJUSTES_INVENTARIO.md del backend).
-// Las vendedoras piden un conteo de inventario o redimir una tarjeta regalo; NADA
-// toca Alegra hasta que el admin lo acepta (ahí se crea el ajuste y se ve su número).
-// Cambios de prenda: pendientes de hablar con el contador.
+// Las vendedoras piden un conteo de inventario, redimir una tarjeta regalo o un cambio
+// de prenda; NADA toca Alegra hasta que el admin lo acepta (ahí se crea el ajuste y se
+// ve su número). En cambios nunca se devuelve plata: lo que sale vale igual o más.
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   PackageCheck, Gift, ClipboardList, Plus, Trash2, Check, X, Search, Loader2,
-  AlertTriangle, CheckCircle2, RefreshCw, History, Ban,
+  AlertTriangle, CheckCircle2, RefreshCw, History, Ban, Repeat,
 } from 'lucide-react';
 import { isAdmin, isReadOnly } from '../utils/auth';
 import EmployeeSelect from '../components/employees/EmployeeSelect';
@@ -79,18 +79,80 @@ const CodeField = ({ row, onChange, label = 'Código', autoFocus = false }) => {
 
 // ─── Formulario de solicitud ─────────────────────────────────────────────────
 
+const FORM_TEXT = {
+  conteo: {
+    title: 'Conteo de inventario',
+    help: 'Escribe el código y cuántas hay físicamente en la tienda. La plataforma calcula si se aumenta o se disminuye.',
+  },
+  tarjeta_regalo: { title: 'Redimir tarjeta regalo', help: 'Entra la tarjeta regalo y sale la prenda que se lleva el cliente.' },
+  cambio_prenda: {
+    title: 'Cambio de prenda',
+    help: 'Entra la prenda que devuelve el cliente y sale la que se lleva. Nunca se devuelve plata: lo que se lleva debe valer igual o más (si vale más, paga el excedente).',
+  },
+};
+
+// Lista de prendas con código + cantidad (o físico, en el conteo)
+const LinesEditor = ({ rows, setRows, mode, diffLabel }) => {
+  const setRow = (key, patch) => setRows(rs => rs.map(r => (r.key === key ? { ...r, ...patch } : r)));
+  const conteo = mode === 'conteo';
+  return (
+    <>
+      {rows.map(r => (
+        <div key={r.key} className="grid grid-cols-1 sm:grid-cols-[1fr_9rem_auto] gap-2 sm:items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+          <CodeField row={r} onChange={patch => setRow(r.key, patch)} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">{conteo ? 'Físico *' : 'Cantidad'}</label>
+            <input aria-label={conteo ? 'Cantidad física' : 'Cantidad'} type="number" min={conteo ? 0 : 1} step={1} inputMode="numeric"
+              required={conteo && !!r.code} placeholder={conteo ? 'Ej.: 6' : '1'}
+              value={r.qty} onChange={e => setRow(r.key, { qty: e.target.value })} className={inputCls} />
+            {conteo && <p className="text-xs mt-1">{diffLabel(r)}</p>}
+          </div>
+          <div className="sm:pt-5">
+            {rows.length > 1 && (
+              <button type="button" onClick={() => setRows(rs => rs.filter(x => x.key !== r.key))}
+                aria-label="Quitar prenda" className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={() => setRows(rs => [...rs, emptyRow()])}
+        className="flex items-center gap-1 text-sm text-indigo-700 font-medium hover:underline">
+        <Plus className="w-4 h-4" /> Agregar otra prenda
+      </button>
+    </>
+  );
+};
+
+const valueOf = (rows) => rows.reduce((sum, r) => sum + (r.item ? (r.item.price || 0) * Number(r.qty || 1) : 0), 0);
+
 const RequestForm = ({ kind, onDone, onCancel }) => {
   const [requestedBy, setRequestedBy] = useState('');
-  const [rows, setRows] = useState([emptyRow()]);
-  const [card, setCard] = useState(emptyRow());
+  const [rows, setRows] = useState([emptyRow()]);        // conteo / prendas que SALEN
+  const [inRows, setInRows] = useState([emptyRow()]);    // cambio: prendas que ENTRAN
+  const [card, setCard] = useState(emptyRow());          // tarjeta regalo que ENTRA
   const [excedente, setExcedente] = useState('');
+  const [excedenteTouched, setExcedenteTouched] = useState(false);
   const [medio, setMedio] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const setRow = (key, patch) => setRows(rs => rs.map(r => (r.key === key ? { ...r, ...patch } : r)));
   const conteo = kind === 'conteo';
+  const cambio = kind === 'cambio_prenda';
+  const text = FORM_TEXT[kind];
+
+  // Valor (precio de venta en Alegra) de lo que entra y lo que sale
+  const valueIn = cambio ? valueOf(inRows) : (card.item ? card.item.price || 0 : 0);
+  const valueOut = valueOf(rows);
+  const ready = !conteo && rows.some(r => r.item) && (cambio ? inRows.some(r => r.item) : !!card.item);
+  const difference = valueOut - valueIn;
+
+  // El excedente arranca con la diferencia (se puede cambiar, ej. si hubo descuento)
+  useEffect(() => {
+    if (ready && !excedenteTouched) setExcedente(difference > 0 ? String(Math.round(difference)) : '');
+  }, [ready, difference, excedenteTouched]);
 
   const diffLabel = (r) => {
     if (!r.item || r.qty === '') return null;
@@ -101,24 +163,32 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
       : <span className="text-red-700 font-semibold">Disminuir {-diff}</span>;
   };
 
+  const lineList = (list, key) => list.filter(r => r.code).map(r => ({
+    code: r.item.code,
+    [key]: r.qty === '' ? (key === 'quantity' ? 1 : null) : Number(r.qty),
+  }));
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (rows.some(r => r.loading) || card.loading) { setError('Espera a que termine la búsqueda en Alegra.'); return; }
-    const filled = rows.filter(r => r.code);
-    if (!filled.length) { setError(conteo ? 'Agrega al menos una prenda.' : 'Agrega la prenda que sale.'); return; }
-    if (filled.some(r => !r.item)) { setError('Hay códigos que no se encontraron en Alegra: revísalos.'); return; }
-    if (!conteo && !card.item) { setError('Busca el código de la tarjeta regalo.'); return; }
-    if (!conteo && !card.item.is_gift_card) { setError('El código que entra no es una tarjeta regalo.'); return; }
+    const all = [...rows, ...(cambio ? inRows : []), ...(kind === 'tarjeta_regalo' ? [card] : [])];
+    if (all.some(r => r.loading)) { setError('Espera a que termine la búsqueda en Alegra.'); return; }
+    if (cambio && !inRows.some(r => r.code)) { setError('Agrega la prenda que devuelve el cliente.'); return; }
+    if (!rows.some(r => r.code)) { setError(conteo ? 'Agrega al menos una prenda.' : 'Agrega la prenda que sale.'); return; }
+    if (all.filter(r => r.code).some(r => !r.item)) { setError('Hay códigos que no se encontraron en Alegra: revísalos.'); return; }
+    if (kind === 'tarjeta_regalo' && !card.item) { setError('Busca el código de la tarjeta regalo.'); return; }
+    if (kind === 'tarjeta_regalo' && !card.item.is_gift_card) { setError('El código que entra no es una tarjeta regalo.'); return; }
+    if (cambio && difference < 0) { setError('Lo que se lleva vale menos que lo que devuelve: debe llevar otra prenda hasta igualar o pasar el valor.'); return; }
+    if (cambio && difference > 0 && !(Number(excedente) > 0)) { setError('Escribe el excedente que pagó el cliente.'); return; }
     if (Number(excedente) > 0 && !medio) { setError('Elige por qué medio pagó el excedente.'); return; }
 
-    const payload = conteo
-      ? { kind, requested_by: requestedBy, notes, lines: filled.map(r => ({ code: r.item.code, physical_qty: r.qty === '' ? null : Number(r.qty) })) }
-      : {
-          kind, requested_by: requestedBy, notes, gift_card_code: card.item.code,
-          lines: filled.map(r => ({ code: r.item.code, quantity: Number(r.qty || 1) })),
-          excedente_valor: Number(excedente || 0), excedente_medio: Number(excedente) > 0 ? medio : '',
-        };
+    const extra = conteo ? {} : { excedente_valor: Number(excedente || 0), excedente_medio: Number(excedente) > 0 ? medio : '' };
+    const payload = {
+      kind, requested_by: requestedBy, notes, ...extra,
+      lines: lineList(rows, conteo ? 'physical_qty' : 'quantity'),
+      ...(cambio ? { in_lines: lineList(inRows, 'quantity') } : {}),
+      ...(kind === 'tarjeta_regalo' ? { gift_card_code: card.item.code } : {}),
+    };
     setSaving(true);
     try {
       await createInventoryRequest(payload);
@@ -134,13 +204,8 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
     <form onSubmit={submit} className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-gray-900">{conteo ? 'Conteo de inventario' : 'Redimir tarjeta regalo'}</h3>
-          <p className="text-xs text-gray-500">
-            {conteo
-              ? 'Escribe el código y cuántas hay físicamente en la tienda. La plataforma calcula si se aumenta o se disminuye.'
-              : 'Entra la tarjeta regalo y sale la prenda que se lleva el cliente.'}
-            {' '}No se aplica en Alegra hasta que el administrador lo acepte.
-          </p>
+          <h3 className="text-base font-semibold text-gray-900">{text.title}</h3>
+          <p className="text-xs text-gray-500">{text.help} No se aplica en Alegra hasta que el administrador lo acepte.</p>
         </div>
         <button type="button" onClick={onCancel} aria-label="Cerrar" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
       </div>
@@ -150,7 +215,7 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
         <EmployeeSelect value={requestedBy} onChange={e => setRequestedBy(e.target.value)} />
       </div>
 
-      {!conteo && (
+      {kind === 'tarjeta_regalo' && (
         <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3">
           <p className="text-xs font-semibold text-emerald-800 mb-2">ENTRA (tarjeta regalo)</p>
           <CodeField row={card} label="Código de la tarjeta" onChange={patch => setCard(c => ({ ...c, ...patch }))} />
@@ -160,39 +225,34 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
         </div>
       )}
 
+      {cambio && (
+        <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3 space-y-3">
+          <p className="text-xs font-semibold text-emerald-800">ENTRA (la que devuelve el cliente)</p>
+          <LinesEditor rows={inRows} setRows={setInRows} mode="in" />
+        </div>
+      )}
+
       <div className={conteo ? 'space-y-3' : 'border border-red-200 bg-red-50/40 rounded-xl p-3 space-y-3'}>
-        {!conteo && <p className="text-xs font-semibold text-red-800">SALE (prenda que se lleva)</p>}
-        {rows.map((r, i) => (
-          <div key={r.key} className="grid grid-cols-1 sm:grid-cols-[1fr_9rem_auto] gap-2 sm:items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-            <CodeField row={r} autoFocus={conteo && i === rows.length - 1 && i > 0} onChange={patch => setRow(r.key, patch)} />
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">{conteo ? 'Físico *' : 'Cantidad'}</label>
-              <input aria-label={conteo ? 'Cantidad física' : 'Cantidad'} type="number" min={conteo ? 0 : 1} step={1} inputMode="numeric"
-                required={conteo && !!r.code} placeholder={conteo ? 'Ej.: 6' : '1'}
-                value={r.qty} onChange={e => setRow(r.key, { qty: e.target.value })} className={inputCls} />
-              {conteo && <p className="text-xs mt-1">{diffLabel(r)}</p>}
-            </div>
-            <div className="sm:pt-5">
-              {rows.length > 1 && (
-                <button type="button" onClick={() => setRows(rs => rs.filter(x => x.key !== r.key))}
-                  aria-label="Quitar prenda" className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-        <button type="button" onClick={() => setRows(rs => [...rs, emptyRow()])}
-          className="flex items-center gap-1 text-sm text-indigo-700 font-medium hover:underline">
-          <Plus className="w-4 h-4" /> Agregar otra prenda
-        </button>
+        {!conteo && <p className="text-xs font-semibold text-red-800">SALE (la que se lleva)</p>}
+        <LinesEditor rows={rows} setRows={setRows} mode={conteo ? 'conteo' : 'out'} diffLabel={diffLabel} />
       </div>
+
+      {ready && (
+        <div className={`text-sm rounded-xl px-3 py-2 border ${difference < 0 && cambio ? 'bg-red-50 border-red-200 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-800'}`}>
+          Entra {fmt(valueIn)} · Sale {fmt(valueOut)} ·{' '}
+          {difference > 0 && <b>El cliente paga {fmt(difference)}</b>}
+          {difference === 0 && <b>Mismo valor: no hay excedente</b>}
+          {difference < 0 && (cambio
+            ? <b>Faltan {fmt(-difference)}: debe llevar otra prenda (nunca se devuelve plata)</b>
+            : <b>Quedan {fmt(-difference)} a favor del cliente</b>)}
+        </div>
+      )}
 
       {!conteo && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Excedente (lo que pagó de más)</label>
-            <LiveMoneyInput value={excedente} onChange={setExcedente} className={inputCls} />
+            <LiveMoneyInput value={excedente} onChange={v => { setExcedenteTouched(true); setExcedente(v); }} className={inputCls} />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Medio del excedente</label>
@@ -257,7 +317,9 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            {req.kind === 'tarjeta_regalo' ? <Gift className="w-4 h-4 text-pink-600" /> : <ClipboardList className="w-4 h-4 text-indigo-600" />}
+            {req.kind === 'tarjeta_regalo' ? <Gift className="w-4 h-4 text-pink-600" />
+              : req.kind === 'cambio_prenda' ? <Repeat className="w-4 h-4 text-amber-600" />
+              : <ClipboardList className="w-4 h-4 text-indigo-600" />}
             {req.kind_label}
           </p>
           <p className="text-xs text-gray-500">
@@ -307,9 +369,13 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
         </table>
       </div>
 
-      {(req.excedente_valor || req.notes) && (
+      {(req.excedente_valor || req.notes || req.price_difference != null) && (
         <p className="text-xs text-gray-600">
+          {req.price_difference != null && <>Diferencia de precio <b>{fmt(req.price_difference)}</b>. </>}
           {req.excedente_valor ? <>Excedente <b>{fmt(req.excedente_valor)}</b> ({MEDIO_LABEL[req.excedente_medio] || req.excedente_medio}). </> : null}
+          {req.price_difference > 0 && Math.round(req.excedente_valor || 0) !== Math.round(req.price_difference) && (
+            <span className="text-amber-700 font-semibold">El excedente no coincide con la diferencia de precio. </span>
+          )}
           {req.notes}
         </p>
       )}
@@ -425,6 +491,10 @@ const InventoryAdjustments = () => {
             <button type="button" onClick={() => setFormKind('conteo')}
               className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">
               <ClipboardList className="w-4 h-4" /> Conteo de inventario
+            </button>
+            <button type="button" onClick={() => setFormKind('cambio_prenda')}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700">
+              <Repeat className="w-4 h-4" /> Cambio de prenda
             </button>
             <button type="button" onClick={() => setFormKind('tarjeta_regalo')}
               className="flex items-center gap-1.5 px-3 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700">

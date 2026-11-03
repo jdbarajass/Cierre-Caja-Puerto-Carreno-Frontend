@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-11-03] (continuación) Cambio de prenda en Ajustes de inventario
+
+El usuario aclaró que un cambio de prenda siempre es un ajuste y que nunca se devuelve plata (lo que se lleva vale igual o más; si vale más, paga el excedente y se reporta en el cierre). Necesita el backend del mismo día (4bc04cc).
+
+- `InventoryAdjustments.jsx`: botón "Cambio de prenda" con ENTRA (las que devuelve, una o varias) y SALE (las que se lleva). Recuadro "Entra $X · Sale $Y · El cliente paga $Z" con el precio de Alegra; si lo que sale vale menos no deja enviar ("debe llevar otra prenda"). El excedente se llena solo con la diferencia (se puede cambiar) y pide el medio. La tarjeta regalo muestra el mismo recuadro.
+- En la revisión del admin: "Diferencia de precio" y aviso si el excedente no coincide con ella.
+- `npm test`, eslint y build OK.
+
 ## [2026-11-03] Ajustes de inventario (las vendedoras piden, el admin acepta)
 
 Pedido del usuario: que las vendedoras registren los conteos de inventario y las tarjetas regalo redimidas, y que él solo revise y acepte. Plan: `docs/PLAN_AJUSTES_INVENTARIO.md` del backend (necesita el backend del mismo día). Cambios de prenda quedan para después de hablar con el contador.
