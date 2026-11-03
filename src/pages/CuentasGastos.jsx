@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   RefreshCw, Plus, Trash2, Pencil, X, Check, AlertCircle, ChevronLeft, ChevronRight,
-  Receipt, ArrowDownCircle, ArrowUpCircle, CalendarClock, Store, ChevronDown,
+  Receipt, ArrowDownCircle, ArrowUpCircle, CalendarClock, Store, ChevronDown, Search,
 } from 'lucide-react';
 import {
   getExpenses, createExpense, updateExpense, deleteExpense,
@@ -137,6 +137,24 @@ const STATUS_STYLE = {
 };
 
 const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
+const filterCls = 'w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
+
+const EMPTY_FILTERS = { text: '', from: '', to: '', category: '', method: '', mode: '', direction: '' };
+const searchable = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+const matchesFilters = (row, f) => {
+  if (f.direction && row.direction !== f.direction) return false;
+  if (f.mode && row.account_mode !== f.mode) return false;
+  if (f.method && !(toNum(row[f.method]) > 0)) return false;
+  if (f.category && categoryView(row).label !== f.category) return false;
+  if (f.from && row.date < f.from) return false;
+  if (f.to && row.date > f.to) return false;
+  if (f.text) {
+    const haystack = searchable([row.concept, row.notes, row.employee_name, row.category_detail].join(' '));
+    if (!searchable(f.text).split(/\s+/).filter(Boolean).every(w => haystack.includes(w))) return false;
+  }
+  return true;
+};
 
 const CuentasGastos = ({ onEntriesChanged } = {}) => {
   const now = getColombiaDate();
@@ -161,6 +179,11 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
   const [fixedForm, setFixedForm] = useState(null); // null = cerrado; {id?, name, amount, due_day, category, default_method}
   const [showInactive, setShowInactive] = useState(false);
   const [openLoan, setOpenLoan] = useState(null);
+
+  // Filtros de "Movimientos del mes" (como los de Excel). Solo filtran la tabla:
+  // los resúmenes por categoría y por medio de abajo siguen con todo el mes.
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const setFilter = (key, value) => setFilters(f => ({ ...f, [key]: value }));
 
   const flash = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
 
@@ -195,6 +218,26 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
     [interStore],
   );
   const storeName = (code) => otherStores.find(s => s.code === code)?.name || code;
+
+  // ── Filtros de la tabla ───────────────────────────────────────────────────
+  // Opciones: solo las que aparecen en el mes (como el filtro de Excel)
+  const categoryOptions = useMemo(
+    () => [...new Set(items.map(r => categoryView(r).label))].sort((a, b) => a.localeCompare(b, 'es')),
+    [items],
+  );
+  const methodOptions = useMemo(() => METHODS.filter(m => items.some(r => toNum(r[m.key]) > 0)), [items]);
+  const filtersOn = Object.values(filters).some(Boolean);
+  const filteredItems = useMemo(() => items.filter(r => matchesFilters(r, filters)), [items, filters]);
+  const filteredTotals = useMemo(() => {
+    // out/in: total con 4x1000; methodOut/methodIn: solo lo pagado por el medio elegido
+    const t = { out: 0, in: 0, methodOut: 0, methodIn: 0 };
+    filteredItems.forEach(r => {
+      const dir = r.direction === 'out' ? 'out' : 'in';
+      t[dir] += r.total_with_fee || 0;
+      if (filters.method) t[dir === 'out' ? 'methodOut' : 'methodIn'] += toNum(r[filters.method]);
+    });
+    return t;
+  }, [filteredItems, filters.method]);
 
   // ── Formulario ────────────────────────────────────────────────────────────
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
@@ -760,12 +803,66 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
               <Receipt className="w-4 h-4 text-indigo-500" />
               <span className="text-sm font-semibold text-gray-700">Movimientos de {MONTHS[month - 1].toLowerCase()}</span>
             </div>
+            {items.length > 0 && (
+              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/60 space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  <div className="col-span-2 relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input aria-label="Buscar en concepto, notas o empleada" type="search" value={filters.text}
+                      onChange={e => setFilter('text', e.target.value)} placeholder="Buscar concepto, nota, empleada…"
+                      className={`${filterCls} pl-8`} />
+                  </div>
+                  <select aria-label="Filtrar por medio de pago" value={filters.method} onChange={e => setFilter('method', e.target.value)} className={filterCls}>
+                    <option value="">Todos los medios</option>
+                    {methodOptions.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                  </select>
+                  <select aria-label="Filtrar por categoría" value={filters.category} onChange={e => setFilter('category', e.target.value)} className={filterCls}>
+                    <option value="">Todas las categorías</option>
+                    {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select aria-label="Filtrar por de dónde" value={filters.mode} onChange={e => setFilter('mode', e.target.value)} className={filterCls}>
+                    <option value="">De dónde: todos</option>
+                    {ACCOUNT_MODES.map(m => <option key={m.value} value={m.value}>{MODE_LABEL[m.value]}</option>)}
+                  </select>
+                  <select aria-label="Filtrar salidas o entradas" value={filters.direction} onChange={e => setFilter('direction', e.target.value)} className={filterCls}>
+                    <option value="">Salidas y entradas</option>
+                    <option value="out">Solo salidas</option>
+                    <option value="in">Solo entradas</option>
+                  </select>
+                  <div className="col-span-2 sm:col-span-4 lg:col-span-1 flex items-center gap-1">
+                    <input aria-label="Desde" type="date" value={filters.from} onChange={e => setFilter('from', e.target.value)} className={filterCls} title="Desde" />
+                    <span className="text-gray-400 text-xs">–</span>
+                    <input aria-label="Hasta" type="date" value={filters.to} onChange={e => setFilter('to', e.target.value)} className={filterCls} title="Hasta" />
+                  </div>
+                </div>
+                {filtersOn && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-700">
+                    <span><b>{filteredItems.length}</b> de {items.length} movimientos</span>
+                    {filteredTotals.out > 0 && <span>Salidas <b className="text-red-700">{fmt(filteredTotals.out)}</b></span>}
+                    {filteredTotals.in > 0 && <span>Entradas <b className="text-emerald-700">{fmt(filteredTotals.in)}</b></span>}
+                    {filters.method && (
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800">
+                        Por {METHODS.find(m => m.key === filters.method)?.label}:
+                        {filteredTotals.methodOut > 0 && <> salió <b>{fmt(filteredTotals.methodOut)}</b></>}
+                        {filteredTotals.methodIn > 0 && <> entró <b>{fmt(filteredTotals.methodIn)}</b></>}
+                        {' '}(sin 4x1000)
+                      </span>
+                    )}
+                    <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="flex items-center gap-1 text-indigo-700 font-medium hover:underline">
+                      <X className="w-3.5 h-3.5" /> Quitar filtros
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             {items.length === 0 ? (
               <p className="px-4 py-10 text-sm text-gray-500 text-center">No hay gastos ni entradas registrados en {MONTHS[month - 1].toLowerCase()}.</p>
+            ) : filteredItems.length === 0 ? (
+              <p className="px-4 py-10 text-sm text-gray-500 text-center">Ningún movimiento de {MONTHS[month - 1].toLowerCase()} coincide con los filtros.</p>
             ) : (
               <>
               <ul className="sm:hidden divide-y divide-gray-100">
-                {items.map(row => {
+                {filteredItems.map(row => {
                   const cat = categoryView(row);
                   return (
                     <li key={row.id} className="px-4 py-3">
@@ -815,7 +912,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {items.map(row => {
+                    {filteredItems.map(row => {
                       const cat = categoryView(row);
                       const otherPeriod = row.period !== ym;
                       const otherDate = row.date.slice(0, 7) !== ym;

@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-11-03] Filtros en Cuentas → Gastos (Movimientos del mes)
+
+Pedido del usuario: filtrar los movimientos como en Excel (ej. ver todo lo que se pagó por datáfono sin revisar uno por uno).
+
+- `CuentasGastos.jsx`: barra de filtros arriba de la tabla: buscar (concepto, nota, empleada, sin tildes y por palabras), medio de pago, categoría, de dónde, salidas/entradas y desde–hasta. Las opciones de medio y categoría son solo las que hay en el mes. Con filtros: "N de M movimientos", salidas/entradas filtradas y, con un medio elegido, cuánto salió/entró por ese medio (sin 4x1000). "Quitar filtros". Aplica a la tabla y a la lista del celular; los resúmenes por categoría y por medio de abajo siguen con todo el mes. Sin filtro por 4x1000 (no aporta, según el usuario).
+- Solo frontend. eslint, `npm test` y build OK.
+
 ## [2026-11-03] (continuación) Nunca se devuelve plata, también en tarjeta regalo
 
 - `InventoryAdjustments.jsx`: la tarjeta regalo no deja enviar si la prenda vale menos que la tarjeta ("Faltan $X: debe llevar otra prenda") y pide el excedente si vale más, igual que el cambio de prenda. Necesita el backend del mismo día.
