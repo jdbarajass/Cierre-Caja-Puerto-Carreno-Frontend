@@ -2,7 +2,7 @@
 // Las vendedoras piden un conteo de inventario, redimir una tarjeta regalo o un cambio
 // de prenda; NADA toca Alegra hasta que el admin lo acepta (ahí se crea el ajuste y se
 // ve su número). Nunca se devuelve plata (cambios y tarjetas): lo que sale vale igual o más.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   PackageCheck, Gift, ClipboardList, Plus, Trash2, Check, X, Search, Loader2,
   AlertTriangle, CheckCircle2, RefreshCw, History, Ban, Repeat,
@@ -10,6 +10,7 @@ import {
 import { isAdmin, isReadOnly } from '../utils/auth';
 import EmployeeSelect from '../components/employees/EmployeeSelect';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
+import { textMatches, inDateRange, anyFilter } from '../utils/tableFilters';
 import {
   lookupCode, getInventoryRequests, createInventoryRequest, cancelInventoryRequest,
   checkInventoryRequest, approveInventoryRequest, approveAllInventoryRequests, rejectInventoryRequest,
@@ -20,6 +21,17 @@ const fmt = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency:
 
 const MEDIOS = [['efectivo', 'Efectivo'], ['qr', 'QR'], ['nequi', 'Nequi'], ['daviplata', 'Daviplata'], ['datafono', 'Datáfono'], ['addi', 'Addi']];
 const MEDIO_LABEL = Object.fromEntries(MEDIOS);
+const KIND_LABELS = { conteo: 'Conteo de inventario', cambio_prenda: 'Cambio de prenda', tarjeta_regalo: 'Redimir tarjeta regalo' };
+
+// Filtros de la lista (como en Excel): solo filtran lo que se ve
+const EMPTY_FILTERS = { text: '', kind: '', status: '', from: '', to: '' };
+const filterCls = 'w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
+const matchesFilters = (req, f) =>
+  (!f.kind || req.kind === f.kind)
+  && (!f.status || req.status === f.status)
+  && inDateRange(req.request_date, f.from, f.to)
+  && textMatches(f.text, [req.requested_by, req.notes, req.reject_reason, req.alegra_number,
+    ...req.lines.flatMap(l => [l.code, l.name])]);
 
 const STATUS = {
   pendiente: { label: 'Pendiente', cls: 'bg-amber-100 text-amber-800' },
@@ -447,6 +459,10 @@ const InventoryAdjustments = () => {
   const [formKind, setFormKind] = useState(null);
   const [approvingAll, setApprovingAll] = useState(false);
   const [version, setVersion] = useState(0);   // vuelve a montar las tarjetas (y su revisión en Alegra)
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const setFilter = (key, value) => setFilters(f => ({ ...f, [key]: value }));
+  const filtersOn = anyFilter(filters);
+  const filteredItems = useMemo(() => items.filter(r => matchesFilters(r, filters)), [items, filters]);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -532,15 +548,56 @@ const InventoryAdjustments = () => {
         )}
       </div>
 
+      {items.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="col-span-2 relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input aria-label="Buscar código, prenda o quién lo pidió" type="search" value={filters.text}
+                onChange={e => setFilter('text', e.target.value)} placeholder="Buscar código, prenda, quién lo pidió…"
+                className={`${filterCls} pl-8`} />
+            </div>
+            <select aria-label="Filtrar por tipo" value={filters.kind} onChange={e => setFilter('kind', e.target.value)} className={filterCls}>
+              <option value="">Todos los tipos</option>
+              {Object.entries(KIND_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            {tab === 'all' ? (
+              <select aria-label="Filtrar por estado" value={filters.status} onChange={e => setFilter('status', e.target.value)} className={filterCls}>
+                <option value="">Todos los estados</option>
+                {Object.entries(STATUS).map(([v, st]) => <option key={v} value={v}>{st.label}</option>)}
+              </select>
+            ) : <span className="hidden sm:block" />}
+            <div className="col-span-2 sm:col-span-1 flex items-center gap-1">
+              <input aria-label="Desde" title="Desde" type="date" value={filters.from} onChange={e => setFilter('from', e.target.value)} className={filterCls} />
+              <span className="text-gray-400 text-xs">–</span>
+              <input aria-label="Hasta" title="Hasta" type="date" value={filters.to} onChange={e => setFilter('to', e.target.value)} className={filterCls} />
+            </div>
+          </div>
+          {filtersOn && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-700">
+              <span><b>{filteredItems.length}</b> de {items.length} solicitudes</span>
+              {admin && tab === 'open' && <span className="text-gray-500">"Aceptar todas" acepta todas las pendientes, no solo las filtradas.</span>}
+              <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="flex items-center gap-1 text-indigo-700 font-medium hover:underline">
+                <X className="w-3.5 h-3.5" /> Quitar filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {loading && !items.length ? (
         <p className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Cargando…</p>
       ) : items.length === 0 ? (
         <p className="text-sm text-gray-500 bg-white border border-dashed border-gray-300 rounded-2xl p-6 text-center">
           {tab === 'open' ? 'No hay solicitudes pendientes.' : 'Todavía no hay solicitudes.'}
         </p>
+      ) : filteredItems.length === 0 ? (
+        <p className="text-sm text-gray-500 bg-white border border-dashed border-gray-300 rounded-2xl p-6 text-center">
+          Ninguna solicitud coincide con los filtros.
+        </p>
       ) : (
         <div className="space-y-3">
-          {items.map(req => (
+          {filteredItems.map(req => (
             <RequestCard key={`${req.id}-${version}`} req={req} admin={admin} readOnly={readOnly} onChanged={load} />
           ))}
         </div>

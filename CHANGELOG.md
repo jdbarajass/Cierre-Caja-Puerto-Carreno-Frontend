@@ -2,6 +2,19 @@
 
 ---
 
+## [2026-11-03] Filtros en Recompras y en Ajustes de inventario
+
+Pedido del usuario: los mismos filtros de Gastos en Recompras y donde sirvan.
+
+- `src/utils/tableFilters.js` (nuevo, con `tableFilters.test.js`): búsqueda sin tildes y por palabras (`textMatches`), rango de fechas (`inDateRange`) y `anyFilter`. Los usan Gastos, Recompras y Ajustes de inventario.
+- Cuentas Recompras:
+  - Dinero enviado al socio: buscar (descripción, nota), medio de pago (solo los usados en el mes) y desde–hasta. Con filtros: "N de M envíos", enviado filtrado y lo enviado por el medio elegido (sin comisión). La fila del saldo del mes anterior se oculta mientras hay filtros.
+  - Compras realizadas por el socio: buscar (tienda/proveedor, nota), categoría (ropa / operacional) y desde–hasta, con el total filtrado.
+  - Las filas TOTAL ENVÍOS / TOTAL COMPRAS y el balance siguen siendo de todo el mes (se avisa).
+- Ajustes de inventario: buscar (código, prenda, quién lo pidió, nota, número de ajuste), tipo, estado (en Historial) y desde–hasta (día de la solicitud). Se avisa que "Aceptar todas" acepta todas las pendientes, no solo las filtradas.
+- Revisado y descartado: Cuentas → Mes (tabla por día con una columna por medio), Resumen (la pestaña Movimientos está oculta a pedido del usuario) y Control de Empleadas (ya filtra por empleada).
+- eslint, `npm test` (10) y build OK.
+
 ## [2026-11-03] Filtros en Cuentas → Gastos (Movimientos del mes)
 
 Pedido del usuario: filtrar los movimientos como en Excel (ej. ver todo lo que se pagó por datáfono sin revisar uno por uno).

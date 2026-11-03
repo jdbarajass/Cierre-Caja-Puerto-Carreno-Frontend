@@ -16,6 +16,7 @@ import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import EmployeeSelect from '../components/employees/EmployeeSelect';
 import { getEmployeeNames } from '../utils/employeeGroups';
 import { getColombiaDate } from '../utils/dateUtils';
+import { textMatches, inDateRange, anyFilter } from '../utils/tableFilters';
 
 const fmt = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.round(v || 0));
@@ -140,20 +141,14 @@ const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm foc
 const filterCls = 'w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
 
 const EMPTY_FILTERS = { text: '', from: '', to: '', category: '', method: '', mode: '', direction: '' };
-const searchable = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 const matchesFilters = (row, f) => {
   if (f.direction && row.direction !== f.direction) return false;
   if (f.mode && row.account_mode !== f.mode) return false;
   if (f.method && !(toNum(row[f.method]) > 0)) return false;
   if (f.category && categoryView(row).label !== f.category) return false;
-  if (f.from && row.date < f.from) return false;
-  if (f.to && row.date > f.to) return false;
-  if (f.text) {
-    const haystack = searchable([row.concept, row.notes, row.employee_name, row.category_detail].join(' '));
-    if (!searchable(f.text).split(/\s+/).filter(Boolean).every(w => haystack.includes(w))) return false;
-  }
-  return true;
+  if (!inDateRange(row.date, f.from, f.to)) return false;
+  return textMatches(f.text, [row.concept, row.notes, row.employee_name, row.category_detail]);
 };
 
 const CuentasGastos = ({ onEntriesChanged } = {}) => {
@@ -226,7 +221,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
     [items],
   );
   const methodOptions = useMemo(() => METHODS.filter(m => items.some(r => toNum(r[m.key]) > 0)), [items]);
-  const filtersOn = Object.values(filters).some(Boolean);
+  const filtersOn = anyFilter(filters);
   const filteredItems = useMemo(() => items.filter(r => matchesFilters(r, filters)), [items, filters]);
   const filteredTotals = useMemo(() => {
     // out/in: total con 4x1000; methodOut/methodIn: solo lo pagado por el medio elegido

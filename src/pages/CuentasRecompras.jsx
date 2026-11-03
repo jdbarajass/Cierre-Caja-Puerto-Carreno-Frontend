@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   RefreshCw, Plus, Trash2, Pencil, X, Check, AlertCircle,
-  ChevronRight, TrendingUp, ChevronLeft, ShoppingBag, ArrowDownCircle, Fuel
+  ChevronRight, TrendingUp, ChevronLeft, ShoppingBag, ArrowDownCircle, Fuel, Search
 } from 'lucide-react';
 import {
   getEntries, createEntry, updateEntry, deleteEntry,
   getPurchases, createPurchase, updatePurchase, deletePurchase
 } from '../services/repurchaseService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
+import { textMatches, inDateRange, anyFilter } from '../utils/tableFilters';
 
 const fmt = (v) =>
   v != null && v !== 0
@@ -44,6 +45,12 @@ const PURCHASE_CATEGORIES = [
   { value: 'ropa', label: 'Compra de ropa', hint: 'Se soporta con factura' },
   { value: 'operacional', label: 'Gasto operacional', hint: 'Gasolina, bolsas, cajas, etc.' },
 ];
+
+// Filtros de las tablas (como en Excel): solo filtran lo que se ve; los
+// totales del mes (TOTAL ENVÍOS / TOTAL COMPRAS y el balance) no cambian.
+const EMPTY_ENTRY_FILTERS = { text: '', method: '', from: '', to: '' };
+const EMPTY_PURCHASE_FILTERS = { text: '', category: '', from: '', to: '' };
+const filterCls = 'w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white';
 
 const CATEGORY_BADGE = {
   ropa:        { label: 'Ropa',        className: 'bg-indigo-100 text-indigo-700' },
@@ -94,6 +101,12 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   const [purchaseForm, setPurchaseForm]           = useState(EMPTY_PURCHASE);
   const [editingPurchaseId, setEditingPurchaseId] = useState(null);
   const [savingPurchase, setSavingPurchase]       = useState(false);
+
+  // Filtros de "Dinero enviado al socio" y "Compras realizadas por el socio"
+  const [entryFilters, setEntryFilters]       = useState(EMPTY_ENTRY_FILTERS);
+  const [purchaseFilters, setPurchaseFilters] = useState(EMPTY_PURCHASE_FILTERS);
+  const setEntryFilter    = (key, value) => setEntryFilters(f => ({ ...f, [key]: value }));
+  const setPurchaseFilter = (key, value) => setPurchaseFilters(f => ({ ...f, [key]: value }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -157,6 +170,32 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   const monthBalance       = () => monthDisponible() - totalCompras;
   const prevMonthName      = MONTHS[(month + 10) % 12];
   const showCarryRow       = carryoverActive && carryover !== 0;
+
+  // ── Filtros ───────────────────────────────────────────────────────────────
+  const entryFiltersOn    = anyFilter(entryFilters);
+  const purchaseFiltersOn = anyFilter(purchaseFilters);
+  const entryMethodOptions = useMemo(
+    () => PAYMENT_COLS.filter(({ key }) => entries.some(e => (parseFloat(e[key]) || 0) > 0)),
+    [entries],
+  );
+  const filteredEntries = useMemo(() => entries.filter(e =>
+    (!entryFilters.method || (parseFloat(e[entryFilters.method]) || 0) > 0)
+    && inDateRange(e.date, entryFilters.from, entryFilters.to)
+    && textMatches(entryFilters.text, [e.descripcion || 'Recompra Jhonatan', e.notes])
+  ), [entries, entryFilters]);
+  const filteredEntriesTotals = useMemo(() => filteredEntries.reduce((t, e) => ({
+    enviado: t.enviado + (e.total_enviado || 0),
+    method: t.method + (entryFilters.method ? (parseFloat(e[entryFilters.method]) || 0) : 0),
+  }), { enviado: 0, method: 0 }), [filteredEntries, entryFilters.method]);
+  const filteredPurchases = useMemo(() => purchases.filter(p =>
+    (!purchaseFilters.category || p.category === purchaseFilters.category)
+    && inDateRange(p.date, purchaseFilters.from, purchaseFilters.to)
+    && textMatches(purchaseFilters.text, [p.store, p.notes])
+  ), [purchases, purchaseFilters]);
+  const filteredPurchasesTotal = useMemo(
+    () => filteredPurchases.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0),
+    [filteredPurchases],
+  );
 
   // ── Entradas: submit ──────────────────────────────────────────────────────
   const handleEntrySubmit = async (e) => {
@@ -447,6 +486,43 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                 <ArrowDownCircle className="w-4 h-4 text-indigo-500" />
                 <span className="text-sm font-semibold text-gray-700">Dinero enviado al socio</span>
               </div>
+              {entries.length > 0 && (
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/60 space-y-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="col-span-2 sm:col-span-1 relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <input aria-label="Buscar en descripción o notas" type="search" value={entryFilters.text}
+                        onChange={e => setEntryFilter('text', e.target.value)} placeholder="Buscar descripción, nota…"
+                        className={`${filterCls} pl-8`} />
+                    </div>
+                    <select aria-label="Filtrar envíos por medio de pago" value={entryFilters.method}
+                      onChange={e => setEntryFilter('method', e.target.value)} className={filterCls}>
+                      <option value="">Todos los medios</option>
+                      {entryMethodOptions.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+                    </select>
+                    <div className="col-span-2 flex items-center gap-1">
+                      <input aria-label="Envíos desde" title="Desde" type="date" value={entryFilters.from} onChange={e => setEntryFilter('from', e.target.value)} className={filterCls} />
+                      <span className="text-gray-400 text-xs">–</span>
+                      <input aria-label="Envíos hasta" title="Hasta" type="date" value={entryFilters.to} onChange={e => setEntryFilter('to', e.target.value)} className={filterCls} />
+                    </div>
+                  </div>
+                  {entryFiltersOn && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-700">
+                      <span><b>{filteredEntries.length}</b> de {entries.length} envíos</span>
+                      <span>Enviado <b className="text-indigo-800">{fmtForce(filteredEntriesTotals.enviado)}</b></span>
+                      {entryFilters.method && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800">
+                          Por {PAYMENT_COLS.find(c => c.key === entryFilters.method)?.label}: <b>{fmtForce(filteredEntriesTotals.method)}</b> (sin comisión)
+                        </span>
+                      )}
+                      <span className="text-gray-500">La fila TOTAL ENVÍOS de abajo es de todo el mes.</span>
+                      <button type="button" onClick={() => setEntryFilters(EMPTY_ENTRY_FILTERS)} className="flex items-center gap-1 text-indigo-700 font-medium hover:underline">
+                        <X className="w-3.5 h-3.5" /> Quitar filtros
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[1200px]">
                   <thead>
@@ -479,7 +555,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {showCarryRow && (
+                    {showCarryRow && !entryFiltersOn && (
                       // Fila automática (no editable): lo que le quedó a
                       // Jhonatan al cerrar el mes anterior. No sale de ninguna
                       // cuenta ni cobra comisión.
@@ -497,7 +573,10 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                         <td className="px-2 py-2.5" />
                       </tr>
                     )}
-                    {entries.map((row, idx) => {
+                    {entryFiltersOn && filteredEntries.length === 0 && (
+                      <tr><td colSpan={14} className="px-3 py-8 text-center text-sm text-gray-500">Ningún envío coincide con los filtros.</td></tr>
+                    )}
+                    {filteredEntries.map((row, idx) => {
                       const total = rowTotal(row);
                       // fee_4mil/total_a_descontar ya vienen resueltos del backend
                       // (respetan fee_override si el envío lo tiene sobrescrito)
@@ -644,12 +723,47 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
               </form>
             )}
 
+            {purchases.length > 0 && (
+              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/60 space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="col-span-2 sm:col-span-1 relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input aria-label="Buscar tienda, proveedor o nota" type="search" value={purchaseFilters.text}
+                      onChange={e => setPurchaseFilter('text', e.target.value)} placeholder="Buscar tienda, proveedor, nota…"
+                      className={`${filterCls} pl-8`} />
+                  </div>
+                  <select aria-label="Filtrar compras por categoría" value={purchaseFilters.category}
+                    onChange={e => setPurchaseFilter('category', e.target.value)} className={filterCls}>
+                    <option value="">Todas las categorías</option>
+                    {PURCHASE_CATEGORIES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  <div className="col-span-2 flex items-center gap-1">
+                    <input aria-label="Compras desde" title="Desde" type="date" value={purchaseFilters.from} onChange={e => setPurchaseFilter('from', e.target.value)} className={filterCls} />
+                    <span className="text-gray-400 text-xs">–</span>
+                    <input aria-label="Compras hasta" title="Hasta" type="date" value={purchaseFilters.to} onChange={e => setPurchaseFilter('to', e.target.value)} className={filterCls} />
+                  </div>
+                </div>
+                {purchaseFiltersOn && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-700">
+                    <span><b>{filteredPurchases.length}</b> de {purchases.length} compras</span>
+                    <span>Total <b className="text-rose-700">{fmtForce(filteredPurchasesTotal)}</b></span>
+                    <span className="text-gray-500">La fila TOTAL COMPRAS de abajo es de todo el mes.</span>
+                    <button type="button" onClick={() => setPurchaseFilters(EMPTY_PURCHASE_FILTERS)} className="flex items-center gap-1 text-indigo-700 font-medium hover:underline">
+                      <X className="w-3.5 h-3.5" /> Quitar filtros
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Tabla de compras */}
             {purchases.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-25" />
                 <p className="text-sm">No hay compras registradas este mes</p>
               </div>
+            ) : filteredPurchases.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-gray-500">Ninguna compra coincide con los filtros.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -663,7 +777,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {purchases.map(p => {
+                  {filteredPurchases.map(p => {
                     const badge = CATEGORY_BADGE[p.category] || CATEGORY_BADGE.ropa;
                     return (
                     <tr key={p.id} className="hover:bg-rose-50 transition-colors">
