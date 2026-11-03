@@ -1,7 +1,7 @@
 import React from 'react';
-import { EMPLOYEE_GROUPS, groupKeyFor } from '../../utils/employeeGroups';
+import { getEmployeeGroups, groupKeyFor, emptyByEmployee } from '../../utils/employeeGroups';
 
-// Tarjetas de totales separadas por empleada (Mónica, Rita y Otras si aplica).
+// Tarjetas de totales separadas por empleada de la tienda activa (y Otras si aplica).
 // valueFor(item) determina cuánto suma cada registro (dinero, días, etc.).
 const EmployeeSummaryCards = ({ items, valueFor, formatValue, countLabel, accentClass = 'text-gray-800' }) => {
   const summary = items.reduce((acc, item) => {
@@ -10,10 +10,10 @@ const EmployeeSummaryCards = ({ items, valueFor, formatValue, countLabel, accent
     acc[key].total += valueFor(item);
     acc[key].count += 1;
     return acc;
-  }, { monica: { total: 0, count: 0 }, rita: { total: 0, count: 0 } });
+  }, emptyByEmployee(() => ({ total: 0, count: 0 })));
 
   const cards = [
-    ...EMPLOYEE_GROUPS,
+    ...getEmployeeGroups(),
     ...(summary.otras ? [{ key: 'otras', label: 'Otras' }] : []),
   ];
 

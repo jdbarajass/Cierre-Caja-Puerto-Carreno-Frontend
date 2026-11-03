@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Plus, Trash2, Pencil, X, Check, AlertCircle } from 'lucide-react';
 import { getPermissions, createPermission, updatePermission, deletePermission } from '../../services/employeesService';
-import { EMPLOYEE_GROUPS, groupKeyFor } from '../../utils/employeeGroups';
+import { getEmployeeGroups, groupKeyFor, emptyByEmployee } from '../../utils/employeeGroups';
 import EmployeeSelect from './EmployeeSelect';
 
 const today = () => new Date().toISOString().split('T')[0];
@@ -64,7 +64,7 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  // Resumen de horas/registros por empleada (Mónica y Rita por separado) y por tipo
+  // Resumen de horas/registros por empleada (cada una por separado) y por tipo
   const emptyTypeBucket = () => Object.keys(TYPE_LABELS).reduce((o, t) => { o[t] = { count: 0, hours: 0 }; return o; }, {});
 
   const summaryByEmployee = items.reduce((acc, item) => {
@@ -73,10 +73,10 @@ const PermisosSection = ({ isAdmin, filterNombre }) => {
     acc[key][item.type].count += 1;
     acc[key][item.type].hours += hoursFor(item);
     return acc;
-  }, { monica: emptyTypeBucket(), rita: emptyTypeBucket() });
+  }, emptyByEmployee(emptyTypeBucket));
 
   const employeeCards = [
-    ...EMPLOYEE_GROUPS,
+    ...getEmployeeGroups(),
     ...(summaryByEmployee.otras ? [{ key: 'otras', label: 'Otras' }] : []),
   ];
 

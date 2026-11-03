@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { isAdmin } from '../../utils/auth';
 import { Shirt, DollarSign, Clock, Sun, CreditCard, ChevronRight, Search, X } from 'lucide-react';
-import { EMPLOYEE_GROUPS } from '../../utils/employeeGroups';
+import { getEmployeeGroups } from '../../utils/employeeGroups';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 import RopaSection from './RopaSection';
@@ -64,7 +64,7 @@ const EmployeesLayout = () => {
             }`}>
             Todas
           </button>
-          {EMPLOYEE_GROUPS.map(g => (
+          {getEmployeeGroups().map(g => (
             <button key={g.key} onClick={() => quickFilter(g.name)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filterNombre === g.name ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

@@ -2,6 +2,14 @@
 
 ---
 
+## [2026-11-03] Empleadas por tienda (Primavera: Yesica y Daniela)
+
+Pedido del usuario: en Primavera, Cuentas → Gastos (sueldos) y Empleadas seguían mostrando a Mónica y Rita.
+
+- `src/utils/employeeGroups.js`: la lista de empleadas ahora es por tienda (`EMPLOYEE_GROUPS_BY_STORE`): Carreño = Mónica Vargas y Rita Infante (igual que antes); Primavera = Yesica y Daniela (solo nombre; si luego se ponen apellidos, los registros viejos siguen agrupando y el filtro del backend es por "contiene"). `getEmployeeGroups()` / `getEmployeeNames()` / `groupKeyFor()` leen la tienda activa; al cambiar de tienda las páginas se vuelven a montar.
+- Usan la lista de la tienda: selector de empleada de Control de Empleadas (pagos, préstamos, permisos, ropa, vacaciones), filtro rápido y tarjetas de totales, Cuentas → Gastos (sueldo / préstamo) e Incentivos de Metas.
+- Solo frontend: los datos de empleadas y gastos ya estaban separados por tienda en el backend. `npm test`, eslint y build OK.
+
 ## [2026-10-30] Popup de gastos operativos en el cierre
 
 Pedido del usuario: si el cierre trae gastos operativos, que pregunte en qué se gastaron para que quede en Gastos con esa descripción.

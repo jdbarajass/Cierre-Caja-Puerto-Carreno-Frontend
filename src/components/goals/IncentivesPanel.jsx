@@ -9,7 +9,7 @@ import {
   loadIncentivesTemplate, payIncentive, saveFinanceSettings,
 } from '../../services/financeService';
 import LiveMoneyInput from '../common/LiveMoneyInput';
-import { EMPLOYEE_NAMES } from '../../utils/employeeGroups';
+import { getEmployeeNames } from '../../utils/employeeGroups';
 
 const formatCOP = (v) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.round(v || 0));
@@ -158,7 +158,7 @@ const IncentivesPanel = ({ month, storeGoal, storeSales, isCurrent, isPast, onSe
             <select aria-label="Empleada" value={form.employee_name || ''} disabled={form.category !== 'sueldo'}
               onChange={e => setForm(f => ({ ...f, employee_name: e.target.value }))} className={`${inputCls} disabled:opacity-50`}>
               <option value="">Ninguna</option>
-              {EMPLOYEE_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+              {getEmployeeNames().map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <p className="sm:col-span-6 text-[11px] text-gray-500 -mt-1">Con empleada, al registrar el pago también queda en Empleadas → Pagos de esa persona (como comisión).</p>

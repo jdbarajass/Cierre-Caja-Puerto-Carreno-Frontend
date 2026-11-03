@@ -14,7 +14,7 @@ import {
 } from '../services/expensesService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import EmployeeSelect from '../components/employees/EmployeeSelect';
-import { EMPLOYEE_NAMES } from '../utils/employeeGroups';
+import { getEmployeeNames } from '../utils/employeeGroups';
 import { getColombiaDate } from '../utils/dateUtils';
 
 const fmt = (v) =>
@@ -461,7 +461,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                   <select aria-label="Empleada" value={form.employee_name} onChange={e => set('employee_name', e.target.value)} className={inputCls}>
                     <option value="">Sin empleada</option>
                     {/* mismas opciones que Empleadas, sin hacerlo obligatorio */}
-                    {EMPLOYEE_NAMES.map(name => <option key={name} value={name}>{name}</option>)}
+                    {getEmployeeNames().map(name => <option key={name} value={name}>{name}</option>)}
                   </select>
                 )}
               </div>
