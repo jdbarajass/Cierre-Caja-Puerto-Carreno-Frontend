@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-03] (continuación) Varias tarjetas regalo en una redención
+
+- `InventoryAdjustments.jsx`: en "Redimir tarjeta regalo", ENTRA ahora es una lista de tarjetas con "Agregar otra tarjeta" (solo el código; cada código es una tarjeta). El recuadro de valores suma todas las tarjetas. Envía `gift_card_codes`; necesita el backend del mismo día.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-03] Filtros en Recompras y en Ajustes de inventario
 
 Pedido del usuario: los mismos filtros de Gastos en Recompras y donde sirvan.

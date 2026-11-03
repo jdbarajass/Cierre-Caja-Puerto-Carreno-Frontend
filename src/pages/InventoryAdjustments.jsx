@@ -98,7 +98,7 @@ const FORM_TEXT = {
   },
   tarjeta_regalo: {
     title: 'Redimir tarjeta regalo',
-    help: 'Entra la tarjeta regalo y sale la prenda que se lleva el cliente. Nunca se devuelve plata: lo que se lleva debe valer igual o más que la tarjeta (si vale más, paga el excedente).',
+    help: 'Entran las tarjetas regalo (una o varias) y sale lo que se lleva el cliente. Nunca se devuelve plata: lo que se lleva debe valer igual o más que las tarjetas (si vale más, paga el excedente).',
   },
   cambio_prenda: {
     title: 'Cambio de prenda',
@@ -106,26 +106,33 @@ const FORM_TEXT = {
   },
 };
 
-// Lista de prendas con código + cantidad (o físico, en el conteo)
+// Lista de prendas con código + cantidad (o físico, en el conteo). mode 'card':
+// tarjetas regalo, solo el código (cada código es una tarjeta).
 const LinesEditor = ({ rows, setRows, mode, diffLabel }) => {
   const setRow = (key, patch) => setRows(rs => rs.map(r => (r.key === key ? { ...r, ...patch } : r)));
   const conteo = mode === 'conteo';
+  const card = mode === 'card';
   return (
     <>
       {rows.map(r => (
-        <div key={r.key} className="grid grid-cols-1 sm:grid-cols-[1fr_9rem_auto] gap-2 sm:items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-          <CodeField row={r} onChange={patch => setRow(r.key, patch)} />
+        <div key={r.key} className={`grid grid-cols-1 ${card ? 'sm:grid-cols-[1fr_auto]' : 'sm:grid-cols-[1fr_9rem_auto]'} gap-2 sm:items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0`}>
           <div>
+            <CodeField row={r} label={card ? 'Código de la tarjeta' : 'Código'} onChange={patch => setRow(r.key, patch)} />
+            {card && r.item && !r.item.is_gift_card && (
+              <p className="text-xs text-red-600 mt-1">Este código no es una tarjeta regalo.</p>
+            )}
+          </div>
+          {!card && <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">{conteo ? 'Físico *' : 'Cantidad'}</label>
             <input aria-label={conteo ? 'Cantidad física' : 'Cantidad'} type="number" min={conteo ? 0 : 1} step={1} inputMode="numeric"
               required={conteo && !!r.code} placeholder={conteo ? 'Ej.: 6' : '1'}
               value={r.qty} onChange={e => setRow(r.key, { qty: e.target.value })} className={inputCls} />
             {conteo && <p className="text-xs mt-1">{diffLabel(r)}</p>}
-          </div>
+          </div>}
           <div className="sm:pt-5">
             {rows.length > 1 && (
               <button type="button" onClick={() => setRows(rs => rs.filter(x => x.key !== r.key))}
-                aria-label="Quitar prenda" className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                aria-label={card ? 'Quitar tarjeta' : 'Quitar prenda'} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg">
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
@@ -134,7 +141,7 @@ const LinesEditor = ({ rows, setRows, mode, diffLabel }) => {
       ))}
       <button type="button" onClick={() => setRows(rs => [...rs, emptyRow()])}
         className="flex items-center gap-1 text-sm text-indigo-700 font-medium hover:underline">
-        <Plus className="w-4 h-4" /> Agregar otra prenda
+        <Plus className="w-4 h-4" /> {card ? 'Agregar otra tarjeta' : 'Agregar otra prenda'}
       </button>
     </>
   );
@@ -146,7 +153,7 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
   const [requestedBy, setRequestedBy] = useState('');
   const [rows, setRows] = useState([emptyRow()]);        // conteo / prendas que SALEN
   const [inRows, setInRows] = useState([emptyRow()]);    // cambio: prendas que ENTRAN
-  const [card, setCard] = useState(emptyRow());          // tarjeta regalo que ENTRA
+  const [cards, setCards] = useState([emptyRow()]);      // tarjetas regalo que ENTRAN
   const [excedente, setExcedente] = useState('');
   const [excedenteTouched, setExcedenteTouched] = useState(false);
   const [medio, setMedio] = useState('');
@@ -159,9 +166,9 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
   const text = FORM_TEXT[kind];
 
   // Valor (precio de venta en Alegra) de lo que entra y lo que sale
-  const valueIn = cambio ? valueOf(inRows) : (card.item ? card.item.price || 0 : 0);
+  const valueIn = valueOf(cambio ? inRows : cards);
   const valueOut = valueOf(rows);
-  const ready = !conteo && rows.some(r => r.item) && (cambio ? inRows.some(r => r.item) : !!card.item);
+  const ready = !conteo && rows.some(r => r.item) && (cambio ? inRows : cards).some(r => r.item);
   const difference = valueOut - valueIn;
 
   // El excedente arranca con la diferencia (se puede cambiar, ej. si hubo descuento)
@@ -186,13 +193,13 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    const all = [...rows, ...(cambio ? inRows : []), ...(kind === 'tarjeta_regalo' ? [card] : [])];
+    const all = [...rows, ...(cambio ? inRows : []), ...(kind === 'tarjeta_regalo' ? cards : [])];
     if (all.some(r => r.loading)) { setError('Espera a que termine la búsqueda en Alegra.'); return; }
     if (cambio && !inRows.some(r => r.code)) { setError('Agrega la prenda que devuelve el cliente.'); return; }
     if (!rows.some(r => r.code)) { setError(conteo ? 'Agrega al menos una prenda.' : 'Agrega la prenda que sale.'); return; }
     if (all.filter(r => r.code).some(r => !r.item)) { setError('Hay códigos que no se encontraron en Alegra: revísalos.'); return; }
-    if (kind === 'tarjeta_regalo' && !card.item) { setError('Busca el código de la tarjeta regalo.'); return; }
-    if (kind === 'tarjeta_regalo' && !card.item.is_gift_card) { setError('El código que entra no es una tarjeta regalo.'); return; }
+    if (kind === 'tarjeta_regalo' && !cards.some(r => r.item)) { setError('Busca el código de la tarjeta regalo.'); return; }
+    if (kind === 'tarjeta_regalo' && cards.some(r => r.item && !r.item.is_gift_card)) { setError('Hay un código que entra que no es una tarjeta regalo.'); return; }
     if (!conteo && difference < 0) { setError('Lo que se lleva vale menos de lo que entra: debe llevar otra prenda hasta igualar o pasar el valor (nunca se devuelve plata).'); return; }
     if (!conteo && difference > 0 && !(Number(excedente) > 0)) { setError('Escribe el excedente que pagó el cliente.'); return; }
     if (Number(excedente) > 0 && !medio) { setError('Elige por qué medio pagó el excedente.'); return; }
@@ -202,7 +209,7 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
       kind, requested_by: requestedBy, notes, ...extra,
       lines: lineList(rows, conteo ? 'physical_qty' : 'quantity'),
       ...(cambio ? { in_lines: lineList(inRows, 'quantity') } : {}),
-      ...(kind === 'tarjeta_regalo' ? { gift_card_code: card.item.code } : {}),
+      ...(kind === 'tarjeta_regalo' ? { gift_card_codes: cards.filter(r => r.item).map(r => r.item.code) } : {}),
     };
     setSaving(true);
     try {
@@ -231,12 +238,9 @@ const RequestForm = ({ kind, onDone, onCancel }) => {
       </div>
 
       {kind === 'tarjeta_regalo' && (
-        <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3">
-          <p className="text-xs font-semibold text-emerald-800 mb-2">ENTRA (tarjeta regalo)</p>
-          <CodeField row={card} label="Código de la tarjeta" onChange={patch => setCard(c => ({ ...c, ...patch }))} />
-          {card.item && !card.item.is_gift_card && (
-            <p className="text-xs text-red-600 mt-1">Este código no es una tarjeta regalo.</p>
-          )}
+        <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3 space-y-3">
+          <p className="text-xs font-semibold text-emerald-800">ENTRA (tarjetas regalo, una o varias)</p>
+          <LinesEditor rows={cards} setRows={setCards} mode="card" />
         </div>
       )}
 
