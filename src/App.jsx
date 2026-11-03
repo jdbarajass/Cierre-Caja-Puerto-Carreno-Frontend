@@ -36,6 +36,7 @@ const EmployeesLayout = lazy(() => import('./components/employees/EmployeesLayou
 const CuentasRecompras = lazy(() => import('./pages/CuentasRecompras'));
 const CuentasLayout = lazy(() => import('./pages/CuentasLayout'));
 const NotesTasksLayout = lazy(() => import('./pages/NotesTasksLayout'));
+const InventoryAdjustments = lazy(() => import('./pages/InventoryAdjustments'));
 
 // Componente de carga
 const LoadingFallback = () => <AppLoader label="Cargando…" />;
@@ -118,6 +119,18 @@ const App = () => {
                   <ProtectedRoute allowedRoles={['admin', 'sales']}>
                     <MainLayout>
                       <NotesTasksLayout />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Ajustes de inventario: las vendedoras piden, el admin acepta (Admin y Sales) */}
+              <Route
+                path="/ajustes-inventario"
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'sales']}>
+                    <MainLayout>
+                      <InventoryAdjustments />
                     </MainLayout>
                   </ProtectedRoute>
                 }

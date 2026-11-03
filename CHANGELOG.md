@@ -2,6 +2,18 @@
 
 ---
 
+## [2026-11-03] Ajustes de inventario (las vendedoras piden, el admin acepta)
+
+Pedido del usuario: que las vendedoras registren los conteos de inventario y las tarjetas regalo redimidas, y que él solo revise y acepte. Plan: `docs/PLAN_AJUSTES_INVENTARIO.md` del backend (necesita el backend del mismo día). Cambios de prenda quedan para después de hablar con el contador.
+
+- `src/pages/InventoryAdjustments.jsx` (nuevo, ruta `/ajustes-inventario`, admin y sales; en el menú Gestión → Ajustes de inventario):
+  - Vendedoras: "Conteo de inventario" (código + cantidad física; muestra el nombre y el "Sistema" de Alegra al escribir el código y si se aumenta o disminuye) y "Redimir tarjeta regalo" (entra la tarjeta, sale la prenda, excedente y su medio como nota). "¿Quién lo pide?" obligatorio con las empleadas de la tienda. El código acepta Enter (lector de código de barras). Pueden quitar una solicitud mientras esté pendiente.
+  - Admin: cada pendiente se revisa sola contra Alegra (columna "Hoy en Alegra", avisos si cambió la existencia o si quedaría en negativo); Aceptar (crea el ajuste y muestra "Ajuste No. N"), Aceptar todas, Rechazar con motivo. "Por revisar" (Alegra no respondió) se acepta de nuevo y primero se busca si ya quedó creado. Historial con las últimas 150.
+  - El admin de solo lectura ve todo sin botones.
+- `src/services/inventoryRequestsService.js` (nuevo): tiempos más largos para buscar códigos (la lista de ítems de Alegra) y aceptar.
+- El recordatorio del admin "N ajustes de inventario por aceptar" lleva a esta pantalla.
+- `npm test`, eslint y build OK. Falta probar la pantalla en el navegador con el backend.
+
 ## [2026-11-03] Empleadas por tienda (Primavera: Yesica y Daniela)
 
 Pedido del usuario: en Primavera, Cuentas → Gastos (sueldos) y Empleadas seguían mostrando a Mónica y Rita.

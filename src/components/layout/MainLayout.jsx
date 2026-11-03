@@ -28,6 +28,7 @@ import {
   ClipboardList,
   Briefcase,
   Wallet,
+  PackageCheck,
   Menu,
   X,
   AlertTriangle,
@@ -322,6 +323,15 @@ const MainLayout = ({ children }) => {
       path: '/empleadas',
       icon: Shirt,
       color: 'pink',
+      roles: ['admin', 'sales']
+    },
+    {
+      id: 'ajustes-inventario',
+      label: 'Ajustes de inventario',
+      description: 'Conteos y tarjetas regalo; se aplican en Alegra al aceptarlos',
+      path: '/ajustes-inventario',
+      icon: PackageCheck,
+      color: 'indigo',
       roles: ['admin', 'sales']
     },
     {
