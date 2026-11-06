@@ -50,3 +50,9 @@ export const getInterStoreLoans = () => call('getInterStoreLoans', `${BASE}/inte
 export const getInterStoreDebt = () => call('getInterStoreDebt', '/api/inter-store-debt');
 export const updateInterStoreDebtOpening = (payload) =>
   call('updateInterStoreDebtOpening', '/api/inter-store-debt/opening', json('PUT', payload));
+
+// Préstamos de cada tienda (Radiografía Fase 0c): mamá de Angie, don Miguel
+export const getLoans = () => call('getLoans', '/api/loans');
+export const updateLoan = (id, payload) => call('updateLoan', `/api/loans/${id}`, json('PUT', payload));
+export const addLoanPayment = (id, payload) => call('addLoanPayment', `/api/loans/${id}/payments`, json('POST', payload));
+export const deleteLoanPayment = (id) => call('deleteLoanPayment', `/api/loans/payments/${id}`, { method: 'DELETE' });

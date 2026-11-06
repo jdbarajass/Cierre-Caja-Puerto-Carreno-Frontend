@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-11-06] (continuación) Radiografía, Fase 0c: tarjetas de los préstamos
+
+- `components/accounts/LoansCards.jsx` (nuevo), en Cuentas → Resumen debajo de la deuda entre tiendas: "LO QUE DEBE LA TIENDA · <tarjeta>" con el saldo; al darle clic, prestado / pagado / intereses / falta, aviso de la cuota del mes, "Registrar pago" (a qué préstamo, valor, de dónde salió: cuenta, caja del día o descontada del préstamo) y por préstamo la tabla de pagos (interés, lo que baja la deuda, saldo después), "Editar plazo, tasa o cuota" (con recálculo e historial) y "Ajustar saldo". El viewer lo ve sin botones.
+- `CuentasGastos.jsx`: "¿A qué préstamo abona?" en las cuotas de crédito.
+- `expensesService.js`: `getLoans`, `updateLoan`, `addLoanPayment`, `deleteLoanPayment`. Necesita el backend del mismo día.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-06] (continuación) Radiografía, Fase 0b: tarjeta de la deuda entre tiendas
 
 - `components/accounts/InterStoreDebtCard.jsx` (nuevo), en Cuentas → Resumen debajo de Notas importantes: Carreño "PRIMAVERA NOS DEBE", Primavera "LE DEBEMOS A CARREÑO", mismo saldo. Al darle clic: partida, préstamos nuevos, abonado, saldo hoy con la fórmula, cada pago/préstamo con el saldo después, historial de cambios de la partida, "Ajustar saldo de partida" (con nota) y "Registrar abono en Gastos". El viewer lo ve sin botones.

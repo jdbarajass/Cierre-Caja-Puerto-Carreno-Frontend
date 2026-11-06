@@ -10,7 +10,7 @@ import {
 import {
   getExpenses, createExpense, updateExpense, deleteExpense,
   getFixedExpenses, createFixedExpense, updateFixedExpense, deleteFixedExpense, loadFixedTemplate,
-  getInterStoreLoans,
+  getInterStoreLoans, getLoans,
 } from '../services/expensesService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
 import EmployeeSelect from '../components/employees/EmployeeSelect';
@@ -143,6 +143,7 @@ const emptyForm = (direction = 'out') => ({
   related_store_code: '',
   purpose: '',
   arrived_method: '',
+  loan_id: '',
   fixed_expense_id: '',
   apply_fee: true,
   feeOverride: null,
@@ -182,6 +183,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
   const [totals, setTotals] = useState({});
   const [fixed, setFixed] = useState({ items: [], inactive: [], summary: {}, template_available: false });
   const [interStore, setInterStore] = useState({ lent: [], owed: [] });
+  // Préstamos de la tienda (Radiografía Fase 0c): a cuál abona una cuota de crédito
+  const [loans, setLoans] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -207,11 +210,13 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
     setLoading(true);
     setError('');
     try {
-      const [exp, fx, inter] = await Promise.all([
+      const [exp, fx, inter, ln] = await Promise.all([
         getExpenses({ year, month }),
         getFixedExpenses({ year, month }),
         getInterStoreLoans(),
+        getLoans().catch(() => ({ groups: [] })),
       ]);
+      setLoans((ln.groups || []).flatMap(g => g.loans.map(l => ({ ...l, label: g.loans.length > 1 ? `${g.group_name} · ${l.name}` : g.group_name }))));
       setItems(exp.items || []);
       setTotals(exp.totals || {});
       setFixed(fx);
@@ -302,6 +307,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
       related_store_code: row.related_store_code || '',
       purpose: row.purpose || '',
       arrived_method: row.arrived_method || '',
+      loan_id: row.loan_id ? String(row.loan_id) : '',
       fixed_expense_id: row.fixed_expense_id ? String(row.fixed_expense_id) : '',
       apply_fee: row.apply_fee,
       feeOverride: row.fee_override != null ? String(row.fee_override) : null,
@@ -335,6 +341,7 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
         related_store_code: STORE_CATEGORIES.includes(formCategory) ? form.related_store_code : '',
         purpose: PURPOSES[formCategory] ? form.purpose : '',
         arrived_method: PURPOSES[formCategory] && form.purpose === 'cuenta' ? form.arrived_method : '',
+        loan_id: formCategory === 'cuota_credito' && form.loan_id ? Number(form.loan_id) : null,
         fixed_expense_id: form.fixed_expense_id ? Number(form.fixed_expense_id) : null,
         apply_fee: form.apply_fee,
         fee_override: form.feeOverride !== null ? toNum(form.feeOverride) : null,
@@ -540,6 +547,17 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                   <option value="" disabled>Selecciona…</option>
                   {otherStores.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
                 </select>
+              </div>
+            )}
+
+            {formCategory === 'cuota_credito' && loans.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">¿A qué préstamo abona?</label>
+                <select aria-label="Préstamo" value={form.loan_id} onChange={e => set('loan_id', e.target.value)} className={inputCls}>
+                  <option value="">Ninguno</option>
+                  {loans.filter(l => l.active).map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">Baja la deuda en la tarjeta de Resumen (un solo registro).</p>
               </div>
             )}
 
