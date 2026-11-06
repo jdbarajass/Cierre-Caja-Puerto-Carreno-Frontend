@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-06] Radiografía, Fase 0: cuotas de crédito en su propia columna
+
+- `CuentasAnual.jsx`: columna "Cuotas crédito" (y línea en celular) entre gastos operativos y ganancia bruta; "En gastos" cuando los gastos del mes se escribieron a mano. Títulos de G. neta y G. real con la fórmula nueva; los números de ganancia no cambian. Necesita el backend del mismo día.
+- `StoreComparison.jsx`: fila "Cuotas de crédito" y la ganancia real las resta (como Año).
+
 ## [2026-11-03] (continuación) Varias tarjetas regalo en una redención
 
 - `InventoryAdjustments.jsx`: en "Redimir tarjeta regalo", ENTRA ahora es una lista de tarjetas con "Agregar otra tarjeta" (solo el código; cada código es una tarjeta). El recuadro de valores suma todas las tarjetas. Envía `gift_card_codes`; necesita el backend del mismo día.

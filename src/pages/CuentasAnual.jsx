@@ -343,6 +343,7 @@ const CuentasAnual = () => {
                     {m.excedentes ? <><span className="text-gray-500">Excedentes (no venta)</span><span className="text-right">{fmt(m.excedentes)}</span></> : null}
                     <span className="text-gray-500">Recompras</span><span className="text-right">{fmt(m.recompras)}<EditedMark info={m.edited.recompras} /></span>
                     <span className="text-gray-500">Gastos operativos</span><span className="text-right">{m.has_expenses ? fmt(m.gastos_operativos) : 'Sin registrar'}<EditedMark info={m.edited.gastos_operativos} /></span>
+                    {m.cuotas ? <><span className="text-gray-500">Cuotas de crédito</span><span className="text-right">{fmt(m.cuotas)}</span></> : null}
                     <span className="text-gray-500">Ganancia real</span><span className={`text-right font-bold ${m.ganancia_real < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{fmt(m.ganancia_real)} ({pct(m.porcentaje)})</span>
                     <span className="text-gray-500">Inventario</span><span className="text-right">{fmt(m.inventario)}</span>
                     <span className="text-gray-500">Subió / bajó</span><span className="text-right">{signed(m.inventario_cambio)}</span>
@@ -351,7 +352,7 @@ const CuentasAnual = () => {
               ))}
             </ul>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm min-w-[1200px]">
+              <table className="w-full text-sm min-w-[1300px]">
                 <thead>
                   <tr className="bg-gray-800 text-white text-xs uppercase tracking-wide">
                     <th className="text-left px-3 py-2.5">Mes</th>
@@ -359,9 +360,10 @@ const CuentasAnual = () => {
                     <th className="text-right px-3 py-2.5" title="Excedentes de los cierres sincronizados: plata que entró pero no es venta de Alegra. No suma a ventas ni ganancia.">Excedentes</th>
                     <th className="text-right px-3 py-2.5">Recompras</th>
                     <th className="text-right px-3 py-2.5">Gastos operativos</th>
+                    <th className="text-right px-3 py-2.5" title="Cuotas de los créditos (mamá de Angie, don Miguel). No son gasto del local, pero la plata sale: se restan en las ganancias.">Cuotas crédito</th>
                     <th className="text-right px-3 py-2.5" title="Ventas − recompras">G. bruta</th>
-                    <th className="text-right px-3 py-2.5" title="Ventas − gastos operativos (como el Excel)">G. neta</th>
-                    <th className="text-right px-3 py-2.5 bg-emerald-800" title="Ventas − recompras − gastos operativos">G. real</th>
+                    <th className="text-right px-3 py-2.5" title="Ventas − gastos operativos − cuotas (como el Excel)">G. neta</th>
+                    <th className="text-right px-3 py-2.5 bg-emerald-800" title="Ventas − recompras − gastos operativos − cuotas">G. real</th>
                     <th className="text-right px-3 py-2.5 bg-emerald-800">%</th>
                     <th className="text-right px-3 py-2.5">Inventario</th>
                     <th className="text-right px-3 py-2.5">Subió / bajó</th>
@@ -381,6 +383,11 @@ const CuentasAnual = () => {
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         {m.has_expenses ? fmt(m.gastos_operativos) : <span className="text-gray-400" title="No hay gastos registrados para este mes: escríbelos a mano con Editar">Sin registrar</span>}
                         <EditedMark info={m.edited.gastos_operativos} />
+                      </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        {m.cuotas_en_gastos
+                          ? <span className="text-gray-400" title="Los gastos de este mes se escribieron a mano: ya traen las cuotas">En gastos</span>
+                          : (m.cuotas ? fmt(m.cuotas) : '')}
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.ganancia_bruta)}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">{fmt(m.ganancia_neta)}</td>
@@ -409,6 +416,7 @@ const CuentasAnual = () => {
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{t.excedentes ? fmt(t.excedentes) : ''}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.recompras)}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.gastos_operativos)}</td>
+                    <td className="px-3 py-2.5 text-right whitespace-nowrap">{t.cuotas ? fmt(t.cuotas) : ''}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.ganancia_bruta)}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">{fmt(t.ganancia_neta)}</td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap bg-emerald-900">{fmt(t.ganancia_real)}</td>
@@ -583,7 +591,8 @@ const CuentasAnual = () => {
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p><b>Ganancia bruta</b> = ventas − recompras. <b>Ganancia neta</b> = ventas − gastos operativos (como el Excel). <b>Ganancia real</b> = ventas − recompras − gastos operativos.</p>
-              <p><b>Gastos operativos</b>: los que corresponden al mes (arriendo, sueldos, servicios, fletes, cuotas, 4x1000 de gastos y de recompras). Inversiones, préstamos y retiros de socios van aparte.</p>
+              <p><b>Gastos operativos</b>: los que corresponden al mes (arriendo, sueldos, servicios, fletes, 4x1000 de gastos y de recompras). Inversiones, préstamos y retiros de socios van aparte.</p>
+              <p><b>Cuotas de crédito</b>: van en su propia columna porque no son gasto del local (es devolver un préstamo), pero la plata sale: se restan en la ganancia neta y en la real. Si los gastos de un mes se escribieron a mano, ya traen las cuotas.</p>
               <p><b>G. real + inventario</b>: si el inventario subió, esa plata no se perdió, está en la tienda en ropa. Antes de usarla, compara el inventario de julio que trae Alegra con el del Excel ($174.013.437) para confirmar que Alegra lo da al mismo precio.</p>
             </div>
           </div>

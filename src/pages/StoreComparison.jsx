@@ -544,13 +544,17 @@ const OPERATION_ROWS = [
     value: (o) => formatCOP(o.expenses_operating),
   },
   {
+    label: 'Cuotas de crédito',
+    value: (o) => formatCOP(o.expenses_debt || 0),
+  },
+  {
     label: 'Inversiones, préstamos y retiros de socios',
     value: (o) => formatCOP(o.expenses_other),
   },
   {
-    // Ventas de Alegra − recompras − gastos operativos (como Cuentas → Año)
-    label: 'Ganancia real (ventas − recompras − gastos)',
-    value: (o, s) => (s.sales ? formatCOP(s.sales.total - o.repurchase_sent - (o.expenses_operating || 0)) : '—'),
+    // Ventas de Alegra − recompras − gastos operativos − cuotas (como Cuentas → Año)
+    label: 'Ganancia real (ventas − recompras − gastos − cuotas)',
+    value: (o, s) => (s.sales ? formatCOP(s.sales.total - o.repurchase_sent - (o.expenses_operating || 0) - (o.expenses_debt || 0)) : '—'),
   },
   {
     label: 'Saldo disponible en cuentas (hoy)',
