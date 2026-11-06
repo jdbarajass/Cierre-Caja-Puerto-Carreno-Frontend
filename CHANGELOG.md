@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-11-06] (continuación) Radiografía, Fase 0b: tarjeta de la deuda entre tiendas
+
+- `components/accounts/InterStoreDebtCard.jsx` (nuevo), en Cuentas → Resumen debajo de Notas importantes: Carreño "PRIMAVERA NOS DEBE", Primavera "LE DEBEMOS A CARREÑO", mismo saldo. Al darle clic: partida, préstamos nuevos, abonado, saldo hoy con la fórmula, cada pago/préstamo con el saldo después, historial de cambios de la partida, "Ajustar saldo de partida" (con nota) y "Registrar abono en Gastos". El viewer lo ve sin botones.
+- `CuentasGastos.jsx`: salida nueva "Pago a otra tienda (abono a la deuda)" y "¿Para qué fue?" en préstamos y abonos entre tiendas (con "¿A qué cuenta llegó?"); los registros espejo dicen "Espejo / se edita allá" sin botones de editar o borrar. Pistas de la cuota de crédito con las deudas reales.
+- `expensesService.js`: `getInterStoreDebt`, `updateInterStoreDebtOpening`. Necesita el backend del mismo día.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-06] Radiografía, Fase 0: cuotas de crédito en su propia columna
 
 - `CuentasAnual.jsx`: columna "Cuotas crédito" (y línea en celular) entre gastos operativos y ganancia bruta; "En gastos" cuando los gastos del mes se escribieron a mano. Títulos de G. neta y G. real con la fórmula nueva; los números de ganancia no cambian. Necesita el backend del mismo día.

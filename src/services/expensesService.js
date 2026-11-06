@@ -45,3 +45,8 @@ export const deleteFixedExpense = (id) => call('deleteFixedExpense', `${BASE}/fi
 export const loadFixedTemplate = () => call('loadFixedTemplate', `${BASE}/fixed/load-template`, { method: 'POST' });
 
 export const getInterStoreLoans = () => call('getInterStoreLoans', `${BASE}/inter-store`);
+
+// Deuda entre tiendas (Radiografía Fase 0b): igual en las dos tiendas
+export const getInterStoreDebt = () => call('getInterStoreDebt', '/api/inter-store-debt');
+export const updateInterStoreDebtOpening = (payload) =>
+  call('updateInterStoreDebtOpening', '/api/inter-store-debt/opening', json('PUT', payload));

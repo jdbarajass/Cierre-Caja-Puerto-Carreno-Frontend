@@ -40,16 +40,18 @@ const OUT_CATEGORIES = [
   { value: 'sueldo', label: 'Sueldo', hint: 'Con empleada: queda en Empleadas → Pagos', badge: 'bg-sky-100 text-sky-800' },
   { value: 'flete', label: 'Flete de mercancía', hint: 'Es parte del costo de la ropa', badge: 'bg-orange-100 text-orange-800' },
   { value: 'financiero', label: 'Gasto financiero', hint: '4x1000, cuota de manejo, intereses', badge: 'bg-gray-200 text-gray-800' },
-  { value: 'cuota_credito', label: 'Cuota de crédito', hint: 'Scotiabank, Davivienda', badge: 'bg-gray-200 text-gray-800' },
+  { value: 'cuota_credito', label: 'Cuota de crédito', hint: 'Mamá de Angie (Carreño), BBVA don Miguel (Primavera)', badge: 'bg-gray-200 text-gray-800' },
   { value: 'inversion', label: 'Inversión / activo', hint: 'Equipos, herrajería, cámaras: no es gasto del mes', badge: 'bg-violet-100 text-violet-800' },
   { value: 'prestamo_empleada', label: 'Préstamo a empleada', hint: 'Queda en Empleadas → Préstamos', badge: 'bg-rose-100 text-rose-800' },
-  { value: 'prestamo_tienda', label: 'Préstamo a otra tienda', hint: 'Ej.: lo que Carreño paga por Primavera', badge: 'bg-indigo-100 text-indigo-800' },
+  { value: 'prestamo_tienda', label: 'Préstamo a otra tienda', hint: 'Lo que esta tienda paga por la otra: suma a la deuda', badge: 'bg-indigo-100 text-indigo-800' },
+  { value: 'pago_prestamo_tienda', label: 'Pago a otra tienda (abono a la deuda)', hint: 'Baja la deuda; no es gasto', badge: 'bg-indigo-100 text-indigo-800' },
   { value: 'retiro_socio', label: 'Retiro de socio', hint: 'Ganancia que retira un socio: no es gasto', badge: 'bg-emerald-100 text-emerald-800' },
   { value: 'otro', label: 'Otro', hint: '', badge: 'bg-gray-100 text-gray-700' },
 ];
 const IN_CATEGORIES = [
   { value: 'devolucion_prestamo', label: 'Devolución de préstamo', hint: 'Con empleada: abona a su préstamo en Empleadas', badge: 'bg-emerald-100 text-emerald-800' },
-  { value: 'devolucion_prestamo_tienda', label: 'Devolución de otra tienda', hint: 'La otra tienda devuelve lo prestado', badge: 'bg-emerald-100 text-emerald-800' },
+  { value: 'devolucion_prestamo_tienda', label: 'Devolución de otra tienda', hint: 'Solo si la otra tienda NO lo registró como abono', badge: 'bg-emerald-100 text-emerald-800' },
+  { value: 'prestamo_recibido_tienda', label: 'Préstamo recibido de otra tienda', hint: 'Se crea solo desde la otra tienda', badge: 'bg-indigo-100 text-indigo-800' },
   { value: 'ingreso_extra', label: 'Ingreso extra', hint: 'Plata que entra y no es venta', badge: 'bg-emerald-100 text-emerald-800' },
 ];
 const CATEGORY_BY_VALUE = Object.fromEntries([...OUT_CATEGORIES, ...IN_CATEGORIES].map(c => [c.value, c]));
@@ -74,7 +76,8 @@ const SUBCATEGORIES = [
   { value: 'ganancia_cristian', label: 'Ganancias mes a mes Cristian', group: 'retiro_socio' },
   { value: 'ganancia_jose', label: 'Ganancias mes a mes José', group: 'retiro_socio' },
   { value: 'prestamo_empleada', label: 'Préstamo empleada', group: 'prestamo_empleada' },
-  { value: 'prestamo_tienda', label: 'Préstamo a otra tienda', group: 'prestamo_tienda' },
+  { value: 'prestamo_tienda', label: 'Préstamo a otra tienda (suma a la deuda)', short: 'Préstamo a otra tienda', group: 'prestamo_tienda' },
+  { value: 'pago_prestamo_tienda', label: 'Pago a otra tienda (abono a la deuda)', short: 'Abono a otra tienda', group: 'pago_prestamo_tienda' },
   { value: 'flete', label: 'Flete mercancía', group: 'flete' },
   { value: 'aseo', label: 'Aseo', group: 'operativo' },
   { value: 'moto_carro', label: 'Moto carro', group: 'flete', hint: 'Mercancía del aeropuerto al local' },
@@ -104,7 +107,23 @@ const ACCOUNT_MODES = [
 const MODE_LABEL = { cuentas: 'Cuentas', caja: 'Caja del día', sin_mover: 'Sin mover' };
 
 const EMPLOYEE_CATEGORIES = ['prestamo_empleada', 'devolucion_prestamo', 'sueldo'];
-const STORE_CATEGORIES = ['prestamo_tienda', 'devolucion_prestamo_tienda'];
+const STORE_CATEGORIES = ['prestamo_tienda', 'pago_prestamo_tienda', 'devolucion_prestamo_tienda'];
+// Para qué fue un préstamo o abono entre tiendas (Radiografía Fase 0b; el
+// backend lo valida en app/services/inter_store_debt.py)
+const PURPOSES = {
+  prestamo_tienda: [
+    { value: 'recompra', label: 'Recompra de la otra tienda', hint: 'Allá queda la recompra sin mover sus cuentas' },
+    { value: 'cuenta', label: 'Llegó a una cuenta de la otra tienda', hint: 'Allá entra a la cuenta que elijas' },
+    { value: 'otro', label: 'Otra cosa de la otra tienda', hint: 'Solo suma a la deuda' },
+  ],
+  pago_prestamo_tienda: [
+    { value: 'recompra', label: 'Recompra de la otra tienda', hint: 'Allá queda la recompra sin mover sus cuentas' },
+    { value: 'cuenta', label: 'Llegó a una cuenta de la otra tienda', hint: 'Allá entra a la cuenta que elijas' },
+    { value: 'ganancias', label: 'Ganancias de los dueños', hint: 'Solo baja la deuda' },
+    { value: 'otro', label: 'Otra cosa de la otra tienda', hint: 'Solo baja la deuda' },
+  ],
+};
+const PURPOSE_LABEL = Object.fromEntries([...PURPOSES.prestamo_tienda, ...PURPOSES.pago_prestamo_tienda].map(p => [p.value, p.label]));
 
 const todayStr = () => {
   const d = getColombiaDate();
@@ -122,6 +141,8 @@ const emptyForm = (direction = 'out') => ({
   account_mode: 'cuentas',
   employee_name: '',
   related_store_code: '',
+  purpose: '',
+  arrived_method: '',
   fixed_expense_id: '',
   apply_fee: true,
   feeOverride: null,
@@ -279,6 +300,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
       account_mode: row.account_mode,
       employee_name: row.employee_name || '',
       related_store_code: row.related_store_code || '',
+      purpose: row.purpose || '',
+      arrived_method: row.arrived_method || '',
       fixed_expense_id: row.fixed_expense_id ? String(row.fixed_expense_id) : '',
       apply_fee: row.apply_fee,
       feeOverride: row.fee_override != null ? String(row.fee_override) : null,
@@ -310,6 +333,8 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
         account_mode: form.account_mode,
         employee_name: EMPLOYEE_CATEGORIES.includes(formCategory) ? form.employee_name : '',
         related_store_code: STORE_CATEGORIES.includes(formCategory) ? form.related_store_code : '',
+        purpose: PURPOSES[formCategory] ? form.purpose : '',
+        arrived_method: PURPOSES[formCategory] && form.purpose === 'cuenta' ? form.arrived_method : '',
         fixed_expense_id: form.fixed_expense_id ? Number(form.fixed_expense_id) : null,
         apply_fee: form.apply_fee,
         fee_override: form.feeOverride !== null ? toNum(form.feeOverride) : null,
@@ -508,11 +533,33 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
             {STORE_CATEGORIES.includes(formCategory) && (
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                  {formCategory === 'prestamo_tienda' ? 'Tienda a la que se le presta *' : 'Tienda que devuelve *'}
+                  {formCategory === 'prestamo_tienda' ? 'Tienda a la que se le presta *'
+                    : formCategory === 'pago_prestamo_tienda' ? 'Tienda a la que se le abona *' : 'Tienda que devuelve *'}
                 </label>
                 <select aria-label="Otra tienda" required value={form.related_store_code} onChange={e => set('related_store_code', e.target.value)} className={inputCls}>
                   <option value="" disabled>Selecciona…</option>
                   {otherStores.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {PURPOSES[formCategory] && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">¿Para qué fue? *</label>
+                <select aria-label="Para qué fue" required={!editingId || !!form.purpose} value={form.purpose} onChange={e => set('purpose', e.target.value)} className={inputCls}>
+                  <option value="" disabled>Selecciona…</option>
+                  {PURPOSES[formCategory].map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+                {form.purpose && <p className="text-[11px] text-gray-500 mt-1">{PURPOSES[formCategory].find(p => p.value === form.purpose)?.hint}</p>}
+              </div>
+            )}
+
+            {PURPOSES[formCategory] && form.purpose === 'cuenta' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">¿A qué cuenta de la otra tienda llegó? *</label>
+                <select aria-label="Cuenta de llegada" required value={form.arrived_method} onChange={e => set('arrived_method', e.target.value)} className={inputCls}>
+                  <option value="" disabled>Selecciona…</option>
+                  {METHODS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
                 </select>
               </div>
             )}
@@ -881,13 +928,17 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                       </div>
                       {(row.employee_name || row.related_store_code || row.notes) && (
                         <p className="text-[11px] text-gray-500 mt-1">
-                          {[row.employee_name && `Empleada: ${row.employee_name}`, row.related_store_code && `Tienda: ${storeName(row.related_store_code)}`, row.notes].filter(Boolean).join(' · ')}
+                          {[row.employee_name && `Empleada: ${row.employee_name}`, row.related_store_code && `Tienda: ${storeName(row.related_store_code)}`, row.purpose && PURPOSE_LABEL[row.purpose], row.notes].filter(Boolean).join(' · ')}
                         </p>
                       )}
-                      <div className="flex gap-2 mt-2">
-                        <button onClick={() => openEdit(row)} className="px-3 py-1 text-xs border border-gray-300 rounded-lg">Editar</button>
-                        <button onClick={() => handleDelete(row)} className="px-3 py-1 text-xs text-red-600 border border-red-200 rounded-lg">Eliminar</button>
-                      </div>
+                      {row.linked_from_id ? (
+                        <p className="text-[11px] text-indigo-700 mt-2">Se creó solo desde la otra tienda: se edita allá.</p>
+                      ) : (
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => openEdit(row)} className="px-3 py-1 text-xs border border-gray-300 rounded-lg">Editar</button>
+                          <button onClick={() => handleDelete(row)} className="px-3 py-1 text-xs text-red-600 border border-red-200 rounded-lg">Eliminar</button>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
@@ -943,10 +994,14 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
                             {row.direction === 'out' ? '−' : '+'}{fmt(row.total_with_fee)}
                           </td>
                           <td className="px-2 py-2.5">
-                            <div className="flex items-center gap-1 justify-end">
-                              <button aria-label="Editar" onClick={() => openEdit(row)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button aria-label="Eliminar" onClick={() => handleDelete(row)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                            </div>
+                            {row.linked_from_id ? (
+                              <span className="text-[11px] text-indigo-700" title="Se creó solo desde la otra tienda: se edita allá">Espejo</span>
+                            ) : (
+                              <div className="flex items-center gap-1 justify-end">
+                                <button aria-label="Editar" onClick={() => openEdit(row)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil className="w-3.5 h-3.5" /></button>
+                                <button aria-label="Eliminar" onClick={() => handleDelete(row)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );

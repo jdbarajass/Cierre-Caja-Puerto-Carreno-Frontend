@@ -12,6 +12,7 @@ import { getEntries, getPurchases } from '../services/repurchaseService';
 import { getMonthSheet } from '../services/monthSheetService';
 import { PendingArrivalsDialog, ArrivedDialog } from '../components/accounts/PendingArrivals';
 import CardAccountPanel from '../components/accounts/CardAccountPanel';
+import InterStoreDebtCard from '../components/accounts/InterStoreDebtCard';
 import { getColombiaDate, formatColombiaDateTime } from '../utils/dateUtils';
 import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
@@ -819,6 +820,9 @@ const CuentasLayout = () => {
           )}
 
           <ImportantNotesCard />
+
+          {/* Deuda entre tiendas (Radiografía Fase 0b): igual en las dos tiendas */}
+          <InterStoreDebtCard refreshKey={totalBalance} onGoToGastos={() => setTab('gastos')} />
 
           {/* ADDI + DATÁFONO va sola, a todo el ancho (Datáfono | Addi | las dos);
               las demás cuentas siguen en su cuadrícula, en el mismo orden. */}
