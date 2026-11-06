@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-06] (continuación) Radiografía, Fase 1: pestaña Radiografía (el mes)
+
+- `src/pages/CuentasRadiografia.jsx` (nuevo) + `src/services/radiografiaService.js`: pestaña "Radiografía" en Gestión → Cuentas (`?tab=radiografia`). Mes de la tienda activa con flechas (desde ene-2026): tarjetas (ventas con variación, utilidad bruta y neta ESTIMADAS, punto de equilibrio con barra de avance), estado de resultados con la fórmula y el % de cada línea, indicadores con comparación contra el mes anterior y el año pasado, "¿Cuánto hay que vender?" (equilibrio mes/día, con cuotas, ritmo, calculadora que no guarda) y salidas por clase. Variaciones con flecha y texto, no solo color; "—" cuando no hay con qué dividir.
+- Necesita el backend del mismo día. eslint, `npm test` y build OK.
+
 ## [2026-11-06] (continuación) Radiografía, Fase 0c: tarjetas de los préstamos
 
 - `components/accounts/LoansCards.jsx` (nuevo), en Cuentas → Resumen debajo de la deuda entre tiendas: "LO QUE DEBE LA TIENDA · <tarjeta>" con el saldo; al darle clic, prestado / pagado / intereses / falta, aviso de la cuota del mes, "Registrar pago" (a qué préstamo, valor, de dónde salió: cuenta, caja del día o descontada del préstamo) y por préstamo la tabla de pagos (interés, lo que baja la deuda, saldo después), "Editar plazo, tasa o cuota" (con recálculo e historial) y "Ajustar saldo". El viewer lo ve sin botones.

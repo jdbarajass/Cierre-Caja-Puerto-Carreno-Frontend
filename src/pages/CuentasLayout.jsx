@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useR
 import {
   Wallet, History, Plus, Minus, RefreshCw,
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange,
-  StickyNote, Maximize2, X
+  StickyNote, Maximize2, X, ScanLine
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
@@ -19,6 +19,7 @@ import CuentasRecompras from './CuentasRecompras';
 import CuentasGastos from './CuentasGastos';
 import CuentasMes from './CuentasMes';
 import CuentasAnual from './CuentasAnual';
+import CuentasRadiografia from './CuentasRadiografia';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useDialog from '../hooks/useDialog';
 import { usePublishSceneData, experience } from '../experience/store';
@@ -416,6 +417,7 @@ const TABS = [
   { id: 'anual', label: 'Año', icon: CalendarRange },
   { id: 'recompras', label: 'Cuentas Recompras', icon: Repeat },
   { id: 'gastos', label: 'Gastos', icon: Receipt },
+  { id: 'radiografia', label: 'Radiografía', icon: ScanLine },
 ];
 
 const CuentasLayout = () => {
@@ -424,7 +426,7 @@ const CuentasLayout = () => {
   const [tab, setTab] = useState(() => {
     try {
       const t = new URLSearchParams(window.location.search).get('tab');
-      return ['resumen', 'mes', 'anual', 'recompras', 'gastos', 'movimientos'].includes(t) ? t : 'resumen';
+      return ['resumen', 'mes', 'anual', 'recompras', 'gastos', 'radiografia', 'movimientos'].includes(t) ? t : 'resumen';
     } catch { return 'resumen'; }
   });
 
@@ -998,6 +1000,8 @@ const CuentasLayout = () => {
       {tab === 'gastos' && <CuentasGastos onEntriesChanged={refreshSummary} />}
 
       {tab === 'mes' && <CuentasMes onEntriesChanged={refreshSummary} />}
+
+      {tab === 'radiografia' && <CuentasRadiografia />}
 
       {tab === 'anual' && <CuentasAnual />}
 
