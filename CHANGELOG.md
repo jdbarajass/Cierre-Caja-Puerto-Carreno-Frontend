@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-06] (continuación) Radiografía: tarjetas regalo aparte
+
+- `CuentasRadiografia.jsx`: "Ventas netas" dice cuánto fue de tarjetas regalo vendidas y "Precio de lista vendido" separa ropa y tarjetas; fórmulas del costo y de los descuentos actualizadas.
+
 ## [2026-11-06] (continuación) Radiografía, Fase 1: pestaña Radiografía (el mes)
 
 - `src/pages/CuentasRadiografia.jsx` (nuevo) + `src/services/radiografiaService.js`: pestaña "Radiografía" en Gestión → Cuentas (`?tab=radiografia`). Mes de la tienda activa con flechas (desde ene-2026): tarjetas (ventas con variación, utilidad bruta y neta ESTIMADAS, punto de equilibrio con barra de avance), estado de resultados con la fórmula y el % de cada línea, indicadores con comparación contra el mes anterior y el año pasado, "¿Cuánto hay que vender?" (equilibrio mes/día, con cuotas, ritmo, calculadora que no guarda) y salidas por clase. Variaciones con flecha y texto, no solo color; "—" cuando no hay con qué dividir.

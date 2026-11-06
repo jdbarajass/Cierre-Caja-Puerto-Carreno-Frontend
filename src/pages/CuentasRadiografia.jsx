@@ -37,9 +37,9 @@ const Tile = ({ label, value, sub, estimated, tone = 'default' }) => (
 // Líneas del estado de resultados: clave, nombre, fórmula, estimado, nivel (0 = total)
 const STATEMENT = [
   ['ventas', 'Ventas netas', 'Facturas de Alegra no anuladas (igual que Cuentas → Año)', false, 0],
-  ['precio_lista', 'Precio de lista vendido', 'Cantidad × precio de lista, sin bolsa ni tarjetas regalo', false, 1],
-  ['descuentos', 'Descuentos', 'Precio de lista vendido − ventas netas', false, 1],
-  ['costo_estimado', 'Costo de la ropa', 'Precio de lista vendido × (1 − margen KOAJ)', true, 1],
+  ['precio_lista', 'Precio de lista vendido', 'Ropa (cantidad × precio de lista) + tarjetas regalo vendidas; sin bolsas', false, 1],
+  ['descuentos', 'Descuentos', 'Precio de lista vendido + bolsas − ventas netas', false, 1],
+  ['costo_estimado', 'Costo de la ropa', 'Precio de lista vendido × (1 − margen KOAJ). La tarjeta regalo se costea al venderla: se canjea por ropa sin factura', true, 1],
   ['fletes', 'Fletes y moto carro', 'Salidas de flete del mes (con 4x1000)', false, 1],
   ['costo_vendido', 'Costo de lo vendido', 'Costo de la ropa + fletes', true, 1],
   ['utilidad_bruta', 'Utilidad bruta', 'Ventas netas − costo de lo vendido', true, 0],
@@ -169,7 +169,9 @@ const CuentasRadiografia = () => {
                   <li key={key} className={`px-4 py-2 grid grid-cols-[1fr_auto] gap-x-3 ${level === 0 ? 'bg-gray-50' : ''}`}>
                     <div className="min-w-0">
                       <p className={`text-sm ${level === 0 ? 'font-semibold text-gray-900' : 'text-gray-700 pl-3'}`}>{label}{est && <Est />}</p>
-                      <p className="text-[11px] text-gray-500 pl-3">{formula}{key === 'gastos_financieros' && s.comisiones_calculadas > 0 && !s.comisiones_registradas
+                      <p className="text-[11px] text-gray-500 pl-3">{formula}{key === 'precio_lista' && s.tarjetas_regalo > 0
+                        ? ` · ropa ${fmt(s.ropa_lista)} + tarjetas regalo ${fmt(s.tarjetas_regalo)}` : ''}{key === 'ventas' && s.tarjetas_regalo > 0
+                        ? ` · incluye ${fmt(s.tarjetas_regalo)} de tarjetas regalo vendidas` : ''}{key === 'gastos_financieros' && s.comisiones_calculadas > 0 && !s.comisiones_registradas
                         ? ` · incluye ${fmt(s.comisiones_calculadas)} de comisiones calculadas (no registradas en Gastos)` : ''}</p>
                     </div>
                     <div className="text-right">
