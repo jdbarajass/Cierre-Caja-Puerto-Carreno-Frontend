@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía, Fase 3: vista Inventario
+
+- `src/components/radiografia/RadiografiaInventario.jsx` (nuevo), tercera opción del selector de `CuentasRadiografia.jsx`: tarjetas (inventario a costo y a precio de venta con el reporte de Alegra al lado, días de inventario, rotación, plata parada), las que más y menos rotan, tablas por departamento y por tipo de prenda, y prendas quietas (60/90/180 días) ordenadas por plata parada (25 y "ver todas"). `getRadiografiaInventory` en `radiografiaService.js`.
+- eslint y build OK.
+
 ## [2026-11-09] (continuación) Radiografía Año: nota del ajuste de 2025
 
 - `RadiografiaAnio.jsx`: fila "Cambio sin el ajuste de 2025" (solo si algún mes lo trae) y asterisco con la nota en el cambio del inventario de ese mes; el aviso de arriba explica el ajuste.

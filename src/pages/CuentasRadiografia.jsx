@@ -1,5 +1,5 @@
 // Gestión → Cuentas → Radiografía (docs/PLAN_RADIOGRAFIA.md del backend).
-// Vistas Mes (Fase 1) y Año (Fase 2, components/radiografia/RadiografiaAnio).
+// Vistas Mes (Fase 1), Año (Fase 2) e Inventario (Fase 3), en components/radiografia/.
 // Mes: el mes de la tienda activa — estado de resultados con la fórmula de
 // cada línea, indicadores, comparaciones, punto de equilibrio y salidas por
 // clase. Solo lee (admin y viewer). Todo lo que depende del costo dice
@@ -12,6 +12,7 @@ import { getColombiaDate } from '../utils/dateUtils';
 import { Change, Est, Tile, Warnings } from '../components/radiografia/RadiografiaUI';
 import { MONTHS, fmt, fmtDate, num, pct } from '../utils/radiografiaFormat';
 import RadiografiaAnio from '../components/radiografia/RadiografiaAnio';
+import RadiografiaInventario from '../components/radiografia/RadiografiaInventario';
 
 // Líneas del estado de resultados: clave, nombre, fórmula, estimado, nivel (0 = total)
 const STATEMENT = [
@@ -296,7 +297,7 @@ const RadiografiaMes = () => {
   );
 };
 
-const VIEWS = [['mes', 'Mes'], ['anio', 'Año']];
+const VIEWS = [['mes', 'Mes'], ['anio', 'Año'], ['inventario', 'Inventario']];
 
 const CuentasRadiografia = () => {
   const [view, setView] = useState('mes');
@@ -310,7 +311,9 @@ const CuentasRadiografia = () => {
           </button>
         ))}
       </div>
-      {view === 'mes' ? <RadiografiaMes /> : <RadiografiaAnio />}
+      {view === 'mes' && <RadiografiaMes />}
+      {view === 'anio' && <RadiografiaAnio />}
+      {view === 'inventario' && <RadiografiaInventario />}
     </div>
   );
 };

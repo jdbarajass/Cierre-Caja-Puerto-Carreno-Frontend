@@ -28,3 +28,7 @@ export const getRadiografiaMonth = ({ year, month, target }) =>
 // Fase 2 (Año): por mes, total y promedio; cuadra con Cuentas → Año
 export const getRadiografiaYear = ({ year }) =>
   call('getRadiografiaYear', `/api/radiografia/year?year=${year}`);
+
+// Fase 3 (Inventario): stock de Alegra (la primera vez tarda), quieta = sin venta ni llegada en N días
+export const getRadiografiaInventory = ({ quiet }) =>
+  call('getRadiografiaInventory', `/api/radiografia/inventory?quiet=${quiet}`);
