@@ -41,3 +41,22 @@ export const getRadiografiaCashFlow = ({ year, month }) =>
 // Fase 5 (Comparativo): las tiendas lado a lado y las dos sumadas (solo quien ve las dos tiendas)
 export const getRadiografiaCompare = ({ year, month }) =>
   call('getRadiografiaCompare', `/api/radiografia/compare?year=${year}&month=${month}`, 120000);
+
+// Fase 6 (Exportar): el mismo endpoint de la vista con &format=xlsx|pdf; descarga el archivo
+export const downloadRadiografia = async (url, fmt, filename) => {
+  const res = await authenticatedFetch(`${url}${url.includes('?') ? '&' : '?'}format=${fmt}`, {}, 200000);
+  if (!res.ok) {
+    let message = 'No se pudo generar el archivo';
+    try { message = (await res.json()).message || message; } catch { /* no era JSON */ }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(href);
+};

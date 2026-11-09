@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { getRadiografiaCashFlow } from '../../services/radiografiaService';
 import { Est, Tile, Warnings } from './RadiografiaUI';
 import { fmt, fmtDate, MONTHS } from '../../utils/radiografiaFormat';
+import ExportButtons from './ExportButtons';
 
 const MEDIO = { ahorro: 'Datáfono débito', credito: 'Datáfono crédito', addi: 'Addi', bold: 'Bold' };
 
@@ -110,7 +111,7 @@ const RadiografiaFlujo = () => {
           <h2 className="text-xl font-bold text-gray-900">Flujo de caja</h2>
           <p className="text-xs text-gray-500">La plata real de las cuentas. Solo se resta lo que se registró a mano.</p>
         </div>
-        <button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+        <div className="flex items-center gap-2 flex-wrap"><ExportButtons url={`/api/radiografia/cash-flow?year=${year}&month=${month}`} view="flujo" period={`${year}-${String(month).padStart(2, '0')}`} /><button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button></div>
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}

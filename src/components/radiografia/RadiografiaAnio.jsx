@@ -8,6 +8,7 @@ import { getRadiografiaYear } from '../../services/radiografiaService';
 import { getColombiaDate } from '../../utils/dateUtils';
 import { Change, Est, Tile, Warnings } from './RadiografiaUI';
 import { fmt, num, pct } from '../../utils/radiografiaFormat';
+import ExportButtons from './ExportButtons';
 
 // [clave, nombre, ESTIMADO, tipo, nivel (0 = total), fórmula]
 const ROWS = [
@@ -78,11 +79,12 @@ const RadiografiaAnio = () => {
             Mes por mes. Costo = precio de lista × (1 − {data?.margin_pct ?? 35} %): <b className="text-amber-700">ESTIMADO</b>. Lo que quedó cuadra con Cuentas → Año.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button type="button" aria-label="Año anterior" onClick={() => setYear(y => y - 1)} disabled={year <= 2026} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
           <span className="min-w-[70px] text-center font-semibold text-gray-800">{year}</span>
           <button type="button" aria-label="Año siguiente" onClick={() => setYear(y => y + 1)} disabled={year >= thisYear} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           <button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <ExportButtons url={`/api/radiografia/year?year=${year}`} view="anio" period={String(year)} />
         </div>
       </div>
 

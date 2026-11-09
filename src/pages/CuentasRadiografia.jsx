@@ -16,6 +16,7 @@ import RadiografiaInventario from '../components/radiografia/RadiografiaInventar
 import RadiografiaFlujo from '../components/radiografia/RadiografiaFlujo';
 import RadiografiaComparativo from '../components/radiografia/RadiografiaComparativo';
 import { getUserStores } from '../utils/activeStore';
+import ExportButtons from '../components/radiografia/ExportButtons';
 
 // Líneas del estado de resultados: clave, nombre, fórmula, estimado, nivel (0 = total)
 const STATEMENT = [
@@ -95,11 +96,12 @@ const RadiografiaMes = () => {
             Costo de la ropa = precio de lista × (1 − {data?.margin_pct ?? 35} %): <b className="text-amber-700">ESTIMADO</b> hasta que Alegra tenga los costos reales.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button type="button" aria-label="Mes anterior" onClick={prev} disabled={isFirst} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
           <span className="min-w-[130px] text-center font-semibold text-gray-800">{MONTHS[month - 1]} {year}</span>
           <button type="button" aria-label="Mes siguiente" onClick={next} disabled={isCurrent} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           <button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <ExportButtons url={`/api/radiografia/month?year=${year}&month=${month}`} view="mes" period={`${year}-${String(month).padStart(2, '0')}`} />
         </div>
       </div>
 

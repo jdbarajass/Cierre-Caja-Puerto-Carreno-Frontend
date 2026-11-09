@@ -7,6 +7,7 @@ import { RefreshCw } from 'lucide-react';
 import { getRadiografiaInventory } from '../../services/radiografiaService';
 import { Est, Tile, Warnings } from './RadiografiaUI';
 import { fmt, fmtDate, num, pct } from '../../utils/radiografiaFormat';
+import ExportButtons from './ExportButtons';
 
 const days = (v) => (v == null ? 'sin ventas' : `${num(v)} días`);
 
@@ -105,13 +106,14 @@ const RadiografiaInventario = () => {
             Stock de hoy en Alegra × precio de lista. A costo = × (1 − {data?.margin_pct ?? 35} %): <b className="text-amber-700">ESTIMADO</b>.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <label className="text-xs text-gray-600 flex items-center gap-2">Quieta si no se vende ni llega en
             <select value={quiet} onChange={e => setQuiet(Number(e.target.value))} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
               {(data?.quiet_options || [60, 90, 180]).map(o => <option key={o} value={o}>{o} días</option>)}
             </select>
           </label>
           <button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <ExportButtons url={`/api/radiografia/inventory?quiet=${quiet}`} view="inventario" period={new Date().toLocaleDateString('en-CA')} />
         </div>
       </div>
 

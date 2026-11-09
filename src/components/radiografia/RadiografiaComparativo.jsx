@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { getRadiografiaCompare } from '../../services/radiografiaService';
 import { Est, Warnings } from './RadiografiaUI';
 import { fmt, fmtDate, MONTHS, num, pct } from '../../utils/radiografiaFormat';
+import ExportButtons from './ExportButtons';
 
 const get = (obj, path) => path.reduce((v, k) => (v == null ? v : v[k]), obj);
 
@@ -120,11 +121,12 @@ const RadiografiaComparativo = () => {
           <h2 className="text-xl font-bold text-gray-900">Comparativo de las tiendas</h2>
           <p className="text-xs text-gray-500">Las mismas cifras de Mes y Flujo de caja, una tienda al lado de la otra, y las dos sumadas.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button type="button" aria-label="Mes anterior" onClick={prev} disabled={isFirst} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
           <span className="min-w-[130px] text-center font-semibold text-gray-800">{MONTHS[month - 1]} {year}</span>
           <button type="button" aria-label="Mes siguiente" onClick={next} disabled={isCurrent} className="p-2 rounded-lg border border-gray-300 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           <button type="button" aria-label="Actualizar" onClick={load} className="p-2 rounded-lg border border-gray-300"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+          <ExportButtons url={`/api/radiografia/compare?year=${year}&month=${month}`} view="comparativo" period={`${year}-${String(month).padStart(2, '0')}`} allStores />
         </div>
       </div>
 

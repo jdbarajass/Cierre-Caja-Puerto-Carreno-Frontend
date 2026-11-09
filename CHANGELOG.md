@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía, Fase 6: botones Excel y PDF
+
+- `src/components/radiografia/ExportButtons.jsx` (nuevo) en las cinco vistas (Mes, Año, Inventario, Flujo de caja, Comparativo), al lado de "Actualizar": descarga el archivo del mes/año/días elegidos con `downloadRadiografia` (`radiografiaService.js`, el mismo endpoint con `&format=`). Las barras de botones se acomodan en dos líneas en el celular.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-09] (continuación) Comparativo revisado en producción
 
 - Revisado a 1366 y 390 px (sin desborde; en el celular la tabla se desliza con la columna de nombres fija). Título del inventario "foto de Alegra del mes; en curso, la de hoy" y sin la nota del préstamo repetida.
