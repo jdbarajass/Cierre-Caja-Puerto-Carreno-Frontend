@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-09] (continuación) Comparativo revisado en producción
+
+- Revisado a 1366 y 390 px (sin desborde; en el celular la tabla se desliza con la columna de nombres fija). Título del inventario "foto de Alegra del mes; en curso, la de hoy" y sin la nota del préstamo repetida.
+
 ## [2026-11-09] (continuación) Radiografía, Fase 5: vista Comparativo
 
 - `src/components/radiografia/RadiografiaComparativo.jsx` (nuevo), quinta opción del selector de `CuentasRadiografia.jsx`, solo si el usuario ve las dos tiendas (`getUserStores`): una tabla con Carreño, Primavera y "Las dos" (resultado del mes, indicadores, la plata del mes, hoy e inventario), columna del nombre fija, "sin gastos" donde falta, ESTIMADO donde va, y la nota del préstamo entre tiendas (no aparece en "Las dos"). `getRadiografiaCompare` en `radiografiaService.js`.

@@ -49,7 +49,7 @@ const SECTIONS = [
     ['Avisos del mes (no se restan solos)', ['today', 'avisos_total'], 'money', true],
     ['Quedarían si se pagara todo', ['today', 'quedarian'], 'money', true, null, true],
   ]],
-  ['Inventario (foto de fin de mes de Alegra)', [
+  ['Inventario (foto de Alegra del mes; en curso, la de hoy)', [
     ['A precio de venta', ['inventory', 'valor_venta'], 'money'],
     ['A costo', ['inventory', 'valor_costo'], 'money', true],
   ]],
@@ -175,8 +175,8 @@ const RadiografiaComparativo = () => {
           </section>
           <ul className="text-[11px] text-gray-500 space-y-0.5">
             {debt > 0 && <li>Préstamo entre las tiendas hoy: {fmt(debt)}. No aparece en "Las dos" ni en lo que le deben o debe cada una arriba (se ve en Flujo de caja de cada tienda).</li>}
-            {data.consolidated.inventory && <li>Inventario: foto de Alegra al {fmtDate(data.consolidated.inventory.as_of)}/{data.consolidated.inventory.as_of.slice(0, 4)} o la más reciente de cada tienda; el detalle por prenda está en Inventario.</li>}
-            {data.notes.filter(n => !/Inventario/.test(n)).map(n => <li key={n}>{n}</li>)}
+            {data.consolidated.inventory && <li>Inventario: foto de Alegra de ese mes (la más antigua de las dos es del {fmtDate(data.consolidated.inventory.as_of)}/{data.consolidated.inventory.as_of.slice(0, 4)}); el detalle por prenda está en Inventario.</li>}
+            {data.notes.filter(n => !/Inventario/.test(n) && !(debt > 0 && /préstamo/.test(n))).map(n => <li key={n}>{n}</li>)}
           </ul>
         </>
       )}
