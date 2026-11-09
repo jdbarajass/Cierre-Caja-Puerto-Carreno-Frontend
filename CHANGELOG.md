@@ -2,6 +2,13 @@
 
 ---
 
+## [2026-11-09] Radiografía, Fase 2: vista Año
+
+- `CuentasRadiografia.jsx`: selector Mes · Año arriba de la pestaña Radiografía.
+- `src/components/radiografia/RadiografiaAnio.jsx` (nuevo): tarjetas del año (ventas, utilidad bruta y neta ESTIMADAS, lo que quedó = Año), mejor y peor mes, y tabla mes por mes con total y promedio (primera columna fija; en el celular la tabla se desliza de lado). Marca meses en curso, sin gastos y con gastos escritos a mano.
+- Piezas comunes en `src/components/radiografia/RadiografiaUI.jsx` (Est, Change, Tile, Warnings) y `src/utils/radiografiaFormat.js` (formatos). `getRadiografiaYear` en `radiografiaService.js`.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-06] (continuación) Radiografía: tarjetas regalo aparte
 
 - `CuentasRadiografia.jsx`: "Ventas netas" dice cuánto fue de tarjetas regalo vendidas y "Precio de lista vendido" separa ropa y tarjetas; fórmulas del costo y de los descuentos actualizadas.

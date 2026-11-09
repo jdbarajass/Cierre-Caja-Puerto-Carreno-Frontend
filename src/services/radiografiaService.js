@@ -24,3 +24,7 @@ const call = async (name, url) => {
 // Fase 1 (Mes). target = utilidad que se quiere sacar (opcional, no se guarda)
 export const getRadiografiaMonth = ({ year, month, target }) =>
   call('getRadiografiaMonth', `/api/radiografia/month?year=${year}&month=${month}${target ? `&target=${target}` : ''}`);
+
+// Fase 2 (Año): por mes, total y promedio; cuadra con Cuentas → Año
+export const getRadiografiaYear = ({ year }) =>
+  call('getRadiografiaYear', `/api/radiografia/year?year=${year}`);
