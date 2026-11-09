@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía: arreglos tras revisarla en el navegador (1366 px y 390 px)
+
+- Inventario: la consulta espera hasta 200 s (como Prendas); con el tiempo por defecto (30-80 s) la primera carga del stock de Alegra (~60-70 s) salía "No se pudo conectar con el servidor". Solo la consulta más reciente escribe en pantalla (un intento viejo ya no deja el error encima de los datos).
+- Año: en los meses sin gastos registrados, fletes, gastos, cuotas y utilidad neta muestran «—» en vez de "$ 0".
+- Revisado en el navegador contra producción: sin desborde horizontal a 390 px; tablas con la primera columna fija.
+
 ## [2026-11-09] (continuación) Radiografía, Fase 3: vista Inventario
 
 - `src/components/radiografia/RadiografiaInventario.jsx` (nuevo), tercera opción del selector de `CuentasRadiografia.jsx`: tarjetas (inventario a costo y a precio de venta con el reporte de Alegra al lado, días de inventario, rotación, plata parada), las que más y menos rotan, tablas por departamento y por tipo de prenda, y prendas quietas (60/90/180 días) ordenadas por plata parada (25 y "ver todas"). `getRadiografiaInventory` en `radiografiaService.js`.

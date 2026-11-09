@@ -15,9 +15,9 @@ async function handle(res) {
   return data;
 }
 
-const call = async (name, url) => {
+const call = async (name, url, timeout) => {
   try {
-    return await handle(await authenticatedFetch(url));
+    return await handle(await authenticatedFetch(url, {}, timeout));
   } catch (e) { logger.error(`${name}:`, e); throw e; }
 };
 
@@ -31,4 +31,5 @@ export const getRadiografiaYear = ({ year }) =>
 
 // Fase 3 (Inventario): stock de Alegra (la primera vez tarda), quieta = sin venta ni llegada en N días
 export const getRadiografiaInventory = ({ quiet }) =>
-  call('getRadiografiaInventory', `/api/radiografia/inventory?quiet=${quiet}`);
+  // Hasta 200 s, como Estadísticas → Prendas: la primera vez Alegra tarda ~1 min
+  call('getRadiografiaInventory', `/api/radiografia/inventory?quiet=${quiet}`, 200000);

@@ -152,11 +152,12 @@ const RadiografiaAnio = () => {
                         </th>
                         {months.map(m => {
                           const v = m[key];
-                          const missing = v == null && EXPENSE_KEYS.includes(key) && !m.has_expenses;
+                          // Sin gastos registrados: «—» (no es que haya sido $0)
+                          const missing = EXPENSE_KEYS.includes(key) && !m.has_expenses;
                           return (
                             <td key={m.period} title={missing ? 'Sin gastos registrados' : (key === 'inventario_cambio' && m.inventario_nota) || undefined}
                               className={`text-right px-3 py-2 whitespace-nowrap ${strong ? 'font-semibold' : ''} ${typeof v === 'number' && v < 0 && type === 'money' ? 'text-red-700' : 'text-gray-900'}`}>
-                              {cell(type, v)}{key === 'inventario_cambio' && m.inventario_nota && <span className="text-amber-700" aria-label="Tiene una nota"> *</span>}
+                              {missing ? '—' : cell(type, v)}{key === 'inventario_cambio' && m.inventario_nota && <span className="text-amber-700" aria-label="Tiene una nota"> *</span>}
                             </td>
                           );
                         })}

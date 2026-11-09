@@ -2,7 +2,7 @@
 // Cuánta plata hay en ropa (a precio de venta y a costo ESTIMADO), cuántos días
 // alcanza, rotación, prendas quietas con su plata parada y qué rota por tipo
 // de prenda y departamento. Necesita el stock de Alegra (la primera vez tarda).
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { getRadiografiaInventory } from '../../services/radiografiaService';
 import { Est, Tile, Warnings } from './RadiografiaUI';
@@ -76,16 +76,19 @@ const RadiografiaInventario = () => {
   const [error, setError] = useState('');
   const [showAll, setShowAll] = useState(false);
 
+  // Solo la consulta más reciente escribe (cambiar los días o actualizar mientras otra va en camino)
+  const lastRequest = useRef(0);
   const load = useCallback(async () => {
+    const id = ++lastRequest.current;
     setLoading(true);
     setError('');
     try {
       const res = await getRadiografiaInventory({ quiet });
-      setData(res.inventory);
+      if (id === lastRequest.current) setData(res.inventory);
     } catch (e) {
-      setError(e.message);
+      if (id === lastRequest.current) setError(e.message);
     } finally {
-      setLoading(false);
+      if (id === lastRequest.current) setLoading(false);
     }
   }, [quiet]);
   useEffect(() => { load(); }, [load]);
