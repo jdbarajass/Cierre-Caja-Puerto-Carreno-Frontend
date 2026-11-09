@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía Año: nota del ajuste de 2025
+
+- `RadiografiaAnio.jsx`: fila "Cambio sin el ajuste de 2025" (solo si algún mes lo trae) y asterisco con la nota en el cambio del inventario de ese mes; el aviso de arriba explica el ajuste.
+
 ## [2026-11-09] Radiografía, Fase 2: vista Año
 
 - `CuentasRadiografia.jsx`: selector Mes · Año arriba de la pestaña Radiografía.

@@ -32,9 +32,10 @@ const ROWS = [
   ['inventario', 'Inventario fin de mes', false, 'money', 1, 'Alegra, a precio de venta'],
   ['inventario_costo', 'Inventario a costo', true, 'money', 1, 'Inventario × (1 − margen)'],
   ['inventario_cambio', 'Cambio del inventario', false, 'money', 1, 'Fin de mes − fin del mes anterior'],
+  ['inventario_cambio_sin_ajuste', 'Cambio sin el ajuste de 2025', false, 'money', 1, 'Quitando el ajuste de salida de la reconstrucción de 2025 (no es venta); ver el aviso de arriba'],
 ];
 const EXPENSE_KEYS = ['gastos_operativos', 'gastos_financieros', 'utilidad_neta', 'margen_neto_pct', 'fletes', 'cuotas'];
-const INVENTORY_KEYS = ['inventario', 'inventario_costo', 'inventario_cambio'];
+const INVENTORY_KEYS = ['inventario', 'inventario_costo', 'inventario_cambio', 'inventario_cambio_sin_ajuste'];
 
 const cell = (type, v) => {
   if (type === 'pct') return pct(v);
@@ -139,7 +140,7 @@ const RadiografiaAnio = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {ROWS.map(([key, label, est, type, level, formula]) => {
+                  {ROWS.filter(([key]) => key !== 'inventario_cambio_sin_ajuste' || months.some(m => m.inventario_cambio_sin_ajuste != null)).map(([key, label, est, type, level, formula]) => {
                     const total = INVENTORY_KEYS.includes(key) || key === 'ventas_vs_anio_anterior' ? null : t[key];
                     const average = avg[key];
                     const strong = level === 0;
@@ -153,9 +154,9 @@ const RadiografiaAnio = () => {
                           const v = m[key];
                           const missing = v == null && EXPENSE_KEYS.includes(key) && !m.has_expenses;
                           return (
-                            <td key={m.period} title={missing ? 'Sin gastos registrados' : undefined}
+                            <td key={m.period} title={missing ? 'Sin gastos registrados' : (key === 'inventario_cambio' && m.inventario_nota) || undefined}
                               className={`text-right px-3 py-2 whitespace-nowrap ${strong ? 'font-semibold' : ''} ${typeof v === 'number' && v < 0 && type === 'money' ? 'text-red-700' : 'text-gray-900'}`}>
-                              {cell(type, v)}
+                              {cell(type, v)}{key === 'inventario_cambio' && m.inventario_nota && <span className="text-amber-700" aria-label="Tiene una nota"> *</span>}
                             </td>
                           );
                         })}
