@@ -136,7 +136,8 @@ const RadiografiaFlujo = () => {
               <div>
                 <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Avisos: lo que falta pagar este mes (no se resta solo)</p>
                 {w.avisos.length === 0 ? <p className="text-sm text-gray-500 py-2">Nada pendiente.</p> : w.avisos.map(a => (
-                  <Expandable key={a.key} label={a.label} value={fmt(a.value)} estimated={a.estimated}>
+                  <Expandable key={a.key} label={a.label} estimated={a.estimated}
+                    value={a.value < 1 && a.items?.length ? 'sin valor fijo' : fmt(a.value)}>
                     <AvisoItems a={a} />
                   </Expandable>
                 ))}
@@ -197,8 +198,8 @@ const RadiografiaFlujo = () => {
                   {f.salidas.length === 0 ? <p className="text-sm text-gray-500">Nada.</p> : f.salidas.map(s => (
                     <Expandable key={s.key} label={s.label} value={fmt(s.total)}
                       note={s.reduces_utility ? 'Baja la utilidad' : 'No baja la utilidad'}>
-                      {s.items.length === 0 ? <p>Envíos de Cuentas Recompras (con su 4x1000).</p> : s.items.map(i => (
-                        <Row key={`${i.id}-${i.caja}`} left={`${fmtDate(i.date)} · ${i.concept}${i.caja ? ' (caja del día)' : ''}${i.interest ? ` · interés ${fmt(i.interest)}` : ''}`} right={fmt(i.amount)} />
+                      {s.items.length === 0 ? <p>{s.key === 'recompras' ? 'Envíos de Cuentas Recompras (con su 4x1000).' : 'Sin detalle.'}</p> : s.items.map(i => (
+                        <Row key={`${i.id}-${i.caja}`} left={`${fmtDate(i.date)} · ${i.concept}${i.caja ? ' (caja del día)' : ''}${i.interest ? ` (sin el interés de ${fmt(i.interest)})` : ''}`} right={fmt(i.amount)} />
                       ))}
                     </Expandable>
                   ))}

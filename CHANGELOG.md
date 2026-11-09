@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-09] (continuación) Flujo de caja revisado en producción
+
+- Revisado a 1366 y 390 px en las dos tiendas, sin desborde. Una cuota libre (sin valor fijo, como la de la mamá de Angie) dice "sin valor fijo" en vez de "$ 0"; una salida sin detalle dice "Sin detalle." (el texto de recompras solo en recompras).
+
 ## [2026-11-09] (continuación) Radiografía, Fase 4: vista Flujo de caja
 
 - `src/components/radiografia/RadiografiaFlujo.jsx` (nuevo), cuarta opción del selector de `CuentasRadiografia.jsx` (el selector ahora se acomoda en dos líneas si no cabe en el celular): "¿Cuánto se puede retirar hoy?" (plata por cuenta, avisos desplegables que no se restan solos y "Quedarían si se pagara todo" resaltado como VALOR APROXIMADO), lo que le deben y lo que debe la tienda, y la plata del mes elegido (saldos, lo que entró, lo que salió por clase con su detalle, por cuenta y utilidad contra plata). `getRadiografiaCashFlow` en `radiografiaService.js`.
