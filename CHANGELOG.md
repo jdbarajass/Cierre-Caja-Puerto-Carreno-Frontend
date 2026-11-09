@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía, Fase 5: vista Comparativo
+
+- `src/components/radiografia/RadiografiaComparativo.jsx` (nuevo), quinta opción del selector de `CuentasRadiografia.jsx`, solo si el usuario ve las dos tiendas (`getUserStores`): una tabla con Carreño, Primavera y "Las dos" (resultado del mes, indicadores, la plata del mes, hoy e inventario), columna del nombre fija, "sin gastos" donde falta, ESTIMADO donde va, y la nota del préstamo entre tiendas (no aparece en "Las dos"). `getRadiografiaCompare` en `radiografiaService.js`.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-09] (continuación) Flujo de caja revisado en producción
 
 - Revisado a 1366 y 390 px en las dos tiendas, sin desborde. Una cuota libre (sin valor fijo, como la de la mamá de Angie) dice "sin valor fijo" en vez de "$ 0"; una salida sin detalle dice "Sin detalle." (el texto de recompras solo en recompras).

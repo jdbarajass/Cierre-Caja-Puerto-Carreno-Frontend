@@ -37,3 +37,7 @@ export const getRadiografiaInventory = ({ quiet }) =>
 // Fase 4 (Flujo de caja): la plata del mes y, hoy, lo que le deben, lo que debe y cuánto se puede retirar
 export const getRadiografiaCashFlow = ({ year, month }) =>
   call('getRadiografiaCashFlow', `/api/radiografia/cash-flow?year=${year}&month=${month}`, 80000);
+
+// Fase 5 (Comparativo): las tiendas lado a lado y las dos sumadas (solo quien ve las dos tiendas)
+export const getRadiografiaCompare = ({ year, month }) =>
+  call('getRadiografiaCompare', `/api/radiografia/compare?year=${year}&month=${month}`, 120000);

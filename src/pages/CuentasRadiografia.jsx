@@ -14,6 +14,8 @@ import { MONTHS, fmt, fmtDate, num, pct } from '../utils/radiografiaFormat';
 import RadiografiaAnio from '../components/radiografia/RadiografiaAnio';
 import RadiografiaInventario from '../components/radiografia/RadiografiaInventario';
 import RadiografiaFlujo from '../components/radiografia/RadiografiaFlujo';
+import RadiografiaComparativo from '../components/radiografia/RadiografiaComparativo';
+import { getUserStores } from '../utils/activeStore';
 
 // Líneas del estado de resultados: clave, nombre, fórmula, estimado, nivel (0 = total)
 const STATEMENT = [
@@ -299,13 +301,15 @@ const RadiografiaMes = () => {
 };
 
 const VIEWS = [['mes', 'Mes'], ['anio', 'Año'], ['inventario', 'Inventario'], ['flujo', 'Flujo de caja']];
+// El comparativo solo para quien ve las dos tiendas (el backend también lo exige)
+const COMPARE_VIEW = ['comparativo', 'Comparativo'];
 
 const CuentasRadiografia = () => {
   const [view, setView] = useState('mes');
   return (
     <div className="space-y-4">
       <div role="tablist" aria-label="Vista de la radiografía" className="inline-flex flex-wrap max-w-full rounded-lg border border-gray-300 bg-white p-0.5">
-        {VIEWS.map(([key, label]) => (
+        {(getUserStores().length > 1 ? [...VIEWS, COMPARE_VIEW] : VIEWS).map(([key, label]) => (
           <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)}
             className={`px-4 py-1.5 text-sm rounded-md ${view === key ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}>
             {label}
@@ -316,6 +320,7 @@ const CuentasRadiografia = () => {
       {view === 'anio' && <RadiografiaAnio />}
       {view === 'inventario' && <RadiografiaInventario />}
       {view === 'flujo' && <RadiografiaFlujo />}
+      {view === 'comparativo' && <RadiografiaComparativo />}
     </div>
   );
 };
