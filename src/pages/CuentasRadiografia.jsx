@@ -13,6 +13,7 @@ import { Change, Est, Tile, Warnings } from '../components/radiografia/Radiograf
 import { MONTHS, fmt, fmtDate, num, pct } from '../utils/radiografiaFormat';
 import RadiografiaAnio from '../components/radiografia/RadiografiaAnio';
 import RadiografiaInventario from '../components/radiografia/RadiografiaInventario';
+import RadiografiaFlujo from '../components/radiografia/RadiografiaFlujo';
 
 // Líneas del estado de resultados: clave, nombre, fórmula, estimado, nivel (0 = total)
 const STATEMENT = [
@@ -297,13 +298,13 @@ const RadiografiaMes = () => {
   );
 };
 
-const VIEWS = [['mes', 'Mes'], ['anio', 'Año'], ['inventario', 'Inventario']];
+const VIEWS = [['mes', 'Mes'], ['anio', 'Año'], ['inventario', 'Inventario'], ['flujo', 'Flujo de caja']];
 
 const CuentasRadiografia = () => {
   const [view, setView] = useState('mes');
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label="Vista de la radiografía" className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
+      <div role="tablist" aria-label="Vista de la radiografía" className="inline-flex flex-wrap max-w-full rounded-lg border border-gray-300 bg-white p-0.5">
         {VIEWS.map(([key, label]) => (
           <button key={key} type="button" role="tab" aria-selected={view === key} onClick={() => setView(key)}
             className={`px-4 py-1.5 text-sm rounded-md ${view === key ? 'bg-gray-900 text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}>
@@ -314,6 +315,7 @@ const CuentasRadiografia = () => {
       {view === 'mes' && <RadiografiaMes />}
       {view === 'anio' && <RadiografiaAnio />}
       {view === 'inventario' && <RadiografiaInventario />}
+      {view === 'flujo' && <RadiografiaFlujo />}
     </div>
   );
 };

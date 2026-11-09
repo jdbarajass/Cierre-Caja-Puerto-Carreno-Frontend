@@ -33,3 +33,7 @@ export const getRadiografiaYear = ({ year }) =>
 export const getRadiografiaInventory = ({ quiet }) =>
   // Hasta 200 s, como Estadísticas → Prendas: la primera vez Alegra tarda ~1 min
   call('getRadiografiaInventory', `/api/radiografia/inventory?quiet=${quiet}`, 200000);
+
+// Fase 4 (Flujo de caja): la plata del mes y, hoy, lo que le deben, lo que debe y cuánto se puede retirar
+export const getRadiografiaCashFlow = ({ year, month }) =>
+  call('getRadiografiaCashFlow', `/api/radiografia/cash-flow?year=${year}&month=${month}`, 80000);

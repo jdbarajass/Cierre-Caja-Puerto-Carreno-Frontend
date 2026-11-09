@@ -2,6 +2,11 @@
 
 ---
 
+## [2026-11-09] (continuación) Radiografía, Fase 4: vista Flujo de caja
+
+- `src/components/radiografia/RadiografiaFlujo.jsx` (nuevo), cuarta opción del selector de `CuentasRadiografia.jsx` (el selector ahora se acomoda en dos líneas si no cabe en el celular): "¿Cuánto se puede retirar hoy?" (plata por cuenta, avisos desplegables que no se restan solos y "Quedarían si se pagara todo" resaltado como VALOR APROXIMADO), lo que le deben y lo que debe la tienda, y la plata del mes elegido (saldos, lo que entró, lo que salió por clase con su detalle, por cuenta y utilidad contra plata). `getRadiografiaCashFlow` en `radiografiaService.js`.
+- eslint, `npm test` y build OK.
+
 ## [2026-11-09] (continuación) Radiografía: arreglos tras revisarla en el navegador (1366 px y 390 px)
 
 - Inventario: la consulta espera hasta 200 s (como Prendas); con el tiempo por defecto (30-80 s) la primera carga del stock de Alegra (~60-70 s) salía "No se pudo conectar con el servidor". Solo la consulta más reciente escribe en pantalla (un intento viejo ya no deja el error encima de los datos).
