@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-11-09] (continuación) Corrección de cierres + aviso rojo de cierres no exitosos
+
+- `src/pages/CuentasCorrecciones.jsx` (nuevo) + `src/services/closingCorrectionsService.js`: pestaña "Corrección de cierres" en Cuentas, solo admin (no el de solo lectura). Por cada cierre no exitoso: lo de Alegra, lo que envió la vendedora, la venta real y los excedentes por medio, total contra Alegra en vivo, efectivo a consignar y nota obligatoria; "Corregir y pasar a Cuentas" con confirmación. Lista de corregidos con su rastro.
+- `MainLayout.jsx`: aviso rojo fijo mientras haya un cierre guardado que no salió exitoso y no se ha corregido (vendedoras: "Corregir y reenviar"; admin: lleva a Corrección de cierres). Se actualiza al corregir (evento `cash-closing-success`).
+- eslint, `npm test` y build OK.
+
 ## [2026-11-09] (continuación) Radiografía, Fase 6: botones Excel y PDF
 
 - `src/components/radiografia/ExportButtons.jsx` (nuevo) en las cinco vistas (Mes, Año, Inventario, Flujo de caja, Comparativo), al lado de "Actualizar": descarga el archivo del mes/año/días elegidos con `downloadRadiografia` (`radiografiaService.js`, el mismo endpoint con `&format=`). Las barras de botones se acomodan en dos líneas en el celular.

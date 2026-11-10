@@ -85,11 +85,15 @@ const MainLayout = ({ children }) => {
   // exitoso (evento 'cash-closing-success'), para que el aviso desaparezca
   // apenas se resuelva sin esperar a la próxima navegación.
   const [pendingClosingDates, setPendingClosingDates] = useState([]);
+  // Cierres guardados que no salieron exitosos y siguen sin corregir (2026-11-09):
+  // el aviso rojo no se quita hasta que se corrijan y reenvíen, o el admin los corrija.
+  const [unsuccessfulClosings, setUnsuccessfulClosings] = useState([]);
 
   const loadPendingClosingDates = async () => {
     try {
       const data = await getPendingClosingDates();
       setPendingClosingDates(data.missing_dates || []);
+      setUnsuccessfulClosings(data.unsuccessful_closings || []);
     } catch {
       // No bloquea el resto de la app si esto falla - el aviso simplemente no aparece.
     }
@@ -752,6 +756,40 @@ const MainLayout = ({ children }) => {
               </span>
               <span className="self-start sm:self-auto ml-8 sm:ml-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-900 text-amber-50 text-xs font-semibold group-hover:bg-amber-950 transition-colors whitespace-nowrap">
                 Hacer el cierre ahora
+                <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AVISO FIJO: cierres guardados que no salieron exitosos (no pasan a Cuentas).
+          Para vendedoras y admin; el admin puede corregirlos en Cuentas → Corrección de cierres. */}
+      {unsuccessfulClosings.length > 0 && (
+        <div className="bg-red-50 border-b border-red-200/70">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+            <button
+              onClick={() => navigate(user?.role === 'admin' && !user?.readOnly
+                ? '/cuentas?tab=correcciones'
+                : `/dashboard?date=${unsuccessfulClosings[0].date}`)}
+              className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-left group rounded-lg"
+            >
+              <span className="flex items-start gap-3 flex-1 min-w-0">
+                <AlertTriangle className="w-[18px] h-[18px] text-red-600 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-red-900 font-medium">
+                  {unsuccessfulClosings.length === 1
+                    ? `El cierre del ${formatDateStringToColombiaDate(unsuccessfulClosings[0].date)} no salió exitoso y no ha pasado a Cuentas.`
+                    : `Hay ${unsuccessfulClosings.length} cierres que no salieron exitosos, el más antiguo del ${formatDateStringToColombiaDate(unsuccessfulClosings[0].date)}.`}
+                  {unsuccessfulClosings[0].message && <span className="block font-normal text-red-800">{unsuccessfulClosings[0].message}</span>}
+                  <span className="block font-normal text-red-800">
+                    {user?.role === 'admin' && !user?.readOnly
+                      ? 'Si el error quedó en Alegra, corrígelo en Cuentas → Corrección de cierres.'
+                      : 'Corrige los valores y vuelve a enviarlo. Si el error está en Alegra, avísale al administrador.'}
+                  </span>
+                </span>
+              </span>
+              <span className="self-start sm:self-auto ml-8 sm:ml-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-900 text-red-50 text-xs font-semibold group-hover:bg-red-950 transition-colors whitespace-nowrap">
+                {user?.role === 'admin' && !user?.readOnly ? 'Corregir' : 'Corregir y reenviar'}
                 <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </button>

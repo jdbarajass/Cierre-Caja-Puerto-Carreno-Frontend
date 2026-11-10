@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useR
 import {
   Wallet, History, Plus, Minus, RefreshCw,
   AlertTriangle, CheckCircle2, ArrowLeftRight, Repeat, Receipt, CalendarDays, CalendarRange,
-  StickyNote, Maximize2, X, ScanLine
+  StickyNote, Maximize2, X, ScanLine, FileCheck2
 } from 'lucide-react';
 import {
   getAccounts, getMovements, manualAdjustment, transferBetweenAccounts, syncDaily, getSyncStatus,
@@ -20,6 +20,8 @@ import CuentasGastos from './CuentasGastos';
 import CuentasMes from './CuentasMes';
 import CuentasAnual from './CuentasAnual';
 import CuentasRadiografia from './CuentasRadiografia';
+import CuentasCorrecciones from './CuentasCorrecciones';
+import { isAdmin, isReadOnly } from '../utils/auth';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import useDialog from '../hooks/useDialog';
 import { usePublishSceneData, experience } from '../experience/store';
@@ -419,6 +421,9 @@ const TABS = [
   { id: 'gastos', label: 'Gastos', icon: Receipt },
   { id: 'radiografia', label: 'Radiografía', icon: ScanLine },
 ];
+// Corrección de cierres: solo el admin (no el de solo lectura). 2026-11-09
+const CORRECTIONS_TAB = { id: 'correcciones', label: 'Corrección de cierres', icon: FileCheck2 };
+const canCorrect = () => isAdmin() && !isReadOnly();
 
 const CuentasLayout = () => {
   useDocumentTitle('Cuentas');
@@ -426,7 +431,7 @@ const CuentasLayout = () => {
   const [tab, setTab] = useState(() => {
     try {
       const t = new URLSearchParams(window.location.search).get('tab');
-      return ['resumen', 'mes', 'anual', 'recompras', 'gastos', 'radiografia', 'movimientos'].includes(t) ? t : 'resumen';
+      return (['resumen', 'mes', 'anual', 'recompras', 'gastos', 'radiografia', 'movimientos'].includes(t) || (t === 'correcciones' && canCorrect())) ? t : 'resumen';
     } catch { return 'resumen'; }
   });
 
@@ -693,7 +698,7 @@ const CuentasLayout = () => {
       </div>
 
       <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
-        {TABS.map(t => {
+        {(canCorrect() ? [...TABS, CORRECTIONS_TAB] : TABS).map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
           return (
@@ -1002,6 +1007,8 @@ const CuentasLayout = () => {
       {tab === 'mes' && <CuentasMes onEntriesChanged={refreshSummary} />}
 
       {tab === 'radiografia' && <CuentasRadiografia />}
+
+      {tab === 'correcciones' && canCorrect() && <CuentasCorrecciones onEntriesChanged={refreshSummary} />}
 
       {tab === 'anual' && <CuentasAnual />}
 
