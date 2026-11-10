@@ -48,7 +48,8 @@ export const paymentsByMethod = (documents) => {
     if (payments.length > 0) {
       payments.forEach((p) => add(p.paymentMethod, Number(p.amount) || 0, seen));
     } else {
-      add(doc.paymentMethod, Number(doc.total) || 0, seen);
+      // paymentForm = medio real (CASH, DEBIT_CARD, DEBIT_TRANSFER...); paymentMethod es "de contado"
+      add(doc.paymentForm || doc.paymentMethod, Number(doc.total) || 0, seen);
     }
   });
   const grand = Object.values(acc).reduce((s, m) => s + m.total, 0);

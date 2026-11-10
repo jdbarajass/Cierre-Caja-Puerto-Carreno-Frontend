@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-09] (continuación) Estadísticas: medio de pago sin el detalle de Alegra
+
+- `utils/salesMetrics.js` (`paymentsByMethod`): si una factura llega sin `payments` (Alegra dejó de mandarlo el 2026-11-09; el backend ya lo arma), usa `paymentForm` (el medio real) y no `paymentMethod` (que siempre es "de contado").
+
 ## [2026-11-09] (continuación) Solo lectura en Ajustes de inventario + contraseña nueva visible al resetear
 
 - `services/api.js`: el admin de solo lectura puede mandar peticiones a `/api/inventory-requests` (crear, cancelar, aceptar y rechazar ajustes); todo lo demás sigue bloqueado. El aviso de "Modo solo lectura" menciona la excepción.
