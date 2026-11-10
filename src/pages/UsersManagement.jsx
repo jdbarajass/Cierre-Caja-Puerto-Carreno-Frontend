@@ -14,7 +14,8 @@ import {
   Shield,
   ShieldCheck,
   UserCheck,
-  UserX
+  UserX,
+  Copy
 } from 'lucide-react';
 import {
   getUsers,
@@ -28,6 +29,29 @@ import { useAuth } from '../contexts/AuthContext';
 import { storeDisplayName } from '../utils/activeStore';
 import useDialog from '../hooks/useDialog';
 import { usePublishSceneData } from '../experience/store';
+
+// Contraseña nueva segura para "Resetear contraseña" (2026-11-09). La plataforma no
+// guarda contraseñas (solo su huella bcrypt): no se puede mostrar la actual, así que al
+// resetear se muestra la nueva para copiarla y dársela al usuario. Cumple la regla del
+// backend (8+, mayúscula, minúscula y número); sin letras que se confunden (O/0, l/1).
+const PASSWORD_SETS = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnpqrstuvwxyz', '23456789'];
+const generatePassword = (length = 12) => {
+  const pick = (set) => {
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    return set[buf[0] % set.length];
+  };
+  const all = PASSWORD_SETS.join('');
+  const chars = PASSWORD_SETS.map(pick);                        // una de cada tipo
+  while (chars.length < length) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i--) {                  // mezclar
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    const j = buf[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+};
 
 const UsersManagement = () => {
   useDocumentTitle('Gestionar Usuarios');
@@ -58,6 +82,9 @@ const UsersManagement = () => {
   });
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  // Resultado de "Resetear contraseña": se muestra la nueva para copiarla (no se vuelve a ver)
+  const [resetDone, setResetDone] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Cargar usuarios al montar
@@ -128,9 +155,12 @@ const UsersManagement = () => {
     setSelectedUser(user);
     setFormData({
       ...formData,
-      password: ''
+      password: generatePassword()
     });
     setFormError('');
+    setResetDone(null);
+    setCopied(false);
+    setShowPassword(true);
     setShowModal(true);
   };
 
@@ -139,6 +169,8 @@ const UsersManagement = () => {
     setSelectedUser(null);
     setFormError('');
     setShowPassword(false);
+    setResetDone(null);
+    setCopied(false);
   };
   const dialogRef = useDialog(showModal, closeModal);
 
@@ -206,7 +238,10 @@ const UsersManagement = () => {
         setSuccess('Usuario actualizado exitosamente');
       } else if (modalMode === 'reset-password') {
         await resetPassword(selectedUser.id, formData.password);
-        setSuccess('Contrasena reseteada exitosamente');
+        setSuccess(`Contraseña de ${selectedUser.name} cambiada`);
+        // La ventana queda abierta mostrando la nueva para copiarla
+        setResetDone({ name: selectedUser.name, email: selectedUser.email, password: formData.password });
+        return;
       }
 
       closeModal();
@@ -480,6 +515,31 @@ const UsersManagement = () => {
                 </button>
               </div>
 
+              {resetDone ? (
+                <div className="p-6 space-y-4">
+                  <p className="text-sm text-gray-700">
+                    Nueva contraseña de <b>{resetDone.name}</b> ({resetDone.email}):
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 select-all rounded-lg bg-gray-100 px-4 py-3 text-xl font-mono tracking-wider text-gray-900 break-all">{resetDone.password}</code>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try { await navigator.clipboard.writeText(resetDone.password); setCopied(true); } catch { setCopied(false); }
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-3 rounded-lg border border-gray-300 text-sm font-semibold text-gray-800"
+                    >
+                      <Copy className="w-4 h-4" aria-hidden="true" />{copied ? 'Copiada' : 'Copiar'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Cópiala o dásela al usuario ahora: por seguridad la plataforma no guarda las contraseñas y después de cerrar esta ventana no se puede volver a ver. Si la olvida, la vuelves a resetear.
+                  </p>
+                  <div className="flex justify-end">
+                    <button type="button" onClick={closeModal} className="px-4 py-2 bg-gray-900 text-white rounded-lg">Listo</button>
+                  </div>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="p-6">
                 {formError && (
                   <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
@@ -615,6 +675,15 @@ const UsersManagement = () => {
                       <p className="mt-1 text-xs text-gray-500">
                         Minimo 8 caracteres, incluir mayuscula, minuscula y numero
                       </p>
+                      {modalMode === 'reset-password' && (
+                        <div className="mt-2 space-y-1">
+                          <button type="button" onClick={() => setFormData(f => ({ ...f, password: generatePassword() }))}
+                            className="text-xs font-semibold text-gray-800 underline">Generar otra contraseña</button>
+                          <p className="text-xs text-gray-500">
+                            La contraseña actual no se puede ver: la plataforma no la guarda, solo una huella cifrada. Al guardar te muestro la nueva para que la copies.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -642,6 +711,7 @@ const UsersManagement = () => {
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </div>

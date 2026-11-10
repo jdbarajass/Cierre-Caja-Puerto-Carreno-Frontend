@@ -2,6 +2,12 @@
 
 ---
 
+## [2026-11-09] (continuación) Solo lectura en Ajustes de inventario + contraseña nueva visible al resetear
+
+- `services/api.js`: el admin de solo lectura puede mandar peticiones a `/api/inventory-requests` (crear, cancelar, aceptar y rechazar ajustes); todo lo demás sigue bloqueado. El aviso de "Modo solo lectura" menciona la excepción.
+- `pages/UsersManagement.jsx`: "Resetear contraseña" propone una contraseña nueva segura (con "Generar otra"), y al guardar la muestra en grande con botón Copiar. La contraseña actual no se puede ver: la plataforma no guarda contraseñas, solo su huella bcrypt (decisión del usuario: mostrar la nueva, no guardarlas).
+- eslint, `npm test` y build OK.
+
 ## [2026-11-09] (continuación) Corrección de cierres + aviso rojo de cierres no exitosos
 
 - `src/pages/CuentasCorrecciones.jsx` (nuevo) + `src/services/closingCorrectionsService.js`: pestaña "Corrección de cierres" en Cuentas, solo admin (no el de solo lectura). Por cada cierre no exitoso: lo de Alegra, lo que envió la vendedora, la venta real y los excedentes por medio, total contra Alegra en vivo, efectivo a consignar y nota obligatoria; "Corregir y pasar a Cuentas" con confirmación. Lista de corregidos con su rastro.

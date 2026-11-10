@@ -1014,7 +1014,7 @@ const MainLayout = ({ children }) => {
           {user?.readOnly && (
             <div role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900 ring-1 ring-amber-200">
               <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
-              Modo solo lectura: puedes ver todo, pero no guardar ni cambiar nada.
+              Modo solo lectura: puedes ver todo, pero no guardar ni cambiar nada. La excepción es Gestión → Ajustes de inventario, donde sí puedes crear, aceptar y rechazar.
             </div>
           )}
           <AlegraFailedDaysBanner />

@@ -344,13 +344,17 @@ const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = nul
  * Fetch autenticado (con X-Store y descubrimiento de backend). Además avisa si
  * el backend reporta días que Alegra no entregó (ver utils/dataWarnings.js).
  */
-// Lo único que el admin de solo lectura puede mandar además de GET (no guarda nada)
+// Lo único que el admin de solo lectura puede mandar además de GET: subir el
+// archivo de inventario (no guarda nada) y Gestión → Ajustes de inventario completo
+// (pedido del usuario 2026-11-09; el backend lo permite en READ_ONLY_ALLOWED_BLUEPRINTS)
 const READ_ONLY_ALLOWED = ['/api/inventory/upload-file'];
+const READ_ONLY_ALLOWED_PREFIXES = ['/api/inventory-requests'];
 
 export const authenticatedFetch = async (endpoint, options = {}, customTimeout = null) => {
   const method = (options.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && isReadOnly()
-      && !endpoint.startsWith('/auth/') && !READ_ONLY_ALLOWED.includes(endpoint)) {
+      && !endpoint.startsWith('/auth/') && !READ_ONLY_ALLOWED.includes(endpoint)
+      && !READ_ONLY_ALLOWED_PREFIXES.some(p => endpoint.startsWith(p))) {
     // Misma respuesta que da el backend: cada pantalla muestra su mensaje de error
     return new Response(JSON.stringify({
       success: false, read_only: true, message: 'Usuario de solo lectura: no puede modificar nada',
