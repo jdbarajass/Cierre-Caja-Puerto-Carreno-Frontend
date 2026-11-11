@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-11] Login: cuenta bloqueada ya no sale como "El servidor no responde"
+
+- Con la cuenta bloqueada (5 intentos fallidos) el backend responde 403 "Cuenta bloqueada temporalmente"; el login lo trataba como error del servidor (4 reintentos y "El servidor no responde") y `authenticatedFetch` mandaba a `/unauthorized`. Ahora `AuthContext.login` muestra el mensaje del 403 sin reintentar y `api.js` no redirige un 403 de `/auth/login`. Contexto (500 del admin del 10/11-nov por la fecha del bloqueo): CHANGELOG del backend.
+
 ## [2026-11-09] (continuación) Estadísticas: medio de pago sin el detalle de Alegra
 
 - `utils/salesMetrics.js` (`paymentsByMethod`): si una factura llega sin `payments` (Alegra dejó de mandarlo el 2026-11-09; el backend ya lo arma), usa `paymentForm` (el medio real) y no `paymentMethod` (que siempre es "de contado").

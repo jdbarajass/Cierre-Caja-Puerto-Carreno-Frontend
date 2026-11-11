@@ -193,7 +193,7 @@ const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = nul
           window.location.href = '/login';
           throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
         }
-        if (response.status === 403) {
+        if (response.status === 403 && !isLoginRequest) {
           window.location.href = '/unauthorized';
           throw new Error('No tienes permisos para acceder a este recurso.');
         }
@@ -263,7 +263,7 @@ const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = nul
         }
 
         // Si la respuesta es 403 (sin permisos), redirigir a unauthorized
-        if (response.status === 403) {
+        if (response.status === 403 && !isLoginRequest) {
           window.location.href = '/unauthorized';
           throw new Error('No tienes permisos para acceder a este recurso.');
         }
@@ -314,7 +314,7 @@ const rawAuthenticatedFetch = async (endpoint, options = {}, customTimeout = nul
     }
 
     // Si la respuesta es 403 (sin permisos), redirigir a unauthorized
-    if (response.status === 403) {
+    if (response.status === 403 && !isLoginRequest) {
       window.location.href = '/unauthorized';
       throw new Error('No tienes permisos para acceder a este recurso.');
     }

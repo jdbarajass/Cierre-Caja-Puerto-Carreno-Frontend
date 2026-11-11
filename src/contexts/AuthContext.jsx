@@ -171,6 +171,15 @@ export const AuthProvider = ({ children }) => {
             };
           }
 
+          // Cuenta bloqueada o inactiva (403): el servidor sí responde, no
+          // reintentar ni mostrar "El servidor no responde"
+          if (response.status === 403) {
+            return {
+              success: false,
+              error: data.message || 'Cuenta bloqueada temporalmente. Intenta más tarde.'
+            };
+          }
+
           // Para otros errores HTTP, continuar con reintentos
           throw new Error(data.message || 'Error del servidor');
         }
