@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-12] Gastos: aviso antes de guardar un pago repetido
+
+- Si el backend responde 409 `duplicate` (ya hay un pago de Alegra, internet, luz, etc. ese mes), `CuentasGastos.jsx` muestra cuál es y pregunta; con Aceptar reenvía con `confirm_duplicate: true`, con Cancelar no guarda. `expensesService.handle` deja los datos del aviso en `err.duplicate`.
+
 ## [2026-11-11] Login: cuenta bloqueada ya no sale como "El servidor no responde"
 
 - Con la cuenta bloqueada (5 intentos fallidos) el backend responde 403 "Cuenta bloqueada temporalmente"; el login lo trataba como error del servidor (4 reintentos y "El servidor no responde") y `authenticatedFetch` mandaba a `/unauthorized`. Ahora `AuthContext.login` muestra el mensaje del 403 sin reintentar y `api.js` no redirige un 403 de `/auth/login`. Contexto (500 del admin del 10/11-nov por la fecha del bloqueo): CHANGELOG del backend.

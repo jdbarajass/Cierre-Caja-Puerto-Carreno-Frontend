@@ -14,7 +14,10 @@ async function handle(res) {
   if (!res.ok) {
     if (res.status === 401) throw new Error('Sesión expirada. Inicie sesión nuevamente.');
     if (res.status === 403) throw new Error('No tiene permisos para esta acción.');
-    throw new Error(data.message || 'Error en la operación');
+    const err = new Error(data.message || 'Error en la operación');
+    // Gasto que parece repetido (409): la pantalla pregunta y reenvía con confirm_duplicate
+    if (res.status === 409 && data.duplicate) err.duplicate = data;
+    throw err;
   }
   return data;
 }

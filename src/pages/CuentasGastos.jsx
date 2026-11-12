@@ -348,8 +348,19 @@ const CuentasGastos = ({ onEntriesChanged } = {}) => {
         notes: form.notes,
         ...Object.fromEntries(METHODS.map(m => [m.key, toNum(form[m.key])])),
       };
-      if (editingId) { await updateExpense(editingId, payload); flash('Movimiento actualizado'); }
-      else { await createExpense(payload); flash('Movimiento registrado'); }
+      const send = (p) => (editingId ? updateExpense(editingId, p) : createExpense(p));
+      try {
+        await send(payload);
+      } catch (err) {
+        // Ya hay un pago de esto en el mes (ej. Alegra dos veces): preguntar antes de guardar
+        if (!err.duplicate) throw err;
+        if (!window.confirm(`${err.message}\n\nAceptar = guardarlo igual. Cancelar = no guardar.`)) {
+          setError('No se guardó: ya había un pago de esto en el mes.');
+          return;
+        }
+        await send({ ...payload, confirm_duplicate: true });
+      }
+      flash(editingId ? 'Movimiento actualizado' : 'Movimiento registrado');
       closeForm();
       await load();
       onEntriesChanged?.(); // puede haber movido saldos de Resumen
