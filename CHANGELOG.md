@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-12] Ajuste manual con "Día al que corresponde"
+
+- Formulario de ajuste manual (`CuentasLayout.jsx`): fecha opcional `business_date` para un ajuste hecho tarde; solo cambia el día en Cuentas → Mes, no el saldo (backend: `AccountMovement.business_date`).
+
 ## [2026-11-12] Gastos: aviso antes de guardar un pago repetido
 
 - Si el backend responde 409 `duplicate` (ya hay un pago de Alegra, internet, luz, etc. ese mes), `CuentasGastos.jsx` muestra cuál es y pregunta; con Aceptar reenvía con `confirm_duplicate: true`, con Cancelar no guarda. `expensesService.handle` deja los datos del aviso en `err.duplicate`.

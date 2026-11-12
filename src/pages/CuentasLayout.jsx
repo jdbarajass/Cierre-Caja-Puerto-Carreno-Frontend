@@ -585,9 +585,10 @@ const CuentasLayout = () => {
         amount: Number(adjustForm.amount),
         direction: adjustForm.direction,
         description: adjustForm.description || undefined,
+        business_date: adjustForm.businessDate || undefined,
       });
       setSuccess('Ajuste registrado correctamente');
-      setAdjustForm({ accountId: '', direction: 'in', amount: '', description: '' });
+      setAdjustForm({ accountId: '', direction: 'in', amount: '', description: '', businessDate: '' });
       await loadAccounts();
     } catch (e2) {
       setError(e2.message);
@@ -930,6 +931,17 @@ const CuentasLayout = () => {
                   onChange={e => setAdjustForm(f => ({ ...f, description: e.target.value }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                 />
+                <label className="block text-xs text-gray-600">
+                  Día al que corresponde (opcional, si el ajuste se hace tarde)
+                  <input
+                    type="date"
+                    value={adjustForm.businessDate || ''}
+                    max={new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })}
+                    onChange={e => setAdjustForm(f => ({ ...f, businessDate: e.target.value }))}
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  />
+                  <span className="block mt-1 text-gray-500">Solo cambia en qué día sale en Cuentas → Mes; el saldo de hoy es el mismo.</span>
+                </label>
 
                 <button
                   type="submit"
