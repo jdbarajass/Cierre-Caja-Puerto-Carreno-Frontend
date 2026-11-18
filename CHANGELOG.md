@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-18] Recompras: el efectivo no paga 4x1000
+
+- `CuentasRecompras.jsx`: la comisión automática del formulario no cuenta el efectivo (aviso "El efectivo no paga 4x1000"); al editar un envío viejo usa `cash_fee_exempt` del backend para mostrar su regla.
+
 ## [2026-11-12] Ajuste manual con "Día al que corresponde"
 
 - Formulario de ajuste manual (`CuentasLayout.jsx`): fecha opcional `business_date` para un ajuste hecho tarde; solo cambia el día en Cuentas → Mes, no el saldo (backend: `AccountMovement.business_date`).

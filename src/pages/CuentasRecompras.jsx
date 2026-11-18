@@ -36,7 +36,10 @@ const EMPTY_ENTRY = {
   date: today(), descripcion: 'Recompra Jhonatan',
   efectivo: '', datafono: '', qr: '',
   daviplata: '', nequi: '', bbva: '', sobrante_mes_anterior: '',
-  fecha_compra: '', notes: '', feeOverride: null
+  fecha_compra: '', notes: '', feeOverride: null,
+  // El efectivo no paga 4x1000 (envíos nuevos; los viejos lo traen en false
+  // desde el backend, ver cash_fee_exempt en app/models/repurchase.py)
+  cashFeeExempt: true,
 };
 
 const EMPTY_PURCHASE = { date: today(), store: '', amount: '', category: 'ropa', notes: '' };
@@ -150,9 +153,11 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
   // Cálculos del formulario de entrada en tiempo real
   const formTotalEnviado = () => PAYMENT_COLS.reduce((s, { key }) => s + toNum(entryForm[key]), 0);
   const formSobrante     = () => toNum(entryForm.sobrante_mes_anterior);
-  // Comisión automática: 4‰ sobre lo enviado (igual que el backend). Si el
-  // usuario escribió un valor en feeOverride, ese manda.
-  const formFeeAuto       = () => Math.round(formTotalEnviado() * 4 / 1000);
+  // Comisión automática: 4‰ sobre lo enviado por bancos; el efectivo no paga
+  // 4x1000 (igual que el backend). Si el usuario escribió un valor en
+  // feeOverride, ese manda.
+  const formFeeBase       = () => formTotalEnviado() - (entryForm.cashFeeExempt ? toNum(entryForm.efectivo) : 0);
+  const formFeeAuto       = () => Math.round(formFeeBase() * 4 / 1000);
   const formFee            = () => entryForm.feeOverride !== null ? toNum(entryForm.feeOverride) : formFeeAuto();
   // La comisión la asume la tienda, no el socio: a Jhonatan le llega el
   // total enviado completo (formTotalEnviado(), sin descontarle nada). Lo
@@ -232,6 +237,7 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
       sobrante_mes_anterior: String(row.sobrante_mes_anterior || ''),
       fecha_compra: row.fecha_compra || '', notes: row.notes || '',
       feeOverride: row.fee_override != null ? String(row.fee_override) : null,
+      cashFeeExempt: row.cash_fee_exempt !== false,
     });
     setEditingEntryId(row.id);
     setShowEntryForm(true);
@@ -388,6 +394,9 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
               <label className="text-xs text-orange-600 font-medium block mb-1">
                 Comisión {entryForm.feeOverride === null ? '4‰ (automática)' : '(editada)'}
               </label>
+              {entryForm.cashFeeExempt && (
+                <p className="text-[11px] text-orange-500 -mt-0.5 mb-1">El efectivo no paga 4x1000</p>
+              )}
               <div className="flex items-center gap-1">
                 <span className="text-lg font-bold text-orange-800">$</span>
                 <LiveMoneyInput
