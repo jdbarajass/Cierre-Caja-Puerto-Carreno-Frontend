@@ -329,6 +329,23 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
   const st = STATUS[req.status] || { label: req.status, cls: 'bg-gray-100 text-gray-600' };
   const created = req.created_at ? new Date(req.created_at) : null;
 
+  // Totales de la tabla. El valor del ajuste va a precio de venta, con signo,
+  // como "Total del ajuste" de Alegra (lo que entra suma, lo que sale resta).
+  const lineValue = (l) => (Number(l.price) || 0) * (Number(l.quantity) || 0);
+  const totals = req.lines.reduce((t, l) => {
+    const isIn = l.type === 'in';
+    t.unitsIn += isIn ? l.quantity : 0;
+    t.unitsOut += isIn ? 0 : l.quantity;
+    t.valueIn += isIn ? lineValue(l) : 0;
+    t.valueOut += isIn ? 0 : lineValue(l);
+    t.system += Number(l.system_qty) || 0;
+    t.physical += Number(l.physical_qty) || 0;
+    t.now += Number(check?.current?.[l.item_id]?.available) || 0;
+    return t;
+  }, { unitsIn: 0, unitsOut: 0, valueIn: 0, valueOut: 0, system: 0, physical: 0, now: 0 });
+  const totalValue = totals.valueIn - totals.valueOut;
+  const signedMoney = (v) => (v > 0 ? `+${fmt(v)}` : v < 0 ? `-${fmt(-v)}` : fmt(0));
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -350,10 +367,11 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
       </div>
 
       <div className="overflow-x-auto -mx-1">
-        <table className="w-full text-sm min-w-[20rem]">
+        <table className="w-full text-sm min-w-[28rem]">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wide text-gray-500 border-b">
               <th className="py-1 px-1 font-semibold">Prenda</th>
+              <th className="py-1 px-1 font-semibold text-right">Precio</th>
               <th className="py-1 px-1 font-semibold">Ajuste</th>
               <th className="py-1 px-1 font-semibold text-right">Sistema</th>
               {req.kind === 'conteo' && <th className="py-1 px-1 font-semibold text-right">Físico</th>}
@@ -369,6 +387,12 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
                     <span className="font-mono text-xs text-gray-600">{l.code}</span>
                     <span className="block text-xs text-gray-800">{l.name}</span>
                   </td>
+                  <td className="py-1.5 px-1 text-right whitespace-nowrap">
+                    {l.price ? fmt(l.price) : '—'}
+                    {l.price > 0 && l.quantity > 1 && (
+                      <span className="block text-[11px] text-gray-500">× {l.quantity} = {fmt(lineValue(l))}</span>
+                    )}
+                  </td>
                   <td className={`py-1.5 px-1 font-semibold whitespace-nowrap ${l.type === 'in' ? 'text-emerald-700' : 'text-red-700'}`}>
                     {l.type === 'in' ? `Entra ${l.quantity}` : `Sale ${l.quantity}`}
                   </td>
@@ -383,6 +407,27 @@ const RequestCard = ({ req, admin, readOnly, onChanged }) => {
               );
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-gray-200 align-top text-xs">
+              <td className="py-1.5 px-1 font-semibold text-gray-900">
+                Total del ajuste
+                <span className="block font-normal text-[11px] text-gray-500">{req.lines.length} {req.lines.length === 1 ? 'prenda' : 'prendas'}</span>
+              </td>
+              <td className={`py-1.5 px-1 text-right font-bold whitespace-nowrap ${totalValue > 0 ? 'text-emerald-700' : totalValue < 0 ? 'text-red-700' : 'text-gray-900'}`}>
+                {signedMoney(totalValue)}
+                {totals.valueIn > 0 && totals.valueOut > 0 && (
+                  <span className="block font-normal text-[11px] text-gray-500">Entra {fmt(totals.valueIn)} · Sale {fmt(totals.valueOut)}</span>
+                )}
+              </td>
+              <td className="py-1.5 px-1 font-semibold whitespace-nowrap">
+                {totals.unitsIn > 0 && <span className="block text-emerald-700">Entra {totals.unitsIn}</span>}
+                {totals.unitsOut > 0 && <span className="block text-red-700">Sale {totals.unitsOut}</span>}
+              </td>
+              <td className="py-1.5 px-1 text-right font-semibold">{totals.system}</td>
+              {req.kind === 'conteo' && <td className="py-1.5 px-1 text-right font-semibold">{totals.physical}</td>}
+              {check && <td className="py-1.5 px-1 text-right font-semibold">{totals.now}</td>}
+            </tr>
+          </tfoot>
         </table>
       </div>
 

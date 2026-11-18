@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-18] Ajustes de inventario: columna Precio y total del ajuste
+
+- `InventoryAdjustments.jsx` (tarjeta de cada solicitud, los 3 tipos y las dos tiendas): columna **Precio** después de Prenda (precio de venta que ya guarda cada línea; si sale más de 1, muestra "× n = valor") y fila **Total del ajuste** al final: valor con signo a precio de venta (lo que entra suma, lo que sale resta; igual que "Total del ajuste" de Alegra, ej. ajuste 125 de Primavera = -$259.400), con "Entra $ · Sale $" cuando hay de los dos, unidades que entran/salen y sumas de Sistema, Físico y Hoy en Alegra. Solo pantalla; el backend ya mandaba `price` en `lines`.
+
 ## [2026-11-18] Recompras: el efectivo no paga 4x1000
 
 - `CuentasRecompras.jsx`: la comisión automática del formulario no cuenta el efectivo (aviso "El efectivo no paga 4x1000"); al editar un envío viejo usa `cash_fee_exempt` del backend para mostrar su regla.
