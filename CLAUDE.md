@@ -39,6 +39,7 @@ Frontend del sistema de cierre de caja KOAJ (Puerto Carreño). Ver `README.md` p
 - **Orden de las cuentas (2026-10-08)**: viene del `sort_order` del backend; en "Cómo se compone el total" (`FlowWindow`, `CuentasLayout.jsx`) Jhonatan va justo después de NEQUI y AHORRO aparte.
 - **Gastos** (Fase 1): `src/pages/CuentasGastos.jsx` + `src/services/expensesService.js`, dentro de `CuentasLayout` (pestaña Gastos). Plan y fases: `docs/PLAN_CUENTAS_DIARIAS.md` del backend.
 - `src/components/common/LiveMoneyInput.jsx`: input de dinero con miles en vivo (Recompras y Gastos).
+- **Facturas de recompra (2026-11-22)**: `src/components/repurchase/RepurchaseBillsPanel.jsx` (en `CuentasRecompras.jsx`) + `src/services/repurchaseBillsService.js`: revisar las facturas de proveedor pendientes en Alegra (prendas y total), pagarlas (un egreso por factura) y registro con lo que contó la tienda. No mueve cuentas ni el saldo de Jhonatan (ver `app/services/repurchase_bills.py` del backend).
 
 ## Sistema visual y capa WebGL
 

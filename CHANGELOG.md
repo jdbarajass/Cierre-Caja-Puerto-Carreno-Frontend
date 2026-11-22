@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-22] Recompras: contar y pagar en Alegra las facturas de proveedor
+
+- `components/repurchase/RepurchaseBillsPanel.jsx` (arriba en `CuentasRecompras.jsx`, las dos tiendas) + `services/repurchaseBillsService.js`. "Revisar facturas por pagar" (periodo editable, por defecto el mes a hoy): facturas pendientes de Alegra con prendas y total, desplegables por prenda, y la suma de todas. "Pagar N facturas en Alegra" con confirmación (cuenta y valor) → un pago por factura; resultado con las que no se pudieron pagar. Prendas que contó la tienda (opcional) con aviso de diferencia, y **Registro de pagos** con el conteo editable y el número de pago de cada factura. El admin de solo lectura ve pero no paga. Backend: `app/services/repurchase_bills.py`.
+
 ## [2026-11-18] Ajustes de inventario: columna Precio y total del ajuste
 
 - `InventoryAdjustments.jsx` (tarjeta de cada solicitud, los 3 tipos y las dos tiendas): columna **Precio** después de Prenda (precio de venta que ya guarda cada línea; si sale más de 1, muestra "× n = valor") y fila **Total del ajuste** al final: valor con signo a precio de venta (lo que entra suma, lo que sale resta; igual que "Total del ajuste" de Alegra, ej. ajuste 125 de Primavera = -$259.400), con "Entra $ · Sale $" cuando hay de los dos, unidades que entran/salen y sumas de Sistema, Físico y Hoy en Alegra. Solo pantalla; el backend ya mandaba `price` en `lines`.

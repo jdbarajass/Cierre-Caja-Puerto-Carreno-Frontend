@@ -8,6 +8,7 @@ import {
   getPurchases, createPurchase, updatePurchase, deletePurchase
 } from '../services/repurchaseService';
 import LiveMoneyInput from '../components/common/LiveMoneyInput';
+import RepurchaseBillsPanel from '../components/repurchase/RepurchaseBillsPanel';
 import { textMatches, inDateRange, anyFilter } from '../utils/tableFilters';
 
 const fmt = (v) =>
@@ -336,6 +337,9 @@ const CuentasRecompras = ({ onEntriesChanged } = {}) => {
           <Check className="w-4 h-4" /> {success}
         </div>
       )}
+
+      {/* ── Facturas de recompra por pagar en Alegra (conteo y pago) ──────── */}
+      <RepurchaseBillsPanel />
 
       {/* ── Formulario de envío ─────────────────────────────────────────── */}
       {showEntryForm && (
