@@ -91,8 +91,8 @@ const Summary = ({ gross, net, netLabel }) => (
 );
 
 const RULE = {
-  addi: 'Addi paga 30 días después de la venta (o el siguiente día hábil), menos 7,735 % (6,5 % + IVA).',
-  datafono: 'Datáfono (débito, crédito y Bold): llega el siguiente día hábil (sin sábados, domingos ni festivos de Colombia: lo del viernes llega el lunes), menos 3,8 %.',
+  addi: 'Addi paga 30 días después de la venta (o el siguiente día hábil), menos 7,735 % (6,5 % + IVA). Entra al saldo a las 6:30 pm (hora Colombia) del día que llega.',
+  datafono: 'Datáfono (débito, crédito y Bold): llega el siguiente día hábil (sin sábados, domingos ni festivos de Colombia: lo del viernes llega el lunes), menos 3,8 %. Entra al saldo a las 6:30 pm (hora Colombia) del día que llega.',
 };
 
 // Detalle de lo que falta por llegar de un grupo ('datafono' | 'addi')

@@ -120,7 +120,7 @@ const CardAccountPanel = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 rounded-lg border border-gray-200 overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-gray-200 self-start">
             {groups.map(g => (
               <Column key={g.key} title={g.label}
-                caption={`${g.key === 'datafono' ? 'Débito, crédito y Bold · siguiente día hábil' : '30 días después de la venta'} · −${g.fee}`}>
+                caption={`${g.key === 'datafono' ? 'Débito, crédito y Bold · siguiente día hábil' : '30 días después de la venta'}, 6:30 pm · −${g.fee}`}>
                 <Figure label={`Vendido en ${month}`} meta={`A la cuenta: ${fmt(g.sales - g.commission)}`}
                   fee={g.commission} amount={g.sales} tone="text-gray-900" />
                 <Figure label={`Llegó en ${month}`} meta={g.last && `Último: ${dayLabel(g.last)}`}

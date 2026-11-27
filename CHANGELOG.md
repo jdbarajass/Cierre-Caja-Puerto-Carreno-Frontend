@@ -2,6 +2,10 @@
 
 ---
 
+## [2026-11-27] Datáfono y Addi: entran al saldo a las 6:30 pm
+
+- Solo textos: la regla de llegada en `PendingArrivals.jsx` (ventanas de Por llegar y Llegó), el subtítulo de cada casilla en `CardAccountPanel.jsx` y la nota de Cuentas → Mes dicen que la plata entra al saldo a las 6:30 pm (hora Colombia) del día que llega. El corte lo hace el backend (`card_arrivals.arrival_cutoff`).
+
 ## [2026-11-22] Recompras: contar y pagar en Alegra las facturas de proveedor
 
 - `components/repurchase/RepurchaseBillsPanel.jsx` (arriba en `CuentasRecompras.jsx`, las dos tiendas) + `services/repurchaseBillsService.js`. "Revisar facturas por pagar" (periodo editable, por defecto el mes a hoy): facturas pendientes de Alegra con prendas y total, desplegables por prenda, y la suma de todas. "Pagar N facturas en Alegra" con confirmación (cuenta y valor) → un pago por factura; resultado con las que no se pudieron pagar. Prendas que contó la tienda (opcional) con aviso de diferencia, y **Registro de pagos** con el conteo editable y el número de pago de cada factura. El admin de solo lectura ve pero no paga. Backend: `app/services/repurchase_bills.py`.
